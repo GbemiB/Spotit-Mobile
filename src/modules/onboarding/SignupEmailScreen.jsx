@@ -125,7 +125,7 @@ export default function SignupEmailScreen() {
 
           <Text style={s.terms}>
             By continuing, you agree to our{' '}
-            <Text style={s.termsLink}>Terms</Text> and{' '}
+            <Text style={s.termsLink} onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'terms' })}>Terms</Text> and{' '}
             <Text style={s.termsLink}>Privacy Policy</Text>.
           </Text>
         </View>

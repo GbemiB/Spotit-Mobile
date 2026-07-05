@@ -148,11 +148,11 @@ function createStyles(c) {
     dateHeading: { fontSize: 12, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.3 },
     phaseChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99 },
     phaseChipTx: { fontSize: 12, fontWeight: '700' },
-    cdTx: { fontSize: 12, color: c.textMuted, fontWeight: '600' },
+    cdTx: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
     phaseNote: { fontSize: 14, color: c.textSecondary, lineHeight: 21 },
     logHeading: { fontSize: 12, fontWeight: '700', color: c.textSecondary, marginBottom: 12 },
     logRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     logKey: { fontSize: 12, color: c.textMuted, fontWeight: '600' },
     logVal: { fontSize: 12, color: c.textPrimary, fontWeight: '600', textTransform: 'capitalize' },
-  });
+  });r
 }

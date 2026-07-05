@@ -6,7 +6,7 @@ import TermsScreen from '../../modules/onboarding/TermsScreen.jsx';
 import ForgotPasswordScreen from '../../modules/onboarding/ForgotPasswordScreen.jsx';
 import OtpVerifyScreen from '../../modules/onboarding/OtpVerifyScreen.jsx';
 import OnboardingScreen from '../../modules/onboarding/OnboardingScreen.jsx';
-import HomeScreen from '../../modules/onboarding/HomeScreen.jsx';
+import HomeScreen from '../../modules/dashboard/HomeScreen.jsx';
 import CalendarScreen from '../../modules/calender/CalendarScreen.jsx';
 import InsightsScreen from '../../modules/insights/InsightsScreen.jsx';
 import RewardsScreen from '../../modules/rewards/RewardsScreen.jsx';
