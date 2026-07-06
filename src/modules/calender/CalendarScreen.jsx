@@ -1,11 +1,11 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, formatDisplayDate } from '../../shared/utils/cycle.js';
 import { MONTHS, PHASE_NOTES } from '../../shared/constants/cycle.js';
-import { useTheme, phases } from '../../shared/styles/index.js';
+import { useTheme, phases, Text } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -154,5 +154,5 @@ function createStyles(c) {
     logRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     logKey: { fontSize: 12, color: c.textMuted, fontWeight: '600' },
     logVal: { fontSize: 12, color: c.textPrimary, fontWeight: '600', textTransform: 'capitalize' },
-  });r
+  });
 }

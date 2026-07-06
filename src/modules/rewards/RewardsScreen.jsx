@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { todayISO } from '../../shared/utils/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';

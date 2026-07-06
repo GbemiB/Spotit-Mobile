@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 export default function Toast({ icon, text }) {
   const { colors } = useTheme();

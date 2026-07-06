@@ -1,10 +1,10 @@
-import { View, Text, TextInput, ScrollView, Pressable, Alert, StyleSheet, Platform } from 'react-native';
+import { View, ScrollView, Pressable, Alert, StyleSheet, Platform } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';

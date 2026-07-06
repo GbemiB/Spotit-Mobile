@@ -1,6 +1,6 @@
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { View, Pressable, Animated, StyleSheet } from 'react-native';
 import { useRef, useEffect, useMemo } from 'react';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 export default function Toggle({ value, onChange, label, description }) {
   const { colors } = useTheme();

@@ -1,10 +1,10 @@
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { FLOW, MOODS, SYMPTOMS } from '../../shared/constants/options.js';
 import { formatDisplayDate } from '../../shared/utils/cycle.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';

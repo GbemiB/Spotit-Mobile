@@ -1,7 +1,7 @@
+import SplashScreen from '../../modules/onboarding/SplashScreen.jsx';
 import WelcomeScreen from '../../modules/onboarding/WelcomeScreen.jsx';
 import LoginScreen from '../../modules/onboarding/LoginScreen.jsx';
 import SignupScreen from '../../modules/onboarding/SignupScreen.jsx';
-import SignupEmailScreen from '../../modules/onboarding/SignupEmailScreen.jsx';
 import TermsScreen from '../../modules/onboarding/TermsScreen.jsx';
 import ForgotPasswordScreen from '../../modules/onboarding/ForgotPasswordScreen.jsx';
 import OtpVerifyScreen from '../../modules/onboarding/OtpVerifyScreen.jsx';
@@ -14,10 +14,10 @@ import SettingsScreen from '../../modules/onboarding/SettingsScreen.jsx';
 
 // Pre-auth flow, keyed by state.authScreen
 export const AUTH_SCREENS = {
+  splash: SplashScreen,
   welcome: WelcomeScreen,
   login: LoginScreen,
   signup: SignupScreen,
-  'signup-email': SignupEmailScreen,
   terms: TermsScreen,
   'forgot-password': ForgotPasswordScreen,
   'otp-verify': OtpVerifyScreen,

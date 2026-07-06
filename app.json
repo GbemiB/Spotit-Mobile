@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "spotit",
+    "name": "",
     "slug": "spotit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/splash.png",
+    "icon": "", 
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
@@ -12,24 +12,11 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/splash.png",
-        "backgroundImage": "./assets/splash.png",
-        "monochromeImage": "./assets/splash.png"
+        "foregroundImage": "./assets/splash.png"
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-font",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash.png",
-          "backgroundColor": "#C04E68",
-          "resizeMode": "cover"
-        }
-      ]
-    ]
+    }
   }
 }

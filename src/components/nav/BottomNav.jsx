@@ -1,9 +1,9 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { A } from '../../shared/store/actions.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 const TABS = [
   { key: 'home',     label: 'Home',     icon: '🏠' },

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Animated, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, Animated, Alert, StyleSheet } from 'react-native';
 import { useRef, useEffect, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { PHASE_NOTES } from '../../shared/constants/cycle.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 import CycleRing from '../../components/cycle/CycleRing.jsx';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';

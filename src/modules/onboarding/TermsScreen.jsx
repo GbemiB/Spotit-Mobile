@@ -1,9 +1,11 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
+import { DocumentIcon } from '../../components/ui/icons.jsx';
 
 const SECTIONS = [
   {
@@ -38,42 +40,57 @@ export default function TermsScreen() {
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
+  function goBack() {
+    dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
+  }
+
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
+      <Pressable onPress={goBack} style={s.back}>
+        <Text style={s.backTx}>← Back</Text>
+      </Pressable>
       <View style={s.headerRow}>
-        <Pressable onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup-email' })} style={s.back}>
-          <Text style={s.backTx}>← Back</Text>
-        </Pressable>
+        <DocumentIcon size={18} color={colors.authHeading} />
+        <Text style={s.headerTitle}>Terms & Conditions</Text>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 40 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 20, gap: 14 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={s.title}>Terms & Conditions</Text>
-        <Text style={s.updated}>Last updated: January 2026</Text>
+        <Text style={s.updated}>Last updated June 2026</Text>
 
         {SECTIONS.map((sec) => (
-          <View key={sec.title} style={s.section}>
+          <View key={sec.title}>
             <Text style={s.sectionTitle}>{sec.title}</Text>
             <Text style={s.sectionBody}>{sec.body}</Text>
           </View>
         ))}
       </ScrollView>
+
+      <View style={[s.footer, { paddingBottom: insets.bottom + 22 }]}>
+        <Pressable onPress={goBack}>
+          <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
+            <Text style={s.ctaTx}>I Agree</Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 function createStyles(c) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
-    headerRow: { paddingHorizontal: 24, marginBottom: 4 },
-    back: { paddingVertical: 4, alignSelf: 'flex-start' },
+    screen: { flex: 1, backgroundColor: '#FBF8F5' },
+    back: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 4 },
     backTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
-    title: { fontSize: 18, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5, marginTop: 12, marginBottom: 4 },
-    updated: { fontSize: 12, color: c.textFaint, fontWeight: '600', marginBottom: 20 },
-    section: { marginBottom: 20 },
-    sectionTitle: { fontSize: 14, fontWeight: '700', color: c.textPrimary, marginBottom: 6 },
-    sectionBody: { fontSize: 12, color: c.textSecondary, lineHeight: 19 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0E0DA' },
+    headerTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
+    updated: { fontSize: 10.5, color: c.textFaint },
+    sectionTitle: { fontSize: 12.5, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+    sectionBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 17 },
+    footer: { paddingHorizontal: 22, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F0E0DA' },
+    cta: { height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    ctaTx: { fontSize: 13, fontWeight: '600', color: '#fff' },
   });
 }

@@ -65,6 +65,18 @@ export const light = {
     fabAccent:     ['#C04E68', '#DC5A74', '#E2647C'],
     ring:          ['#F2A0AE', '#DC5A74', '#D6A24E'],
   },
+
+  // Auth/onboarding flow only — the warm gradient screens from the Welcome/Signup/Login
+  // design, distinct from the flat c.background used by the main app.
+  authGradient:     ['#FFF3F1', '#FCE0DE', '#F6C7C9', '#EEACAF'],
+  splashGradient:   ['#FFFDFC', '#FCEEEA', '#F7E3DC'],
+  authGradientCta:  ['#F2A0AE', '#DC5A74'],
+  authHeading:      '#2E2429',
+  authBody:         '#5C2430',
+  authLabel:        '#B0827D',
+  authBorder:       '#DDCBC2',
+  authInputBg:      '#FFFFFF',
+  authInputBorder:  '#EAD3CC',
 };
 
 export const dark = {
@@ -116,4 +128,15 @@ export const dark = {
     fabAccent:     ['#C9536D', '#E2647C', '#F2879B'],
     ring:          ['#F2A0AE', '#E2647C', '#E0B564'],
   },
+
+  // Auth/onboarding flow only — mirrors the design's dark-mode gradient screens.
+  authGradient:     ['#160A0C', '#180A0E', '#1C0910', '#200A13'],
+  splashGradient:   ['#160A0C', '#150910', '#1C0910'],
+  authGradientCta:  ['#F2A0AE', '#DC5A74'],
+  authHeading:      '#FFFFFF',
+  authBody:         'rgba(255,255,255,0.65)',
+  authLabel:        'rgba(255,255,255,0.45)',
+  authBorder:       'rgba(255,255,255,0.16)',
+  authInputBg:      'rgba(255,255,255,0.06)',
+  authInputBorder:  'rgba(255,255,255,0.16)',
 };

@@ -1,8 +1,8 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { DAYS_SHORT } from '../../shared/constants/cycle.js';
 import { cycleDayOf, phaseFor, toISO, daysInMonth } from '../../shared/utils/cycle.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 export default function CalendarGrid({ year, month, selDate, logs = {}, cycleState, onSelect }) {
   const { colors } = useTheme();

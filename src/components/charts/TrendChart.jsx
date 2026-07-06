@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MONTHS_SHORT } from '../../shared/constants/cycle.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 export default function TrendChart({ data, labels }) {
   const { colors } = useTheme();

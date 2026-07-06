@@ -1,9 +1,9 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { cycleDayOf, phaseFor, todayISO } from '../../shared/utils/cycle.js';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
 import TrendChart from '../../components/charts/TrendChart.jsx';

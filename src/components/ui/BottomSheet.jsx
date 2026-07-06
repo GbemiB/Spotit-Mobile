@@ -1,6 +1,6 @@
-import { Modal, View, Text, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { useMemo } from 'react';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 export default function BottomSheet({ open, onClose, title, children }) {
   const { colors } = useTheme();

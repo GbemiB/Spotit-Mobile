@@ -1,7 +1,7 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 
 function getVariants(c) {
   return {
@@ -40,6 +40,6 @@ export default function Button({ children, variant = 'primary', onPress, disable
 function createStyles(c) {
   return StyleSheet.create({
     base:  { borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    label: { fontWeight: '700' },
+    label: { fontWeight: '600' },
   });
 }
