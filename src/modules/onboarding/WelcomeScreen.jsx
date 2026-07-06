@@ -106,7 +106,7 @@ export default function WelcomeScreen() {
         onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' })}
         style={[s.loginLink, { paddingBottom: insets.bottom + 14 }]}
       >
-        <Text style={s.loginLinkTx}>Already have an account? <Text style={{ color: colors.primaryDark, fontWeight: '700' }}>Login</Text></Text>
+        <Text style={s.loginLinkTx}>Already have an account? <Text style={{ color: colors.authAccent, fontWeight: '700' }}>Login</Text></Text>
       </Pressable>
     </LinearGradient>
   );
@@ -115,13 +115,13 @@ export default function WelcomeScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1 },
-    photoWrap: { height: '60%', position: 'relative', overflow: 'hidden' },
+    photoWrap: { height: '75%', position: 'relative', overflow: 'hidden' },
     photo: { width: '100%', height: '100%' },
     dots: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', gap: 6, justifyContent: 'center' },
     dot: { height: 5, borderRadius: 99 },
     skip: { position: 'absolute', right: 16, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 99, backgroundColor: 'rgba(0,0,0,0.28)' },
     skipTx: { fontSize: 11, fontWeight: '600', color: '#fff' },
-    content: { flex: 1, padding: 24, paddingTop: 22 },
+    content: { flex: 1, paddingHorizontal: 26, paddingTop: 10, paddingBottom: 20 },
     title: { fontSize: 22, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading },
     body: { fontSize: 12, color: c.authBody, marginTop: 6, lineHeight: 18 },
     footer: { marginTop: 'auto' },

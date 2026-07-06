@@ -45,6 +45,11 @@ SplashScreenNative.preventAutoHideAsync();
 
 const MIN_SPLASH_MS = 3200;
 
+// Dev-only override to preview a theme regardless of system appearance.
+// Set to 'light' or 'dark', or null to follow the system setting.
+// const DEV_FORCE_SCHEME = 'dark';
+const DEV_FORCE_SCHEME = 'light';
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
@@ -65,7 +70,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider onLayout={onLayoutRootView}>
-      <ThemeProvider>
+      <ThemeProvider scheme={DEV_FORCE_SCHEME}>
         <AppProvider>
           <AppContent />
         </AppProvider>

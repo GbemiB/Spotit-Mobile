@@ -10,7 +10,7 @@ import HomeScreen from '../../modules/dashboard/HomeScreen.jsx';
 import CalendarScreen from '../../modules/calender/CalendarScreen.jsx';
 import InsightsScreen from '../../modules/insights/InsightsScreen.jsx';
 import RewardsScreen from '../../modules/rewards/RewardsScreen.jsx';
-import SettingsScreen from '../../modules/onboarding/SettingsScreen.jsx';
+import SettingsScreen from '../../modules/dashboard/SettingsScreen.jsx';
 
 // Pre-auth flow, keyed by state.authScreen
 export const AUTH_SCREENS = {

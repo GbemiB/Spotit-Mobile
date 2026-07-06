@@ -104,7 +104,7 @@ function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
-    body: { paddingHorizontal: 26, paddingTop: 24, alignItems: 'center' },
+    body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
     iconBadge: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(220,90,116,0.14)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
@@ -112,12 +112,12 @@ function createStyles(c) {
     otpRow: { flexDirection: 'row', gap: 10, marginTop: 26 },
     otpBox: {
       width: 44, height: 52, borderRadius: 12, borderWidth: 1.5, borderColor: c.authBorder,
-      backgroundColor: '#fff', textAlign: 'center', fontSize: 20, fontWeight: '700', color: c.authHeading,
+      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '700', color: c.authHeading,
     },
     otpBoxFilled: { borderColor: c.authHeading },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     resendBtn: { alignItems: 'center', marginTop: 24 },
-    resendTx: { fontSize: 12, color: c.primaryDark, fontWeight: '700' },
+    resendTx: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
   });
 }

@@ -81,15 +81,15 @@ export default function TermsScreen() {
 
 function createStyles(c) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#FBF8F5' },
+    screen: { flex: 1, backgroundColor: c.background },
     back: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 4 },
     backTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0E0DA' },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: c.border },
     headerTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
     updated: { fontSize: 10.5, color: c.textFaint },
     sectionTitle: { fontSize: 12.5, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
     sectionBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 17 },
-    footer: { paddingHorizontal: 22, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F0E0DA' },
+    footer: { paddingHorizontal: 22, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border },
     cta: { height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', color: '#fff' },
   });

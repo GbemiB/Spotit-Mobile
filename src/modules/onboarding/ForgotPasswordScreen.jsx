@@ -49,7 +49,7 @@ export default function ForgotPasswordScreen() {
               <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" style={s.input} />
             </View>
 
-            <Pressable disabled={!canSubmit} onPress={handleSend} style={{ marginTop: 24, opacity: canSubmit ? 1 : 0.5 }}>
+            <Pressable disabled={!canSubmit} onPress={handleSend} style={{ alignSelf: 'stretch', marginTop: 24, opacity: canSubmit ? 1 : 0.5 }}>
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
                 <Text style={s.ctaTx}>Send Code</Text>
               </LinearGradient>
@@ -72,17 +72,17 @@ function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
-    body: { paddingHorizontal: 26, paddingTop: 24, alignItems: 'center' },
+    body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
     iconBadge: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(220,90,116,0.14)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     form: { alignSelf: 'stretch', marginTop: 26 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
-    input: { fontSize: 15, fontWeight: '600', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorder },
-    cta: { alignSelf: 'stretch', height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    input: { fontSize: 15, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    cta: { alignSelf: 'stretch', paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
     footerTx: { fontSize: 12, color: c.authBody },
-    footerLink: { fontSize: 12, color: c.primaryDark, fontWeight: '700' },
+    footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
   });
 }

@@ -6,7 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { GoogleIcon, AppleIcon } from '../../components/ui/icons.jsx';
+import { GoogleIcon } from '../../components/ui/icons.jsx';
 
 export default function LoginScreen() {
   const { dispatch } = useApp();
@@ -49,7 +49,7 @@ export default function LoginScreen() {
               <View style={s.field}>
                 <Text style={s.label}>Password</Text>
                 <View style={s.passRow}>
-                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!showPass} style={[s.input, { flex: 1, borderBottomWidth: 0, paddingVertical: 0 }]} />
+                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!showPass} style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
                   <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
                     <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
                   </Pressable>
@@ -78,10 +78,6 @@ export default function LoginScreen() {
                 <GoogleIcon size={16} />
                 <Text style={s.socialTx}>Continue With Google</Text>
               </Pressable>
-              <Pressable style={s.socialBtn} onPress={handleSocial}>
-                <AppleIcon size={14} color={colors.authHeading} />
-                <Text style={s.socialTx}>Continue With Apple</Text>
-              </Pressable>
             </View>
 
             <View style={s.footer}>
@@ -106,11 +102,11 @@ function createStyles(c) {
     form: { marginTop: 24 },
     field: { marginBottom: 18 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
-    input: { fontSize: 15, fontWeight: '600', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorder },
-    passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorder },
-    showTx: { fontSize: 11.5, color: c.primaryDark, fontWeight: '700' },
+    input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     forgotBtn: { alignItems: 'flex-end', marginTop: 10 },
-    forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.primaryDark },
+    forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.authAccent },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 16 },
@@ -120,6 +116,6 @@ function createStyles(c) {
     socialTx: { fontSize: 13, fontWeight: '600', color: c.authHeading },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
-    footerLink: { fontSize: 12, color: c.primaryDark, fontWeight: '700' },
+    footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
   });
 }

@@ -75,6 +75,8 @@ export const light = {
   authBody:         '#5C2430',
   authLabel:        '#B0827D',
   authBorder:       '#DDCBC2',
+  authBorderStrong: '#C9AFA3',
+  authAccent:       '#C04E68',
   authInputBg:      '#FFFFFF',
   authInputBorder:  '#EAD3CC',
 };
@@ -137,6 +139,8 @@ export const dark = {
   authBody:         'rgba(255,255,255,0.65)',
   authLabel:        'rgba(255,255,255,0.45)',
   authBorder:       'rgba(255,255,255,0.16)',
+  authBorderStrong: 'rgba(255,255,255,0.28)',
+  authAccent:       '#F2A0AE',
   authInputBg:      'rgba(255,255,255,0.06)',
   authInputBorder:  'rgba(255,255,255,0.16)',
 };

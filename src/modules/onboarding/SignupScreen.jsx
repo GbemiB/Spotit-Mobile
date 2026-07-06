@@ -7,25 +7,29 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
-import { CheckIcon, GoogleIcon, AppleIcon } from '../../components/ui/icons.jsx';
+import { CheckIcon, GoogleIcon } from '../../components/ui/icons.jsx';
 
 export default function SignupScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
-  const canSubmit = name.trim() && email.trim() && password && agreed && !passwordsMismatch;
+  const canSubmit = firstName.trim() && lastName.trim() && email.trim() && password.length >= 8 && agreed && !passwordsMismatch;
 
   function handleCreate() {
-    if (name.trim()) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: name.trim() });
+    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
     setShowSuccess(true);
   }
 
@@ -55,9 +59,15 @@ export default function SignupScreen() {
             <Text style={s.title}>Create your account</Text>
 
             <View style={s.form}>
-              <View style={s.field}>
-                <Text style={s.label}>Name</Text>
-                <TextInput value={name} onChangeText={setName} placeholder="" style={s.input} />
+              <View style={s.nameRow}>
+                <View style={s.nameField}>
+                  <Text style={s.label}>First name</Text>
+                  <TextInput value={firstName} onChangeText={setFirstName} placeholder="" style={s.input} />
+                </View>
+                <View style={s.nameField}>
+                  <Text style={s.label}>Last name</Text>
+                  <TextInput value={lastName} onChangeText={setLastName} placeholder="" style={s.input} />
+                </View>
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Email</Text>
@@ -65,12 +75,22 @@ export default function SignupScreen() {
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Password</Text>
-                <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="" style={s.input} />
-                <Text style={s.hint}>Min. 8 characters, 1 number, 1 symbol</Text>
+                <View style={s.passRow}>
+                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!showPass} placeholder="" style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                  <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
+                    <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
+                  </Pressable>
+                </View>
+                <Text style={s.hint}>Min. 8 characters</Text>
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Confirm password</Text>
-                <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="" style={[s.input, passwordsMismatch && { borderBottomColor: colors.error }]} />
+                <View style={[s.passRow, passwordsMismatch && { borderBottomColor: colors.error }]}>
+                  <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPass} placeholder="" style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                  <Pressable onPress={() => setShowConfirmPass(v => !v)} hitSlop={8}>
+                    <Text style={s.showTx}>{showConfirmPass ? 'Hide' : 'Show'}</Text>
+                  </Pressable>
+                </View>
                 {passwordsMismatch && <Text style={s.errorTx}>Passwords don't match</Text>}
               </View>
             </View>
@@ -103,10 +123,6 @@ export default function SignupScreen() {
                 <GoogleIcon size={16} />
                 <Text style={s.socialTx}>Continue With Google</Text>
               </Pressable>
-              <Pressable style={s.socialBtn} onPress={handleSocial}>
-                <AppleIcon size={14} color={colors.authHeading} />
-                <Text style={s.socialTx}>Continue With Apple</Text>
-              </Pressable>
             </View>
 
             <View style={s.footer}>
@@ -138,15 +154,19 @@ function createStyles(c) {
     body: { paddingHorizontal: 26, paddingTop: 20 },
     title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center' },
     form: { marginTop: 24 },
-    field: { marginBottom: 16 },
-    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
-    input: { fontSize: 15, fontWeight: '600', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorder },
+    field: { marginBottom: 8 },
+    nameRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+    nameField: { flex: 1 },
+    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
+    input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 6 },
-    agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 4 },
-    checkbox: { width: 18, height: 18, borderRadius: 5, borderWidth: 1.5, borderColor: c.primary, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
+    agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 10, fontSize: 10 },
+    checkbox: { width: 15, height: 15, borderRadius: 2, borderWidth: 1.5, borderColor: c.primary, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
     agreeTx: { flex: 1, fontSize: 11.5, color: c.textSecondary, lineHeight: 17 },
-    agreeLink: { color: c.primaryDark, fontWeight: '700' },
+    agreeLink: { color: c.authAccent, fontWeight: '700' },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 16 },
@@ -156,6 +176,6 @@ function createStyles(c) {
     socialTx: { fontSize: 13, fontWeight: '600', color: c.authHeading },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
-    footerLink: { fontSize: 12, color: c.primaryDark, fontWeight: '700' },
+    footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
   });
 }

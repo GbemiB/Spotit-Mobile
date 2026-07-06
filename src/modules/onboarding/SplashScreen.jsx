@@ -13,8 +13,8 @@ function Dot({ color, delay }) {
   useEffect(() => {
     Animated.loop(Animated.sequence([
       Animated.delay(delay),
-      Animated.timing(anim, { toValue: 1, duration: 550, useNativeDriver: true }),
-      Animated.timing(anim, { toValue: 0, duration: 550, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      Animated.timing(anim, { toValue: 0, duration: 1000, useNativeDriver: true }),
     ])).start();
   }, []);
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
@@ -35,7 +35,7 @@ export default function SplashScreen() {
     <LinearGradient colors={colors.splashGradient} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={s.screen}>
       <LogoMark size={96} />
       <Text style={s.wordmark}>Spot<Text style={{ color: colors.primary }}> it</Text></Text>
-      <Text style={s.tagline}>know your body, gently</Text>
+      <Text style={s.tagline}>Track your body, gently</Text>
       <View style={s.dots}>
         <Dot color={colors.primary} delay={0} />
         <Dot color={colors.primaryLight} delay={150} />
