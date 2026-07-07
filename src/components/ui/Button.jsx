@@ -18,7 +18,7 @@ export default function Button({ children, variant = 'primary', onPress, disable
   const VARIANTS = useMemo(() => getVariants(colors), [colors]);
   const v   = VARIANTS[variant] || VARIANTS.primary;
   const pad = size === 'sm' ? { paddingVertical: 10, paddingHorizontal: 16 } : { paddingVertical: 15, paddingHorizontal: 22 };
-  const fs  = size === 'sm' ? 12 : 13;
+  const fs  = size === 'sm' ? 10 : 11;
 
   return (
     <Pressable
