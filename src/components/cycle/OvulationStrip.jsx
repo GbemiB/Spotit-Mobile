@@ -55,7 +55,7 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
     <View style={s.row}>
       {cells.map(c => (
         <View key={c.key} style={s.col}>
-          <Text style={s.dow}>{c.label}</Text>
+          <Text style={s.dow} numberOfLines={1} adjustsFontSizeToFit>{c.label}</Text>
           {c.isOvulation ? (
             <View style={s.cellWrap}>
               <PulseRing color={colors.primary} />

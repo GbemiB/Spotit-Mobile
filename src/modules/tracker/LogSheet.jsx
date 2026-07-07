@@ -20,14 +20,21 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shap
       <View style={s.chipRow}>
         {items.map(item => {
           const sel = multiSelect ? selected?.includes(item.id) : selected === item.id;
+          const icon = item.emoji || item.icon;
           return (
             <Pressable
               key={item.id}
               onPress={() => onSelect(item.id)}
-              style={[s.chip, shape === 'rect' && s.chipRect, sel && s.chipSel]}
+              style={[shape === 'rect' ? s.chipRect : s.chip, sel && s.chipSel]}
             >
-              {(item.emoji || item.icon) ? <Text style={s.chipEmoji}>{item.emoji || item.icon}</Text> : null}
-              <Text style={[s.chipTx, sel && s.chipTxSel]}>{item.label}</Text>
+              {icon ? <Text style={shape === 'rect' ? s.chipRectEmoji : s.chipEmoji}>{icon}</Text> : null}
+              <Text
+                style={[shape === 'rect' ? s.chipRectTx : s.chipTx, sel && s.chipTxSel]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={shape === 'rect'}
+              >
+                {item.label}
+              </Text>
             </Pressable>
           );
         })}
@@ -36,23 +43,23 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shap
   );
 }
 
-function FlowPicker({ value, onChange, colors, s }) {
-  const dots = { spotting: 1, light: 2, medium: 3, heavy: 4, vheavy: 5 };
+function FlowPicker({ value, onChange, s }) {
   return (
     <View style={s.section}>
       <SectionLabel s={s}>Flow</SectionLabel>
-      <View style={s.chipRow}>
+      <View style={s.flowRow}>
         {FLOW.map(f => {
           const sel = value === f.id;
-          const count = dots[f.id] || 1;
           return (
             <Pressable key={f.id} onPress={() => onChange(f.id)} style={[s.flowChip, sel && s.chipSel]}>
-              <View style={s.flowDots}>
-                {Array.from({ length: count }).map((_, i) => (
-                  <View key={i} style={[s.flowDot, { backgroundColor: sel ? colors.primary : colors.border }]} />
-                ))}
-              </View>
-              <Text style={[s.chipTx, { fontSize: 9, marginTop: 5 }, sel && s.chipTxSel]}>{f.label}</Text>
+              <Text style={s.flowIcon}>{f.icon}</Text>
+              <Text
+                style={[s.chipRectTx, sel && s.chipTxSel]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {f.label}
+              </Text>
             </Pressable>
           );
         })}
@@ -75,7 +82,6 @@ export default function LogSheet() {
           <FlowPicker
             value={draftLog.flow}
             onChange={id => dispatch({ type: A.SET_DRAFT_FLOW, id })}
-            colors={colors}
             s={s}
           />
           <ChipGroup
@@ -140,14 +146,21 @@ function createStyles(c) {
     secLabel: { fontSize: 11, fontWeight: '700', color: c.textSecondary, marginBottom: 10 },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border },
-    chipRect: { borderRadius: 16, flexBasis: '22%', flexGrow: 1, justifyContent: 'center' },
+    chipRect: {
+      alignItems: 'center', justifyContent: 'center',
+      paddingHorizontal: 4, paddingVertical: 9, borderRadius: 16,
+      backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border,
+      flexBasis: '22%', flexGrow: 1,
+    },
     chipSel: { backgroundColor: c.primarySoft, borderColor: c.primary },
     chipEmoji: { fontSize: 12 },
+    chipRectEmoji: { fontSize: 20 },
     chipTx: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
+    chipRectTx: { fontSize: 8, fontWeight: '600', color: c.textSecondary, marginTop: 3, textAlign: 'center' },
     chipTxSel: { color: c.primaryDark },
-    flowChip: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 9, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, minWidth: 56 },
-    flowDots: { flexDirection: 'row', gap: 2, flexWrap: 'wrap', justifyContent: 'center', width: 36 },
-    flowDot: { width: 7, height: 7, borderRadius: 4 },
+    flowRow: { flexDirection: 'row', gap: 8 },
+    flowChip: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2, paddingVertical: 9, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border },
+    flowIcon: { fontSize: 14 },
     notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 12, color: c.textPrimary, minHeight: 80 },
   });
 }

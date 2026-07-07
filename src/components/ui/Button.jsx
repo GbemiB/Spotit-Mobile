@@ -18,7 +18,7 @@ export default function Button({ children, variant = 'primary', onPress, disable
   const VARIANTS = useMemo(() => getVariants(colors), [colors]);
   const v   = VARIANTS[variant] || VARIANTS.primary;
   const pad = size === 'sm' ? { paddingVertical: 10, paddingHorizontal: 16 } : { paddingVertical: 15, paddingHorizontal: 22 };
-  const fs  = size === 'sm' ? 13 : 15;
+  const fs  = size === 'sm' ? 12 : 13;
 
   return (
     <Pressable
@@ -40,6 +40,6 @@ export default function Button({ children, variant = 'primary', onPress, disable
 function createStyles(c) {
   return StyleSheet.create({
     base:  { borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    label: { fontWeight: '600' },
+    label: { fontWeight: '600', letterSpacing: 0.3 },
   });
 }
