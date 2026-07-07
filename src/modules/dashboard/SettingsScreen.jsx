@@ -18,9 +18,14 @@ const THEME_OPTIONS = [
   { key: 'system', label: 'System' },
 ];
 
-function Row({ label, sub, right, last, s }) {
+function Row({ icon, iconBg, label, sub, right, last, s }) {
   return (
     <View style={[s.row, last && { borderBottomWidth: 0 }]}>
+      {icon ? (
+        <View style={[s.rowIconWrap, { backgroundColor: iconBg }]}>
+          <Text style={{ fontSize: 14 }}>{icon}</Text>
+        </View>
+      ) : null}
       <View style={{ flex: 1 }}>
         <Text style={s.rowLabel}>{label}</Text>
         {sub ? <Text style={s.rowSub}>{sub}</Text> : null}
@@ -150,6 +155,8 @@ export default function SettingsScreen() {
             {NOTIF_ROWS.map((n, i) => (
               <Row
                 key={n.key}
+                icon={n.icon}
+                iconBg={colors[`${n.colorKey}Soft`]}
                 label={n.label}
                 sub={n.sub}
                 right={<Toggle value={notifs[n.key]} onChange={() => dispatch({ type: A.TOGGLE_NOTIF, key: n.key })} />}
@@ -235,7 +242,8 @@ function createStyles(c) {
     themeRow: { flexDirection: 'row', gap: 6, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 6, marginTop: 10 },
     themePill: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12 },
     themePillTx: { fontSize: 10.5, fontWeight: '700' },
-    row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: c.border },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: c.border },
+    rowIconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
     rowLabel: { fontSize: 11.5, color: c.textPrimary, fontWeight: '500' },
     rowSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },

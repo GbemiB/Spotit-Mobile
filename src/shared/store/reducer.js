@@ -6,8 +6,8 @@ import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
 const MAX_HISTORY = 20;
 
 export const INIT = {
-  onboarded: false,
-  authDone: false,
+  onboarded: true, // TEMP-DEV-PREVIEW
+  authDone: true, // TEMP-DEV-PREVIEW
   authScreen: 'splash',
   resetEmail: null,
   userName: 'Gbemisola',
@@ -35,7 +35,7 @@ export const INIT = {
     { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Jun 28' },
   ],
   // session
-  screen: 'home',
+  screen: 'settings', // TEMP-DEV-PREVIEW
   logOpen: false,
   logEditDate: null,
   toast: null,

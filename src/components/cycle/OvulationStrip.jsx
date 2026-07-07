@@ -45,7 +45,7 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
         label: off === 0 ? 'Today' : DAYS_SHORT[d.getDay()],
         mark: d.getDate(),
         isOvulation: ph.key === 'ovulation',
-        isFertile: ph.key === 'fertile',
+        phaseColor: ph.color,
       });
     }
     return out;
@@ -64,8 +64,8 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
               </LinearGradient>
             </View>
           ) : (
-            <View style={[s.cell, c.isFertile ? { backgroundColor: colors.successSoft } : { backgroundColor: colors.border }]}>
-              <Text style={[s.mark, { color: c.isFertile ? colors.success : colors.textMuted }]}>{c.mark}</Text>
+            <View style={[s.cell, { backgroundColor: c.phaseColor + '26' }]}>
+              <Text style={[s.mark, { color: c.phaseColor }]}>{c.mark}</Text>
             </View>
           )}
         </View>

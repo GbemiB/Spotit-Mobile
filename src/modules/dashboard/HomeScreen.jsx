@@ -275,7 +275,7 @@ function createStyles(c) {
 
     sectionTitle: { fontSize: 13.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
     fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
-    fyImage: { width: '100%', height: 118, backgroundColor: c.surfaceAlt },
+    fyImage: { width: 208, height: 118, backgroundColor: c.surfaceAlt },
     fyTag: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
     fyTitle: { fontSize: 11.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
   });
