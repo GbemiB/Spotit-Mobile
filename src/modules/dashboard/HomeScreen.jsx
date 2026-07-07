@@ -109,8 +109,7 @@ export default function HomeScreen() {
         <View style={s.headerLeft}>
           <Avatar name={userName} onPress={goSettings} />
           <View style={{ minWidth: 0 }}>
-            <Text style={s.greeting}>{greeting}</Text>
-            <Text style={s.name}>{userName}</Text>
+            <Text style={s.greeting}>{greeting} <Text style={s.name}>{userName}</Text></Text>
           </View>
         </View>
         <Pressable onPress={goSettings} style={s.bellBtn}>
@@ -245,8 +244,8 @@ function createStyles(c) {
     section: { paddingHorizontal: 24, marginBottom: 14 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 20 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1, minWidth: 0 },
-    greeting: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
-    name: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginTop: 1 },
+    greeting: { fontSize: 13, color: c.textMuted, fontWeight: '600', letterSpacing: 0.2 },
+    name: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
     bellBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
     bellDot: { position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: c.primary, borderWidth: 1.5, borderColor: c.surface },
 

@@ -1,6 +1,13 @@
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
   Manrope_400Regular,
   Manrope_500Medium,
   Manrope_600SemiBold,
@@ -12,7 +19,7 @@ import * as SplashScreenNative from 'expo-splash-screen';
 import { useCallback, useRef } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
-import { ThemeProvider, useTheme } from './src/shared/styles/index.js';
+import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
 import { AUTH_SCREENS, OnboardingScreen, TAB_SCREENS, DEFAULT_TAB_SCREEN } from './src/shared/navigation/screens.js';
 import LogSheet from './src/modules/tracker/LogSheet.jsx';
 import BottomNav from './src/components/nav/BottomNav.jsx';
@@ -25,10 +32,10 @@ function AppContent() {
 
   if (!authDone) {
     const AuthScreen = AUTH_SCREENS[authScreen];
-    if (AuthScreen) return <AuthScreen />;
+    if (AuthScreen) return <OnboardingFontScope><AuthScreen /></OnboardingFontScope>;
   }
 
-  if (!onboarded) return <OnboardingScreen />;
+  if (!onboarded) return <OnboardingFontScope><OnboardingScreen /></OnboardingFontScope>;
 
   const Screen = TAB_SCREENS[screen] || DEFAULT_TAB_SCREEN;
 
@@ -62,6 +69,11 @@ function ThemedApp() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,
