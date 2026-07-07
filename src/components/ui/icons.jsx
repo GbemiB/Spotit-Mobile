@@ -9,6 +9,40 @@ export function CalendarIcon({ size = 16, color = '#C04E68' }) {
   );
 }
 
+export function HomeIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function InsightsIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 19V10M12 19V5M19 19v-6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function RewardsIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M7 4h10v3a5 5 0 0 1-10 0z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <Path d="M7 5H4.5v1.5A2.5 2.5 0 0 0 7 9M17 5h2.5v1.5A2.5 2.5 0 0 1 17 9M9.5 13h5M12 12v4M9 20h6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function BellIcon({ size = 18, color = '#2E2429' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z" stroke={color} strokeWidth="1.7" strokeLinejoin="round" />
+      <Path d="M9.5 19a2.5 2.5 0 0 0 5 0" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function CheckIcon({ size = 11, color = '#fff' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

@@ -7,6 +7,7 @@ import { useFonts,
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
+import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
 import { useCallback, useRef } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
@@ -45,10 +46,19 @@ SplashScreenNative.preventAutoHideAsync();
 
 const MIN_SPLASH_MS = 3200;
 
-// Dev-only override to preview a theme regardless of system appearance.
-// Set to 'light' or 'dark', or null to follow the system setting.
-// const DEV_FORCE_SCHEME = 'dark';
-const DEV_FORCE_SCHEME = 'light';
+// Dev-only override to preview a theme regardless of the user's Appearance
+// setting. Set to 'light' or 'dark' to force it; null defers to state.themePref.
+const DEV_FORCE_SCHEME = null;
+
+function ThemedApp() {
+  const { state } = useApp();
+  const scheme = DEV_FORCE_SCHEME || (state.themePref === 'system' ? null : state.themePref);
+  return (
+    <ThemeProvider scheme={scheme}>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -57,6 +67,7 @@ export default function App() {
     Manrope_600SemiBold,
     Manrope_700Bold,
     Manrope_800ExtraBold,
+    Newsreader_400Regular,
   });
   const mountedAt = useRef(Date.now());
 
@@ -70,11 +81,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider onLayout={onLayoutRootView}>
-      <ThemeProvider scheme={DEV_FORCE_SCHEME}>
-        <AppProvider>
-          <AppContent />
-        </AppProvider>
-      </ThemeProvider>
+      <AppProvider>
+        <ThemedApp />
+      </AppProvider>
     </SafeAreaProvider>
   );
 }

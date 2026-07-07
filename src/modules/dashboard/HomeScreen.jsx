@@ -1,84 +1,70 @@
-import { View, ScrollView, Pressable, Animated, Alert, StyleSheet } from 'react-native';
-import { useRef, useEffect, useMemo } from 'react';
+import { View, ScrollView, Pressable, Image, Animated, StyleSheet } from 'react-native';
+import { useMemo, useRef, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
-import { PHASE_NOTES } from '../../shared/constants/cycle.js';
-import { useTheme, Text } from '../../shared/styles/index.js';
-import CycleRing from '../../components/cycle/CycleRing.jsx';
+import { useTheme, Text, FONT } from '../../shared/styles/index.js';
+import Avatar from '../../components/ui/Avatar.jsx';
+import { BellIcon } from '../../components/ui/icons.jsx';
+import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
-import SectionHeader from '../../components/ui/SectionHeader.jsx';
 import Button from '../../components/ui/Button.jsx';
 
-const TIPS = [
-  { icon: '💧', title: 'Stay hydrated', body: 'Drinking water helps reduce bloating and fatigue during your cycle.' },
-  { icon: '🧘', title: 'Try gentle yoga', body: 'Restorative poses can ease cramps and calm your nervous system.' },
-  { icon: '🍫', title: 'Dark chocolate', body: 'Rich in magnesium — can help reduce PMS symptoms naturally.' },
-  { icon: '😴', title: 'Prioritise sleep', body: 'Your body repairs and rebalances hormones during deep sleep.' },
+const FOR_YOU = [
+  { tag: 'Education', tagColor: '#C04E68', title: 'Understanding your fertile window', image: require('../../../assets/lifestyle.png') },
+  { tag: 'Nutrition', tagColor: '#3F8866', title: '5 foods that support ovulation', image: require('../../../assets/food.png') },
+  { tag: 'Sponsored', tagColor: '#B0A09A', title: 'Nourish prenatal multivitamins', image: require('../../../assets/product.png') },
 ];
 
-function PulseBlob({ size, color, delay }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(anim, { toValue: 1, duration: 2200, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-  return (
-    <Animated.View style={{
-      position: 'absolute', width: size, height: size, borderRadius: size / 2,
-      backgroundColor: color,
-      opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.2] }),
-      transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }],
-    }} />
-  );
+function insightFor(phase, cycleLength) {
+  const ovDay = cycleLength - 14;
+  if (phase.key === 'ovulation') {
+    return { title: 'Your fertile window is open', body: 'Today is your predicted ovulation day. You may notice a small temperature rise tomorrow.' };
+  }
+  if (phase.key === 'fertile') {
+    return { title: 'Your fertile window is open', body: 'You’re in your fertile window — a good time to track symptoms closely.' };
+  }
+  return { title: 'Track your ovulation', body: `Ovulation is predicted around day ${ovDay} of your cycle.` };
 }
 
-function SpotPointsCard({ femPoints, streak, level, colors, s }) {
-  const shimAnim = useRef(new Animated.Value(-1)).current;
+function GlowBlob({ size, color, duration, delay = 0, style }) {
+  const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(shimAnim, { toValue: 1, duration: 2600, useNativeDriver: true })
-    ).start();
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(anim, { toValue: 1, duration, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
   return (
-    <LinearGradient colors={colors.gradient.primaryVivid} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.spCard}>
-      <Animated.View style={[s.shimmer, {
-        transform: [{ translateX: shimAnim.interpolate({ inputRange: [-1, 1], outputRange: [-180, 180] }) }],
-      }]} />
-      <View style={s.spRow}>
-        <View>
-          <Text style={s.spLabel}>SpotPoints</Text>
-          <Text style={s.spVal}>{femPoints.toLocaleString()} SP</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={s.spLabel}>Level</Text>
-          <Text style={s.spLvl}>{level.name}</Text>
-        </View>
-      </View>
-      <ProgressBar value={level.pct} color={colors.white} trackColor="rgba(255,255,255,0.2)" height={5} radius={3} />
-      <View style={s.spMeta}>
-        <Text style={s.spMetaTx}>🔥 {streak}-day streak</Text>
-        {level.next && <Text style={s.spMetaTx}>{level.next.name} in {(level.hi - femPoints).toLocaleString()} SP</Text>}
-      </View>
-    </LinearGradient>
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: 'absolute', width: size, height: size, borderRadius: size / 2, backgroundColor: color,
+          opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
+          transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }],
+        },
+        style,
+      ]}
+    />
   );
 }
 
 export default function HomeScreen() {
   const { state, dispatch } = useApp();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, streak, cycleLength, periodLength, lastPeriodDate, logs } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs } = state;
   const insets = useSafeAreaInsets();
 
   const today = todayISO();
@@ -86,125 +72,168 @@ export default function HomeScreen() {
   const phase = phaseFor(cycleDay, periodLength, cycleLength);
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
   const daysLeft = Math.max(0, Math.round((nextP - new Date()) / 86400000));
+  const isDueToday = daysLeft === 0;
   const level = levelInfo(femPoints);
   const loggedToday = !!logs[today];
-
-  const bobAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(bobAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-      Animated.timing(bobAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-    ])).start();
-  }, []);
+  const totalLogs = Object.keys(logs).length;
+  const confidenceLabel = totalLogs >= 3 ? 'High' : 'Estimated';
+  const insight = insightFor(phase, cycleLength);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
 
-  function handleLogout() {
-    Alert.alert(
-      'Log out',
-      'Your cycle data stays saved. You can log back in anytime.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: () => dispatch({ type: A.LOGOUT }) },
-      ]
+  const eggFloat = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(eggFloat, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(eggFloat, { toValue: 0, duration: 1500, useNativeDriver: true }),
+      ])
     );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  function goSettings() {
+    dispatch({ type: A.GO, screen: 'settings' });
   }
 
   return (
     <ScrollView
       style={s.screen}
-      contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 110 }}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 110 }}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={s.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.greeting}>{greeting}</Text>
-          <Text style={s.name}>{userName}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end', gap: 8 }}>
-          <Pressable onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}>
-            <LinearGradient colors={colors.gradient.primary} style={s.spBadge}>
-              <Text style={s.spBadgeTx}>⭐ {femPoints.toLocaleString()} SP</Text>
-            </LinearGradient>
-          </Pressable>
-          <Pressable onPress={handleLogout} style={s.logoutBtn}>
-            <Text style={s.logoutTx}>Log out  ↩</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Cycle ring */}
-      <View style={s.ringWrap}>
-        <PulseBlob size={260} color={phase.color} delay={0} />
-        <PulseBlob size={200} color={phase.color} delay={600} />
-        <CycleRing cycleDay={cycleDay} cycleLength={cycleLength} size={220} />
-        <View style={s.ringCenter} pointerEvents="none">
-          <Animated.Text style={[s.ringEmoji, { transform: [{ translateY: bobAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }] }]}>
-            🩸
-          </Animated.Text>
-          <Text style={[s.phaseLabel, { color: phase.color }]}>{phase.label}</Text>
-          <Text style={s.cycleDayTx}>Day {cycleDay}</Text>
-          <Text style={s.nextPTx}>{daysLeft === 0 ? 'Period due today' : `Next period in ${daysLeft}d`}</Text>
-        </View>
-      </View>
-
-      {/* Log button */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        {loggedToday
-          ? <View style={s.loggedBadge}><Text style={s.loggedTx}>✓ Logged today</Text></View>
-          : <Button onPress={() => dispatch({ type: A.OPEN_LOG })}>Log today →</Button>
-        }
-      </View>
-
-      {/* SpotPoints card */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        <SpotPointsCard femPoints={femPoints} streak={streak} level={level} colors={colors} s={s} />
-      </View>
-
-      {/* Phase tip */}
-      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-        <SectionHeader title="Phase tip" />
-        <Card style={{ padding: 18, marginTop: 10 }}>
-          <View style={[s.phaseChip, { backgroundColor: phase.color + '18' }]}>
-            <Text style={{ color: phase.color, fontSize: 12, fontWeight: '700' }}>{phase.label}</Text>
+        <View style={s.headerLeft}>
+          <Avatar name={userName} onPress={goSettings} />
+          <View style={{ minWidth: 0 }}>
+            <Text style={s.greeting}>{greeting}</Text>
+            <Text style={s.name}>{userName}</Text>
           </View>
-          <Text style={s.phaseTipTx}>{PHASE_NOTES[phase.key]}</Text>
+        </View>
+        <Pressable onPress={goSettings} style={s.bellBtn}>
+          <BellIcon size={18} color={colors.textPrimary} />
+          <View style={s.bellDot} />
+        </Pressable>
+      </View>
+
+      {/* Countdown hero */}
+      <View style={s.section}>
+        <Card style={s.hero}>
+          <GlowBlob
+            size={180} duration={3500}
+            color={isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC'}
+            style={{ top: -50, right: -40 }}
+          />
+          <GlowBlob
+            size={170} duration={4250} delay={1800}
+            color={isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC'}
+            style={{ bottom: -60, left: -50 }}
+          />
+          <Text style={s.phaseLabel}>{phase.label} · Day {cycleDay} of {cycleLength}</Text>
+          {isDueToday ? (
+            <Text style={s.heroSerif}>Your period starts <Text style={[s.heroSerif, { color: colors.primary }]}>today</Text></Text>
+          ) : (
+            <View style={s.heroRow}>
+              <Text style={s.heroSerifSm}>Your period starts in</Text>
+              <Text style={[s.heroSerifBig, { color: colors.primary }]}>{daysLeft}</Text>
+              <Text style={s.heroSerifSm}>days</Text>
+            </View>
+          )}
+          <Text style={s.predictedTx}>
+            Predicted {formatDisplayDate(nextP)} · <Text style={{ color: colors.success, fontWeight: '700' }}>{confidenceLabel} confidence</Text>
+          </Text>
+          <View style={{ marginTop: 16 }}>
+            <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
+          </View>
+          <View style={s.dayRow}>
+            <Text style={s.dayLbl}>Day 1</Text>
+            <Text style={s.dayLbl}>Day {cycleLength}</Text>
+          </View>
         </Card>
       </View>
 
-      {/* Wellness tips carousel */}
-      <View style={{ marginBottom: 24 }}>
-        <SectionHeader title="For you today" style={{ paddingHorizontal: 24 }} />
-        <Carousel style={{ marginTop: 10 }}>
-          {TIPS.map((tip, i) => (
-            <Card key={i} style={[s.tipCard, { marginLeft: i === 0 ? 24 : 10, marginRight: i === TIPS.length - 1 ? 24 : 0 }]}>
-              <Text style={s.tipIcon}>{tip.icon}</Text>
-              <Text style={s.tipTitle}>{tip.title}</Text>
-              <Text style={s.tipBody}>{tip.body}</Text>
-            </Card>
-          ))}
-        </Carousel>
+      {/* Log button */}
+      <View style={s.section}>
+        {loggedToday
+          ? <View style={s.loggedBadge}><Text style={s.loggedTx}>✓ Logged today</Text></View>
+          : <Button onPress={() => dispatch({ type: A.OPEN_LOG })}>Log today · earn 80 SP</Button>
+        }
       </View>
 
-      {/* Quick stats */}
-      <View style={{ paddingHorizontal: 24 }}>
-        <SectionHeader title="This cycle" />
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-          <Card style={[s.statCard, { flex: 1 }]}>
-            <Text style={s.statVal}>{cycleDay}</Text>
-            <Text style={s.statLbl}>Cycle day</Text>
+      {/* Level strip */}
+      <View style={s.section}>
+        <Pressable onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}>
+          <Card style={s.levelStrip}>
+            <LinearGradient colors={['#F6D9BE', '#F0C088']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.levelIconWrap}>
+              <Text style={{ fontSize: 19 }}>🌸</Text>
+            </LinearGradient>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={s.levelName}>{level.name}</Text>
+                <Text style={s.levelSp}>· {femPoints.toLocaleString()} SP</Text>
+              </View>
+              <View style={{ marginTop: 7 }}>
+                <ProgressBar value={level.pct} colors={['#E2B86A', '#D6A24E']} trackColor={colors.border} height={6} />
+              </View>
+              <Text style={s.levelProgress}>
+                {level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+              </Text>
+            </View>
+            <Text style={s.chevron}>›</Text>
           </Card>
-          <Card style={[s.statCard, { flex: 1 }]}>
-            <Text style={s.statVal}>{cycleLength}</Text>
-            <Text style={s.statLbl}>Cycle length</Text>
-          </Card>
-          <Card style={[s.statCard, { flex: 1 }]}>
-            <Text style={s.statVal}>{Object.keys(logs).length}</Text>
-            <Text style={s.statLbl}>Days logged</Text>
-          </Card>
-        </View>
+        </Pressable>
+      </View>
+
+      {/* Ovulation strip */}
+      <View style={s.section}>
+        <LinearGradient
+          colors={isDark ? ['#2A1810', '#301B0F'] : ['#FBF2EC', '#FCEAE0']}
+          start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }}
+          style={s.ovCard}
+        >
+          <GlowBlob
+            size={90} duration={2250}
+            color={isDark ? 'rgba(214,162,78,0.30)' : 'rgba(214,162,78,0.28)'}
+            style={{ top: -24, right: -16 }}
+          />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Animated.Text style={{
+              fontSize: 19, marginTop: 1,
+              transform: [{ translateY: eggFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }],
+            }}>
+              🌼
+            </Animated.Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.ovTitle}>{insight.title}</Text>
+              <Text style={s.ovBody}>{insight.body}</Text>
+            </View>
+          </View>
+          <View style={{ marginTop: 14 }}>
+            <OvulationStrip lastPeriodDate={lastPeriodDate} cycleLength={cycleLength} periodLength={periodLength} />
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* For you today */}
+      <View style={{ marginBottom: 8 }}>
+        <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
+        <Carousel style={{ marginTop: 11 }}>
+          {FOR_YOU.map((card, i) => (
+            <View
+              key={i}
+              style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === FOR_YOU.length - 1 ? 24 : 0 }]}
+            >
+              <Image source={card.image} style={s.fyImage} resizeMode="cover" />
+              <View style={{ padding: 13 }}>
+                <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
+                <Text style={s.fyTitle}>{card.title}</Text>
+              </View>
+            </View>
+          ))}
+        </Carousel>
       </View>
     </ScrollView>
   );
@@ -213,37 +242,42 @@ export default function HomeScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
+    section: { paddingHorizontal: 24, marginBottom: 14 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 20 },
-    greeting: { fontSize: 12, color: c.textMuted, fontWeight: '600', marginBottom: 2 },
-    name: { fontSize: 18, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
-    spBadge: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
-    spBadgeTx: { fontSize: 12, fontWeight: '700', color: c.white },
-    logoutBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.surface },
-    logoutTx: { fontSize: 11, fontWeight: '700', color: c.textMuted },
-    ringWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 20, height: 260 },
-    ringCenter: { position: 'absolute', alignItems: 'center' },
-    ringEmoji: { fontSize: 28, marginBottom: 4 },
-    phaseLabel: { fontSize: 12, fontWeight: '700', marginBottom: 2 },
-    cycleDayTx: { fontSize: 12, color: c.textMuted, fontWeight: '600' },
-    nextPTx: { fontSize: 12, color: c.textDisabled, marginTop: 2 },
-    loggedBadge: { backgroundColor: c.successSoft, borderWidth: 1.5, borderColor: c.successBorder, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
-    loggedTx: { fontSize: 12, fontWeight: '700', color: c.success },
-    spCard: { borderRadius: 22, padding: 20, overflow: 'hidden' },
-    shimmer: { position: 'absolute', top: 0, bottom: 0, width: 80, backgroundColor: 'rgba(255,255,255,0.1)', transform: [{ skewX: '-20deg' }] },
-    spRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 },
-    spLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '600', marginBottom: 2 },
-    spVal: { fontSize: 18, fontWeight: '800', color: c.white },
-    spLvl: { fontSize: 12, fontWeight: '700', color: c.white },
-    spMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-    spMetaTx: { fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-    phaseChip: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, marginBottom: 10 },
-    phaseTipTx: { fontSize: 12, color: c.textSecondary, lineHeight: 22 },
-    tipCard: { width: 200, padding: 18 },
-    tipIcon: { fontSize: 18, marginBottom: 10 },
-    tipTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 6 },
-    tipBody: { fontSize: 12, color: c.textMuted, lineHeight: 19 },
-    statCard: { padding: 18, alignItems: 'center' },
-    statVal: { fontSize: 24, fontWeight: '800', color: c.primary, marginBottom: 4 },
-    statLbl: { fontSize: 11, color: c.textMuted, fontWeight: '600' },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1, minWidth: 0 },
+    greeting: { fontSize: 13, color: c.textMuted, fontWeight: '600' },
+    name: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginTop: 1 },
+    bellBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
+    bellDot: { position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: c.primary, borderWidth: 1.5, borderColor: c.surface },
+
+    hero: { borderRadius: 32, padding: 20, overflow: 'hidden' },
+    phaseLabel: { fontSize: 11, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
+    heroSerif: { fontFamily: FONT.serif, fontSize: 34, color: c.textPrimary, marginTop: 12, lineHeight: 40 },
+    heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 9, marginTop: 12, flexWrap: 'wrap' },
+    heroSerifSm: { fontFamily: FONT.serif, fontSize: 26, color: c.textPrimary },
+    heroSerifBig: { fontFamily: FONT.serif, fontSize: 44 },
+    predictedTx: { fontSize: 13.5, color: c.textMuted, marginTop: 8 },
+    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
+    dayLbl: { fontSize: 10.5, color: c.textDisabled, fontWeight: '600' },
+
+    loggedBadge: { backgroundColor: c.successSoft, borderWidth: 1.5, borderColor: c.successBorder, borderRadius: 22, paddingVertical: 14, alignItems: 'center' },
+    loggedTx: { fontSize: 13, fontWeight: '700', color: c.success },
+
+    levelStrip: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
+    levelIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+    levelName: { fontSize: 13.5, fontWeight: '700', color: c.textPrimary },
+    levelSp: { fontSize: 11, color: c.textMuted },
+    levelProgress: { fontSize: 10.5, color: c.textDisabled, marginTop: 5 },
+    chevron: { fontSize: 12, fontWeight: '700', color: c.primaryDark },
+
+    ovCard: { borderRadius: 22, padding: 17, overflow: 'hidden' },
+    ovTitle: { fontSize: 14, fontWeight: '700', color: c.tertiary },
+    ovBody: { fontSize: 13, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
+
+    sectionTitle: { fontSize: 15.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
+    fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
+    fyImage: { width: '100%', height: 118, backgroundColor: c.surfaceAlt },
+    fyTag: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+    fyTitle: { fontSize: 13.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
   });
 }

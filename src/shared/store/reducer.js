@@ -1,6 +1,9 @@
 import { A } from './actions.js';
 import { toISO, todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, DEFAULT_LAST_PERIOD } from '../constants/cycle.js';
+import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
+
+const MAX_HISTORY = 20;
 
 export const INIT = {
   onboarded: false,
@@ -21,7 +24,16 @@ export const INIT = {
   lastLogDate: null,
   lastClaimedDate: null,
   logs: {},
-  notifications: true,
+  notifs: { period: true, ovulation: true, dailyLog: true, digest: false },
+  themePref: 'system',
+  isPremium: false,
+  history: [
+    { icon: '🩸', label: 'Logged period start', delta: 50, date: 'Jun 16' },
+    { icon: '📝', label: 'Daily mood & symptom log', delta: 30, date: 'Jun 22' },
+    { icon: '📚', label: 'Read a health article', delta: 20, date: 'Jun 27' },
+    { icon: '✅', label: 'Weekly health check-in', delta: 100, date: 'Jun 28' },
+    { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Jun 28' },
+  ],
   // session
   screen: 'home',
   logOpen: false,
@@ -49,6 +61,10 @@ function openLog(state, dateISO) {
   };
 }
 
+function withHistory(state, entry) {
+  return { ...state, history: [entry, ...state.history].slice(0, MAX_HISTORY) };
+}
+
 function saveLog(state) {
   const date = state.logEditDate || todayISO();
   const today = todayISO();
@@ -60,17 +76,22 @@ function saveLog(state) {
       ? state.streak + 1 : 1;
     longestStreak = Math.max(streak, state.longestStreak);
   }
-  const femPoints = isNew && date === today ? state.femPoints + 80 : state.femPoints;
-  const toast = isNew && date === today
-    ? { icon: '🔥', text: `Logged! +80 FP · ${streak}-day streak` }
+  const earns = isNew && date === today;
+  const femPoints = earns ? state.femPoints + 80 : state.femPoints;
+  const toast = earns
+    ? { icon: '🔥', text: `Logged! +80 SP · ${streak}-day streak` }
     : { icon: '✓', text: 'Entry updated' };
-  return {
+  let next = {
     ...state,
     logOpen: false,
     logs: { ...state.logs, [date]: { ...state.draftLog } },
     lastLogDate: date === today ? today : state.lastLogDate,
     femPoints, streak, longestStreak, toast,
   };
+  if (earns) {
+    next = withHistory(next, { icon: '📝', label: 'Logged flow, mood & symptoms', delta: 80, date: 'Today' });
+  }
+  return next;
 }
 
 export function reducer(state, action) {
@@ -123,10 +144,33 @@ export function reducer(state, action) {
     case A.CLAIM_DAILY: {
       const today = todayISO();
       if (state.lastClaimedDate === today) return state;
-      return { ...state, lastClaimedDate: today, femPoints: state.femPoints + 50, toast: { icon: '🎁', text: 'Daily reward claimed · +50 FP' } };
+      const next = { ...state, lastClaimedDate: today, femPoints: state.femPoints + 50, toast: { icon: '🎁', text: 'Daily reward claimed · +50 SP' } };
+      return withHistory(next, { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Today' });
     }
-    case A.WATCH_AD:
-      return { ...state, femPoints: state.femPoints + 100, toast: { icon: '🎬', text: '+100 SpotPoints earned' } };
+    case A.WATCH_AD: {
+      const next = { ...state, femPoints: state.femPoints + 100, toast: { icon: '🎬', text: '+100 SpotPoints earned' } };
+      return withHistory(next, { icon: '🎬', label: 'Watched a rewarded ad', delta: 100, date: 'Today' });
+    }
+    case A.TOGGLE_NOTIF:
+      return { ...state, notifs: { ...state.notifs, [action.key]: !state.notifs[action.key] } };
+    case A.SET_THEME:
+      return { ...state, themePref: action.pref };
+    case A.GO_PREMIUM:
+      return { ...state, isPremium: true, toast: { icon: '👑', text: 'Premium unlocked' } };
+    case A.REDEEM: {
+      const { product } = action;
+      const lv = levelInfo(state.femPoints);
+      const levelOk = LEVEL_ORDER.indexOf(lv.name) >= LEVEL_ORDER.indexOf(product.minLevel);
+      const premiumOk = !product.premium || state.isPremium;
+      if (!levelOk || !premiumOk) {
+        return { ...state, toast: { icon: '🌸', text: !levelOk ? `Unlocks at ${product.minLevel}` : 'Premium only' } };
+      }
+      if (state.femPoints < product.fp) {
+        return { ...state, toast: { icon: '🌸', text: 'Not enough Spotit points yet' } };
+      }
+      const next = { ...state, femPoints: state.femPoints - product.fp, toast: { icon: '🎉', text: `${product.name} is on its way!` } };
+      return withHistory(next, { icon: '🎁', label: `Redeemed ${product.name}`, delta: -product.fp, date: 'Today' });
+    }
     case A.CLEAR_TOAST:
       return { ...state, toast: null };
     case A.SEL_DATE:

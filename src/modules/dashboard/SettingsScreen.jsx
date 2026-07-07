@@ -1,14 +1,22 @@
 import { View, ScrollView, Pressable, Alert, StyleSheet, Platform } from 'react-native';
 import { useMemo } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
+import { levelInfo } from '../../shared/utils/levels.js';
+import { NOTIF_ROWS } from '../../shared/constants/rewards.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
+import Avatar from '../../components/ui/Avatar.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
+
+const THEME_OPTIONS = [
+  { key: 'light', label: 'Light' },
+  { key: 'dark', label: 'Dark' },
+  { key: 'system', label: 'System' },
+];
 
 function Row({ label, sub, right, last, s }) {
   return (
@@ -43,8 +51,9 @@ export default function SettingsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, cycleLength, periodLength, notifications } = state;
+  const { userName, cycleLength, periodLength, notifs, themePref, femPoints } = state;
   const insets = useSafeAreaInsets();
+  const level = levelInfo(femPoints);
 
   function patch(obj) {
     dispatch({ type: A.UPDATE_SETTINGS, patch: obj });
@@ -79,7 +88,19 @@ export default function SettingsScreen() {
         {/* Header */}
         <View style={s.header}>
           <Text style={s.headerSub}>Preferences</Text>
-          <Text style={s.headerTitle}>Settings</Text>
+          <Text style={s.headerTitle}>Profile</Text>
+        </View>
+
+        {/* Profile hero */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <Card style={s.profileHero}>
+            <Avatar name={userName} size={64} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.profileName}>{userName}</Text>
+              <Text style={s.profileMeta}>{level.name} · {femPoints.toLocaleString()} SP</Text>
+            </View>
+            <Text style={s.editLink}>Edit</Text>
+          </Card>
         </View>
 
         {/* Profile */}
@@ -126,14 +147,36 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Notifications" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
-            <Row
-              label="Daily reminders"
-              sub="Get a nudge to log each day"
-              right={<Toggle value={notifications} onChange={v => patch({ notifications: v })} />}
-              last
-              s={s}
-            />
+            {NOTIF_ROWS.map((n, i) => (
+              <Row
+                key={n.key}
+                label={n.label}
+                sub={n.sub}
+                right={<Toggle value={notifs[n.key]} onChange={() => dispatch({ type: A.TOGGLE_NOTIF, key: n.key })} />}
+                last={i === NOTIF_ROWS.length - 1}
+                s={s}
+              />
+            ))}
           </Card>
+        </View>
+
+        {/* Appearance */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <SectionHeader title="Appearance" />
+          <View style={s.themeRow}>
+            {THEME_OPTIONS.map(opt => {
+              const active = themePref === opt.key;
+              return (
+                <Pressable
+                  key={opt.key}
+                  onPress={() => dispatch({ type: A.SET_THEME, pref: opt.key })}
+                  style={[s.themePill, active && { backgroundColor: colors.primary }]}
+                >
+                  <Text style={[s.themePillTx, { color: active ? colors.white : colors.textSecondary }]}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* About */}
@@ -153,19 +196,17 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Account / Logout */}
+        {/* Account */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Account" />
-          <Pressable onPress={handleLogout} style={s.logoutBtn}>
-            <LinearGradient colors={colors.gradient.primary} style={s.logoutMark}>
-              <View style={s.logoutDrop} />
-            </LinearGradient>
-            <View style={{ flex: 1 }}>
-              <Text style={s.logoutLabel}>Log out</Text>
-              <Text style={s.logoutSub}>Your data stays saved on this device</Text>
-            </View>
-            <Text style={s.chevron}>›</Text>
-          </Pressable>
+          <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
+            <Pressable style={s.row} onPress={() => { }}>
+              <Text style={s.rowLabel}>Export my data</Text>
+            </Pressable>
+            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={handleLogout}>
+              <Text style={[s.rowLabel, { color: colors.error }]}>Sign out</Text>
+            </Pressable>
+          </Card>
         </View>
 
         {/* Data / Reset */}
@@ -187,9 +228,16 @@ function createStyles(c) {
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 20 },
     headerSub: { fontSize: 13, color: c.textMuted, fontWeight: '600', marginBottom: 2 },
     headerTitle: { fontSize: 32, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
+    profileHero: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 22, borderRadius: 24 },
+    profileName: { fontSize: 13, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.3 },
+    profileMeta: { fontSize: 12.5, color: c.textMuted, marginTop: 2 },
+    editLink: { fontSize: 12.5, fontWeight: '700', color: c.primaryDark },
+    themeRow: { flexDirection: 'row', gap: 6, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 6, marginTop: 10 },
+    themePill: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12 },
+    themePillTx: { fontSize: 12.5, fontWeight: '700' },
     row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: c.border },
-    rowLabel: { fontSize: 14, color: c.textPrimary, fontWeight: '500' },
-    rowSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+    rowLabel: { fontSize: 13.5, color: c.textPrimary, fontWeight: '500' },
+    rowSub: { fontSize: 11.5, color: c.textMuted, marginTop: 2 },
     metaTx: { fontSize: 14, color: c.textMuted, fontWeight: '500' },
     inlineInput: { fontSize: 14, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },
@@ -197,11 +245,6 @@ function createStyles(c) {
     stepTx: { fontSize: 20, color: c.primary, fontWeight: '600', lineHeight: 24 },
     stepVal: { fontSize: 14, fontWeight: '700', color: c.textPrimary, paddingHorizontal: 12 },
     chevron: { fontSize: 20, color: c.textFaint },
-    logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, padding: 16, marginTop: 10 },
-    logoutMark: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-    logoutDrop: { width: 14, height: 19, borderTopLeftRadius: 7, borderTopRightRadius: 7, borderBottomLeftRadius: 2, borderBottomRightRadius: 2, backgroundColor: c.white, transform: [{ rotate: '180deg' }] },
-    logoutLabel: { fontSize: 15, fontWeight: '700', color: c.primaryDark, marginBottom: 2 },
-    logoutSub: { fontSize: 12, color: c.textMuted },
     dangerNote: { fontSize: 13, color: c.textMuted, lineHeight: 20, marginBottom: 14 },
   });
 }

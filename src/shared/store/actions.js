@@ -24,4 +24,8 @@ export const A = {
   RESET_DATA:       'RESET_DATA',
   SET_AUTH_SCREEN:  'SET_AUTH_SCREEN',
   LOGOUT:           'LOGOUT',
+  TOGGLE_NOTIF:     'TOGGLE_NOTIF',
+  SET_THEME:        'SET_THEME',
+  GO_PREMIUM:       'GO_PREMIUM',
+  REDEEM:           'REDEEM',
 };

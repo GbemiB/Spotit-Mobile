@@ -1,72 +1,92 @@
-import { View, Pressable, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { View, Pressable, Animated, StyleSheet } from 'react-native';
+import { useRef, useEffect, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
+import { HomeIcon, CalendarIcon, InsightsIcon, RewardsIcon } from '../ui/icons.jsx';
 
 const TABS = [
-  { key: 'home',     label: 'Home',     icon: '🏠' },
-  { key: 'cal',      label: 'Calendar', icon: '📅' },
-  { key: 'log',      label: null,       icon: null  },
-  { key: 'insights', label: 'Insights', icon: '📊' },
-  { key: 'rewards',  label: 'Rewards',  icon: '🏆' },
+  { key: 'home',     label: 'Home',     Icon: HomeIcon },
+  { key: 'cal',      label: 'Calendar', Icon: CalendarIcon },
+  { key: 'log',      label: null,       Icon: null },
+  { key: 'insights', label: 'Insights', Icon: InsightsIcon },
+  { key: 'rewards',  label: 'Rewards',  Icon: RewardsIcon },
 ];
 
 export default function BottomNav({ screen, dispatch }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const breathe = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, { toValue: 1, duration: 1600, useNativeDriver: true }),
+        Animated.timing(breathe, { toValue: 0, duration: 1600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const fabScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
 
   return (
-    <View style={[s.nav, { paddingBottom: insets.bottom || 10 }]}>
+    <BlurView intensity={70} tint={isDark ? 'dark' : 'light'} style={[s.nav, { paddingBottom: insets.bottom || 10 }]}>
       {TABS.map((tab) => {
         if (tab.key === 'log') {
           return (
             <Pressable key="log" onPress={() => dispatch({ type: A.OPEN_LOG })} style={s.fabWrap}>
-              <LinearGradient
-                colors={colors.gradient.fabAccent}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={s.fab}
-              >
-                <Text style={s.fabPlus}>+</Text>
-              </LinearGradient>
+              <Animated.View style={{ transform: [{ scale: fabScale }] }}>
+                <LinearGradient
+                  colors={colors.gradient.fabAccent}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={s.fab}
+                >
+                  <Text style={s.fabPlus}>+</Text>
+                </LinearGradient>
+              </Animated.View>
             </Pressable>
           );
         }
         const active = screen === tab.key;
+        const iconColor = active ? colors.primaryDark : colors.textDisabled;
+        const Icon = tab.Icon;
         return (
           <Pressable
             key={tab.key}
             onPress={() => dispatch({ type: A.GO, screen: tab.key })}
             style={s.tab}
           >
-            <Text style={[s.tabIcon, { opacity: active ? 1 : 0.45 }]}>{tab.icon}</Text>
-            <Text style={[s.tabLabel, { color: active ? colors.primaryDark : colors.textDisabled }]}>{tab.label}</Text>
+            <Icon size={22} color={iconColor} />
+            <Text style={[s.tabLabel, { color: iconColor }]}>{tab.label}</Text>
             {active && <View style={s.activeDot} />}
           </Pressable>
         );
       })}
-    </View>
+    </BlurView>
   );
 }
 
 function createStyles(c) {
   return StyleSheet.create({
     nav: {
+      position: 'absolute',
+      left: 0, right: 0, bottom: 0,
       flexDirection: 'row',
       alignItems: 'flex-start',
       justifyContent: 'space-around',
-      backgroundColor: c.background,
       paddingTop: 10,
-      borderTopWidth: 1.5,
+      borderTopWidth: 1,
       borderTopColor: c.border,
     },
-    tab:       { alignItems: 'center', gap: 3, width: 56, paddingBottom: 2 },
-    tabIcon:   { fontSize: 20 },
+    tab:       { alignItems: 'center', gap: 4, width: 56, paddingBottom: 2 },
     tabLabel:  { fontSize: 10, fontWeight: '700' },
     activeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: c.primary, marginTop: 2 },
-    fabWrap:   { marginTop: -20, width: 56, alignItems: 'center' },
+    fabWrap:   { marginTop: -22, width: 56, alignItems: 'center' },
     fab: {
       width: 54,
       height: 54,

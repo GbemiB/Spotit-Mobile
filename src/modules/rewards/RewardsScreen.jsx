@@ -4,42 +4,105 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { todayISO } from '../../shared/utils/cycle.js';
-import { levelInfo } from '../../shared/utils/levels.js';
-import { useTheme, Text } from '../../shared/styles/index.js';
+import { toISO } from '../../shared/utils/cycle.js';
+import { levelInfo, LEVEL_ORDER } from '../../shared/utils/levels.js';
+import { SHOP_PRODUCTS, CHALLENGES } from '../../shared/constants/rewards.js';
+import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
-import SectionHeader from '../../components/ui/SectionHeader.jsx';
-import Button from '../../components/ui/Button.jsx';
 
-const BADGES = [
-  { id: 'first_log', icon: '🌱', label: 'First Log', desc: 'Log your first day', req: 1 },
-  { id: 'streak_3', icon: '🔥', label: '3-Day Streak', desc: '3 days in a row', req: 3 },
-  { id: 'streak_7', icon: '⭐', label: 'Week Warrior', desc: '7 days in a row', req: 7 },
-  { id: 'streak_14', icon: '💎', label: 'Fortnight', desc: '14 days in a row', req: 14 },
-  { id: 'logs_10', icon: '📔', label: 'Journaler', desc: 'Log 10 days total', req: 10 },
-  { id: 'logs_30', icon: '📚', label: 'Chronicler', desc: 'Log 30 days total', req: 30 },
-  { id: 'cycle_1', icon: '🌙', label: 'Full Cycle', desc: 'Track one full cycle', req: 1 },
-  { id: 'fempoints_500', icon: '🎀', label: 'SP Rising', desc: 'Earn 500 SpotPoints', req: 500 },
-];
+function loggedDaysThisWeek(logs) {
+  const now = new Date();
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    if (logs[toISO(d)]) count++;
+  }
+  return count;
+}
 
-function BadgeCard({ badge, earned, colors, s }) {
+function shopView(femPoints, isPremium) {
+  const lv = levelInfo(femPoints);
+  const curIdx = LEVEL_ORDER.indexOf(lv.name);
+  return SHOP_PRODUCTS.map(p => {
+    const levelOk = curIdx >= LEVEL_ORDER.indexOf(p.minLevel);
+    const premiumOk = !p.premium || isPremium;
+    const locked = !levelOk || !premiumOk;
+    const canAfford = femPoints >= p.fp;
+    const lockReason = !levelOk ? `Unlocks at ${p.minLevel}` : (!premiumOk ? 'Premium only' : '');
+    return {
+      ...p, locked, canAfford,
+      ctaLabel: locked ? lockReason : (canAfford ? `Redeem · ${p.fp} SP` : `Need ${p.fp} SP`),
+    };
+  });
+}
+
+function ShopRow({ product, onRedeem, colors, s }) {
+  const active = !product.locked && product.canAfford;
   return (
-    <View style={[s.badge, !earned && s.badgeLocked]}>
-      <Text style={[s.badgeIcon, !earned && { opacity: 0.25 }]}>{badge.icon}</Text>
-      <Text style={[s.badgeLabel, !earned && { color: colors.textFaint }]}>{badge.label}</Text>
-      <Text style={s.badgeDesc}>{badge.desc}</Text>
-      {!earned && <View style={s.lockOverlay}><Text style={s.lockIcon}>🔒</Text></View>}
+    <View style={[s.shopRow, product.locked && { opacity: 0.55 }]}>
+      <View style={s.shopIconWrap}><Text style={{ fontSize: 22 }}>{product.icon}</Text></View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.shopName}>{product.name}</Text>
+        <Text style={s.shopSub}>{product.fp} SP{product.premium ? ' · Premium' : ''}</Text>
+      </View>
+      <Pressable
+        onPress={() => !product.locked && onRedeem(product)}
+        style={[s.shopCta, active ? s.shopCtaActive : s.shopCtaInactive]}
+      >
+        <Text style={[s.shopCtaTx, { color: active ? colors.white : colors.textDisabled }]}>{product.ctaLabel}</Text>
+      </Pressable>
     </View>
   );
 }
 
-function EarnRow({ icon, action, points, last, s }) {
+function ChallengeRow({ title, reward, done, total, s }) {
+  const pct = Math.min(100, Math.round((done / total) * 100));
   return (
-    <View style={[s.earnRow, last && { borderBottomWidth: 0 }]}>
-      <Text style={s.earnIcon}>{icon}</Text>
-      <Text style={s.earnAction}>{action}</Text>
-      <Text style={s.earnPoints}>{points}</Text>
+    <Card style={s.challengeCard}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={s.challengeTitle}>{title}</Text>
+        <Text style={s.challengeReward}>+{reward} SP</Text>
+      </View>
+      <View style={{ marginTop: 10 }}>
+        <ProgressBar value={pct / 100} height={7} />
+      </View>
+      <Text style={s.challengeProgress}>{done} of {total} complete</Text>
+    </Card>
+  );
+}
+
+function HistoryRow({ entry, last, colors, s }) {
+  return (
+    <View style={[s.historyRow, last && { borderBottomWidth: 0 }]}>
+      <View style={s.historyIconWrap}><Text style={{ fontSize: 15 }}>{entry.icon}</Text></View>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={s.historyLabel}>{entry.label}</Text>
+        <Text style={s.historyDate}>{entry.date}</Text>
+      </View>
+      <Text style={[s.historyDelta, { color: entry.delta < 0 ? colors.error : colors.success }]}>
+        {entry.delta > 0 ? '+' : ''}{entry.delta} SP
+      </Text>
+    </View>
+  );
+}
+
+const BADGES = [
+  { id: 'first_flow', icon: '🌸', name: 'First Flow' },
+  { id: 'cycle_veteran', icon: '🗓️', name: 'Cycle Veteran' },
+  { id: 'know_your_body', icon: '🧠', name: 'Know Your Body' },
+  { id: 'week_warrior', icon: '🔥', name: 'Week Warrior' },
+  { id: 'ovulation_oracle', icon: '🔮', name: 'Ovulation Oracle' },
+  { id: 'health_nerd', icon: '📚', name: 'Health Nerd' },
+];
+
+function BadgeCard({ badge, earned, colors, s }) {
+  return (
+    <View style={[s.badge, { opacity: earned ? 1 : 0.4 }]}>
+      <View style={[s.badgeIconWrap, { backgroundColor: earned ? colors.primarySoft : '#F3EDEA' }]}>
+        <Text style={{ fontSize: 22 }}>{badge.icon}</Text>
+      </View>
+      <Text style={s.badgeLabel}>{badge.name}</Text>
     </View>
   );
 }
@@ -48,28 +111,28 @@ export default function RewardsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { femPoints, streak, longestStreak, logs, lastClaimedDate } = state;
+  const { femPoints, streak, longestStreak, logs, isPremium, history } = state;
   const insets = useSafeAreaInsets();
 
-  const today = todayISO();
   const level = levelInfo(femPoints);
   const totalLogs = Object.keys(logs).length;
-  const claimedToday = lastClaimedDate === today;
+  const shopProducts = shopView(femPoints, isPremium);
+  const loggedThisWeek = loggedDaysThisWeek(logs);
+  const challengeRows = CHALLENGES.map(c => ({
+    ...c,
+    done: c.type === 'weekly_log' ? loggedThisWeek : c.done,
+  }));
 
   function isEarned(badge) {
-    if (badge.id === 'first_log') return totalLogs >= 1;
-    if (badge.id === 'streak_3') return longestStreak >= 3;
-    if (badge.id === 'streak_7') return longestStreak >= 7;
-    if (badge.id === 'streak_14') return longestStreak >= 14;
-    if (badge.id === 'logs_10') return totalLogs >= 10;
-    if (badge.id === 'logs_30') return totalLogs >= 30;
-    if (badge.id === 'cycle_1') return totalLogs >= 28;
-    if (badge.id === 'fempoints_500') return femPoints >= 500;
-    return false;
+    if (badge.id === 'first_flow') return totalLogs >= 1;
+    if (badge.id === 'cycle_veteran') return totalLogs >= 28;
+    if (badge.id === 'know_your_body') return totalLogs >= 10;
+    if (badge.id === 'week_warrior') return longestStreak >= 7;
+    return false; // ovulation_oracle, health_nerd: not tracked yet
   }
 
-  const earned = BADGES.filter(b => isEarned(b));
-  const locked = BADGES.filter(b => !isEarned(b));
+  const badgeRows = BADGES.map(b => ({ ...b, earned: isEarned(b) }));
+  const earnedBadgeCount = badgeRows.filter(b => b.earned).length;
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -77,117 +140,101 @@ export default function RewardsScreen() {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.headerSub}>Your progress</Text>
           <Text style={s.headerTitle}>Rewards</Text>
         </View>
 
-        {/* SP hero card */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <LinearGradient colors={colors.gradient.primaryVivid} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-            <View style={s.heroTop}>
+        {/* Hero */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
+          <LinearGradient colors={['#E2647C', '#C8466A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+            <Text style={s.heroFlower}>🌸</Text>
+            <Text style={s.heroLabel}>Current level</Text>
+            <Text style={s.heroLevel}>{level.name}</Text>
+            <Text style={s.heroPoints}>{femPoints.toLocaleString()} Spotit points</Text>
+            <View style={{ marginTop: 16 }}>
+              <ProgressBar value={level.pct} color={colors.white} trackColor="rgba(255,255,255,0.25)" height={8} />
+            </View>
+            <Text style={s.heroProgress}>
+              {level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+            </Text>
+            <View style={s.heroStatsRow}>
               <View>
-                <Text style={s.heroLabel}>SpotPoints</Text>
-                <Text style={s.heroSP}>{femPoints.toLocaleString()} SP</Text>
+                <Text style={s.heroStatNum}>{streak}</Text>
+                <Text style={s.heroStatLbl}>Day streak 🔥</Text>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={s.heroLabel}>Level</Text>
-                <Text style={s.heroLevel}>{level.name}</Text>
+              <View>
+                <Text style={s.heroStatNum}>{earnedBadgeCount}</Text>
+                <Text style={s.heroStatLbl}>Badges earned</Text>
               </View>
-            </View>
-            <View style={{ marginBottom: 10 }}>
-              <ProgressBar value={level.pct} color={colors.white} trackColor="rgba(255,255,255,0.25)" height={6} radius={3} />
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={s.heroMeta}>{level.lo.toLocaleString()} SP</Text>
-              {level.next
-                ? <Text style={s.heroMeta}>{level.next.name}: {level.hi.toLocaleString()} SP</Text>
-                : <Text style={s.heroMeta}>Max level!</Text>
-              }
             </View>
           </LinearGradient>
         </View>
 
-        {/* Streak cards */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Card style={[s.streakCard, { flex: 1 }]}>
-              <Text style={s.streakNum}>🔥 {streak}</Text>
-              <Text style={s.streakLbl}>Current streak</Text>
-            </Card>
-            <Card style={[s.streakCard, { flex: 1 }]}>
-              <Text style={s.streakNum}>⭐ {longestStreak}</Text>
-              <Text style={s.streakLbl}>Best streak</Text>
-            </Card>
-          </View>
-        </View>
-
-        {/* Daily reward */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Daily reward" />
-          <Card style={{ padding: 18, marginTop: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-              <View style={s.rewardIconWrap}>
-                <Text style={{ fontSize: 28 }}>🎁</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.rewardTitle}>Daily check-in</Text>
-                <Text style={s.rewardDesc}>Claim +50 SP every day you open Spot it</Text>
-              </View>
-            </View>
-            <Button onPress={() => dispatch({ type: A.CLAIM_DAILY })} disabled={claimedToday}>
-              {claimedToday ? '✓ Claimed today' : 'Claim +50 SP'}
-            </Button>
-          </Card>
-        </View>
-
         {/* Watch ad */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <Card style={{ padding: 18 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-              <View style={s.rewardIconWrap}>
-                <Text style={{ fontSize: 28 }}>🎬</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.rewardTitle}>Watch an ad</Text>
-                <Text style={s.rewardDesc}>Earn +100 SP for watching a short video</Text>
-              </View>
+        <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
+          <Pressable onPress={() => dispatch({ type: A.WATCH_AD })} style={s.adRow}>
+            <View style={s.adIconWrap}><Text style={{ fontSize: 18 }}>🎬</Text></View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.rewardTitle}>Watch a short ad</Text>
+              <Text style={s.rewardDesc}>Optional · earn 100 bonus SP</Text>
             </View>
-            <Button variant="secondary" onPress={() => dispatch({ type: A.WATCH_AD })}>
-              Watch for +100 SP
-            </Button>
-          </Card>
+            <Text style={s.adCta}>+100</Text>
+          </Pressable>
         </View>
 
-        {/* How to earn */}
+        {/* Redeem for skincare */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="How to earn SP" />
-          <Card style={{ padding: 0, marginTop: 10, overflow: 'hidden' }}>
-            <EarnRow icon="📝" action="Log daily" points="+80 SP" s={s} />
-            <EarnRow icon="🎁" action="Daily check-in" points="+50 SP" s={s} />
-            <EarnRow icon="🎬" action="Watch an ad" points="+100 SP" s={s} />
-            <EarnRow icon="🔥" action="7-day streak bonus" points="+200 SP" last s={s} />
-          </Card>
+          <Text style={s.sectionTitle}>Redeem for skincare</Text>
+          <Text style={s.shopIntro}>Trade your Spotit points for free beauty & self-care products. Some items need a higher level or Premium.</Text>
+
+          {isPremium ? (
+            <View style={s.premiumBanner}>
+              <Text style={{ fontSize: 15 }}>👑</Text>
+              <Text style={s.premiumTx}>Premium active — all rewards unlocked</Text>
+            </View>
+          ) : (
+            <Pressable onPress={() => dispatch({ type: A.GO_PREMIUM })} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 15 }}>👑</Text>
+                <Text style={s.premiumTx}>Go Premium to unlock every reward</Text>
+              </View>
+              <Text style={s.premiumCta}>Subscribe →</Text>
+            </Pressable>
+          )}
+
+          <View style={{ gap: 10 }}>
+            {shopProducts.map(p => (
+              <ShopRow key={p.id} product={p} onRedeem={product => dispatch({ type: A.REDEEM, product })} colors={colors} s={s} />
+            ))}
+          </View>
         </View>
 
-        {/* Badges earned */}
-        {earned.length > 0 && (
-          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-            <SectionHeader title={`Badges earned (${earned.length})`} />
-            <View style={s.badgeGrid}>
-              {earned.map(b => <BadgeCard key={b.id} badge={b} earned colors={colors} s={s} />)}
-            </View>
+        {/* Badges */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <Text style={s.sectionTitle}>Badges</Text>
+          <View style={s.badgeGrid}>
+            {badgeRows.map(b => <BadgeCard key={b.id} badge={b} earned={b.earned} colors={colors} s={s} />)}
           </View>
-        )}
+        </View>
 
-        {/* Badges locked */}
-        {locked.length > 0 && (
-          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-            <SectionHeader title="Locked badges" />
-            <View style={s.badgeGrid}>
-              {locked.map(b => <BadgeCard key={b.id} badge={b} earned={false} colors={colors} s={s} />)}
-            </View>
+        {/* Weekly challenges */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <Text style={s.sectionTitle}>Weekly challenges</Text>
+          <View style={{ marginTop: 12, gap: 12 }}>
+            {challengeRows.map(c => (
+              <ChallengeRow key={c.id} title={c.title} reward={c.reward} done={c.done} total={c.total} s={s} />
+            ))}
           </View>
-        )}
+        </View>
+
+        {/* Points history */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <Text style={s.sectionTitle}>Points history</Text>
+          <Card style={{ padding: 0, marginTop: 12, overflow: 'hidden' }}>
+            {history.map((h, i) => (
+              <HistoryRow key={i} entry={h} last={i === history.length - 1} colors={colors} s={s} />
+            ))}
+          </Card>
+        </View>
       </ScrollView>
     </View>
   );
@@ -196,32 +243,55 @@ export default function RewardsScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
-    header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 20 },
-    headerSub: { fontSize: 12, color: c.textMuted, fontWeight: '600', marginBottom: 2 },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
-    hero: { borderRadius: 22, padding: 22 },
-    heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
-    heroLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '600', marginBottom: 4 },
-    heroSP: { fontSize: 28, fontWeight: '800', color: c.white, letterSpacing: -0.5 },
-    heroLevel: { fontSize: 14, fontWeight: '700', color: c.white },
-    heroMeta: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '600' },
-    streakCard: { padding: 18, alignItems: 'center', marginTop: 0 },
-    streakNum: { fontSize: 18, fontWeight: '800', color: c.textPrimary, marginBottom: 4 },
-    streakLbl: { fontSize: 11, color: c.textMuted, fontWeight: '600' },
-    rewardIconWrap: { width: 52, height: 52, borderRadius: 14, backgroundColor: c.primarySoft, borderWidth: 1.5, borderColor: c.primarySoftBorder, alignItems: 'center', justifyContent: 'center' },
-    rewardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+    header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
+    headerTitle: { fontSize: 26, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
+    sectionTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+
+    hero: { position: 'relative', borderRadius: 28, padding: 22, overflow: 'hidden' },
+    heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 120, opacity: 0.14 },
+    heroLabel: { fontSize: 12.5, opacity: 0.85, fontWeight: '600', color: c.white },
+    heroLevel: { fontFamily: FONT.serif, fontSize: 32, marginTop: 2, color: c.white },
+    heroPoints: { fontSize: 13, opacity: 0.9, marginTop: 2, color: c.white },
+    heroProgress: { fontSize: 11.5, opacity: 0.85, marginTop: 7, color: c.white },
+    heroStatsRow: { flexDirection: 'row', gap: 20, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.22)' },
+    heroStatNum: { fontSize: 19, fontWeight: '700', color: c.white },
+    heroStatLbl: { fontSize: 11, opacity: 0.85, color: c.white, marginTop: 2 },
+
+    rewardTitle: { fontSize: 14, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
     rewardDesc: { fontSize: 12, color: c.textMuted, lineHeight: 18 },
-    earnRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: c.border },
-    earnIcon: { fontSize: 14, width: 28 },
-    earnAction: { flex: 1, fontSize: 14, color: c.textPrimary, fontWeight: '500' },
-    earnPoints: { fontSize: 12, fontWeight: '700', color: c.primary },
-    badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
-    badge: { width: '47%', backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, padding: 16, alignItems: 'center', overflow: 'hidden' },
-    badgeLocked: { borderColor: c.border, backgroundColor: c.surfaceAlt },
-    badgeIcon: { fontSize: 18, marginBottom: 8 },
-    badgeLabel: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 4, textAlign: 'center' },
-    badgeDesc: { fontSize: 10, color: c.textMuted, textAlign: 'center', lineHeight: 16 },
-    lockOverlay: { position: 'absolute', top: 8, right: 8 },
-    lockIcon: { fontSize: 12 },
+
+    adRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.primarySoftBorder, borderStyle: 'dashed', borderRadius: 20, padding: 15 },
+    adIconWrap: { width: 38, height: 38, borderRadius: 11, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
+    adCta: { fontSize: 13, fontWeight: '700', color: c.primaryDark },
+
+    premiumBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.textPrimary, borderRadius: 16, padding: 12, marginTop: 12, marginBottom: 12 },
+    premiumTx: { fontSize: 12.5, fontWeight: '700', color: c.white, flexShrink: 1 },
+    premiumCta: { fontSize: 11.5, fontWeight: '700', color: c.primaryLight },
+
+    shopIntro: { fontSize: 12, color: c.textMuted, lineHeight: 18, marginTop: 4, marginBottom: 4 },
+    shopRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, padding: 14 },
+    shopIconWrap: { width: 52, height: 52, borderRadius: 14, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
+    shopName: { fontSize: 13.5, fontWeight: '700', color: c.textPrimary },
+    shopSub: { fontSize: 11.5, color: c.textMuted, marginTop: 2 },
+    shopCta: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12 },
+    shopCtaActive: { backgroundColor: c.primary },
+    shopCtaInactive: { backgroundColor: c.border },
+    shopCtaTx: { fontSize: 11.5, fontWeight: '700', textAlign: 'center' },
+
+    challengeCard: { padding: 16 },
+    challengeTitle: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
+    challengeReward: { fontSize: 12, fontWeight: '700', color: c.primaryDark },
+    challengeProgress: { fontSize: 11.5, color: c.textMuted, marginTop: 6 },
+
+    historyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border },
+    historyIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
+    historyLabel: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
+    historyDate: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+    historyDelta: { fontSize: 13, fontWeight: '700' },
+
+    badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 },
+    badge: { width: '30%', alignItems: 'center' },
+    badgeIconWrap: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+    badgeLabel: { fontSize: 11, fontWeight: '600', marginTop: 8, textAlign: 'center', lineHeight: 15, color: c.textSecondary },
   });
 }

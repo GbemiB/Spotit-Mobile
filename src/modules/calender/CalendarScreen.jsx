@@ -5,7 +5,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, formatDisplayDate } from '../../shared/utils/cycle.js';
 import { MONTHS, PHASE_NOTES } from '../../shared/constants/cycle.js';
-import { useTheme, phases, Text } from '../../shared/styles/index.js';
+import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -36,17 +36,18 @@ export default function CalendarScreen() {
 
         {/* Header */}
         <View style={s.headerRow}>
-          <Pressable onPress={() => dispatch({ type: A.PREV_MONTH })} style={s.navBtn}>
-            <Text style={s.navArrow}>‹</Text>
-          </Pressable>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={s.monthTitle}>{MONTHS[viewMonth]}</Text>
-            <Text style={s.yearSub}>{viewYear}</Text>
+          <Text style={s.screenTitle}>Calendar</Text>
+          <View style={s.monthNav}>
+            <Pressable onPress={() => dispatch({ type: A.PREV_MONTH })} style={s.navBtn}>
+              <Text style={s.navArrow}>‹</Text>
+            </Pressable>
+            <Text style={s.monthTitle}>{MONTHS[viewMonth]} {viewYear}</Text>
+            <Pressable onPress={() => dispatch({ type: A.NEXT_MONTH })} style={s.navBtn}>
+              <Text style={s.navArrow}>›</Text>
+            </Pressable>
           </View>
-          <Pressable onPress={() => dispatch({ type: A.NEXT_MONTH })} style={s.navBtn}>
-            <Text style={s.navArrow}>›</Text>
-          </Pressable>
         </View>
+        <Text style={s.screenSub}>Tap any day to see what you logged.</Text>
 
         {/* Phase key */}
         <View style={s.phaseKeyWrap}>
@@ -60,7 +61,7 @@ export default function CalendarScreen() {
 
         {/* Calendar grid */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <Card style={{ padding: 14 }}>
+          <Card style={s.gridCard}>
             <CalendarGrid
               year={viewYear}
               month={viewMonth}
@@ -74,14 +75,12 @@ export default function CalendarScreen() {
 
         {/* Selected day */}
         <View style={{ paddingHorizontal: 24 }}>
-          <Text style={s.dateHeading}>{formatDisplayDate(selDate)}</Text>
-
-          <Card style={{ padding: 18, marginTop: 10, marginBottom: 14 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <View style={[s.phaseChip, { backgroundColor: selPhase.color + '18' }]}>
-                <Text style={[s.phaseChipTx, { color: selPhase.color }]}>{selPhase.label}</Text>
-              </View>
-              <Text style={s.cdTx}>Day {selCycleDay}</Text>
+          <Card style={{ padding: 18, marginBottom: 14, borderRadius: 22 }}>
+            <Text style={s.selDateLabel}>{formatDisplayDate(selDate).toUpperCase()}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8 }}>
+              <View style={[s.phaseDot, { backgroundColor: selPhase.color }]} />
+              <Text style={s.selPhaseName}>{selPhase.label}</Text>
+              <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>
             </View>
             <Text style={s.phaseNote}>{PHASE_NOTES[selPhase.key]}</Text>
           </Card>
@@ -136,20 +135,26 @@ export default function CalendarScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
-    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16 },
-    navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 14 },
-    navArrow: { fontSize: 12, color: c.primary, fontWeight: '400', lineHeight: 28 },
-    monthTitle: { fontSize: 18, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
-    yearSub: { fontSize: 12, color: c.textMuted, fontWeight: '600', marginTop: 1 },
-    phaseKeyWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 24, marginBottom: 16 },
-    phaseKeyItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    phaseKeyDot: { width: 8, height: 8, borderRadius: 4 },
-    phaseKeyLabel: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
-    dateHeading: { fontSize: 12, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.3 },
-    phaseChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99 },
-    phaseChipTx: { fontSize: 12, fontWeight: '700' },
-    cdTx: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
-    phaseNote: { fontSize: 14, color: c.textSecondary, lineHeight: 21 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 20, marginBottom: 8 },
+    screenTitle: { fontSize: 26, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
+    monthNav: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    navBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
+    navArrow: { fontSize: 16, color: c.primaryDark, fontWeight: '600', lineHeight: 20 },
+    monthTitle: { fontSize: 14, fontWeight: '600', color: c.primaryDark },
+    screenSub: { fontSize: 13.5, color: c.textMuted, paddingHorizontal: 24, marginBottom: 18 },
+    gridCard: {
+      padding: 14, borderRadius: 28,
+      shadowColor: c.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 20, elevation: 2,
+    },
+    phaseKeyWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 24, marginTop: 18, marginBottom: 16 },
+    phaseKeyItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+    phaseKeyDot: { width: 12, height: 12, borderRadius: 6 },
+    phaseKeyLabel: { fontSize: 12.5, color: c.textSecondary },
+    selDateLabel: { fontSize: 12, color: c.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
+    phaseDot: { width: 11, height: 11, borderRadius: 6 },
+    selPhaseName: { fontFamily: FONT.serif, fontSize: 21, color: c.textPrimary },
+    cdTx: { fontSize: 13, color: c.textMuted, marginLeft: 'auto' },
+    phaseNote: { fontSize: 13, color: c.textSecondary, lineHeight: 20, marginTop: 8 },
     logHeading: { fontSize: 12, fontWeight: '700', color: c.textSecondary, marginBottom: 12 },
     logRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     logKey: { fontSize: 12, color: c.textMuted, fontWeight: '600' },

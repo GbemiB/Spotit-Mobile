@@ -13,7 +13,7 @@ function SectionLabel({ children, s }) {
   return <Text style={s.secLabel}>{children}</Text>;
 }
 
-function ChipGroup({ label, items, selected, onSelect, multiSelect = false, s }) {
+function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shape = 'pill', s }) {
   return (
     <View style={s.section}>
       <SectionLabel s={s}>{label}</SectionLabel>
@@ -24,7 +24,7 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, s })
             <Pressable
               key={item.id}
               onPress={() => onSelect(item.id)}
-              style={[s.chip, sel && s.chipSel]}
+              style={[s.chip, shape === 'rect' && s.chipRect, sel && s.chipSel]}
             >
               {(item.emoji || item.icon) ? <Text style={s.chipEmoji}>{item.emoji || item.icon}</Text> : null}
               <Text style={[s.chipTx, sel && s.chipTxSel]}>{item.label}</Text>
@@ -83,6 +83,7 @@ export default function LogSheet() {
             items={MOODS}
             selected={draftLog.mood}
             onSelect={id => dispatch({ type: A.SET_DRAFT_MOOD, id })}
+            shape="rect"
             s={s}
           />
           <ChipGroup
@@ -139,11 +140,12 @@ function createStyles(c) {
     secLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 10 },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border },
+    chipRect: { borderRadius: 16, flexBasis: '22%', flexGrow: 1, justifyContent: 'center' },
     chipSel: { backgroundColor: c.primarySoft, borderColor: c.primary },
     chipEmoji: { fontSize: 14 },
     chipTx: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
     chipTxSel: { color: c.primaryDark },
-    flowChip: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 9, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, minWidth: 56 },
+    flowChip: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 9, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, minWidth: 56 },
     flowDots: { flexDirection: 'row', gap: 2, flexWrap: 'wrap', justifyContent: 'center', width: 36 },
     flowDot: { width: 7, height: 7, borderRadius: 4 },
     notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 14, color: c.textPrimary, minHeight: 80 },
