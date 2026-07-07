@@ -55,11 +55,11 @@ export default function CalendarGrid({ year, month, selDate, logs = {}, cycleSta
 function createStyles(c) {
   return StyleSheet.create({
     header:    { flexDirection: 'row', marginBottom: 8 },
-    dow:       { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700', color: c.textFaint },
+    dow:       { flex: 1, textAlign: 'center', fontSize: 9, fontWeight: '700', color: c.textFaint },
     grid:      { flexDirection: 'row', flexWrap: 'wrap' },
     cell:      { width: '14.28%', paddingVertical: 2, alignItems: 'center' },
     dayCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-    dayText:   { fontSize: 14, fontWeight: '500', color: c.textPrimary },
+    dayText:   { fontSize: 12, fontWeight: '500', color: c.textPrimary },
     dot:       { position: 'absolute', bottom: 2, width: 4, height: 4, borderRadius: 2, opacity: 0.7 },
   });
 }

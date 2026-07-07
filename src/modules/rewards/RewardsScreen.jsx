@@ -41,7 +41,7 @@ function ShopRow({ product, onRedeem, colors, s }) {
   const active = !product.locked && product.canAfford;
   return (
     <View style={[s.shopRow, product.locked && { opacity: 0.55 }]}>
-      <View style={s.shopIconWrap}><Text style={{ fontSize: 22 }}>{product.icon}</Text></View>
+      <View style={s.shopIconWrap}><Text style={{ fontSize: 20 }}>{product.icon}</Text></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.shopName}>{product.name}</Text>
         <Text style={s.shopSub}>{product.fp} SP{product.premium ? ' · Premium' : ''}</Text>
@@ -75,7 +75,7 @@ function ChallengeRow({ title, reward, done, total, s }) {
 function HistoryRow({ entry, last, colors, s }) {
   return (
     <View style={[s.historyRow, last && { borderBottomWidth: 0 }]}>
-      <View style={s.historyIconWrap}><Text style={{ fontSize: 15 }}>{entry.icon}</Text></View>
+      <View style={s.historyIconWrap}><Text style={{ fontSize: 13 }}>{entry.icon}</Text></View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={s.historyLabel}>{entry.label}</Text>
         <Text style={s.historyDate}>{entry.date}</Text>
@@ -100,7 +100,7 @@ function BadgeCard({ badge, earned, colors, s }) {
   return (
     <View style={[s.badge, { opacity: earned ? 1 : 0.4 }]}>
       <View style={[s.badgeIconWrap, { backgroundColor: earned ? colors.primarySoft : '#F3EDEA' }]}>
-        <Text style={{ fontSize: 22 }}>{badge.icon}</Text>
+        <Text style={{ fontSize: 20 }}>{badge.icon}</Text>
       </View>
       <Text style={s.badgeLabel}>{badge.name}</Text>
     </View>
@@ -172,7 +172,7 @@ export default function RewardsScreen() {
         {/* Watch ad */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <Pressable onPress={() => dispatch({ type: A.WATCH_AD })} style={s.adRow}>
-            <View style={s.adIconWrap}><Text style={{ fontSize: 18 }}>🎬</Text></View>
+            <View style={s.adIconWrap}><Text style={{ fontSize: 16 }}>🎬</Text></View>
             <View style={{ flex: 1 }}>
               <Text style={s.rewardTitle}>Watch a short ad</Text>
               <Text style={s.rewardDesc}>Optional · earn 100 bonus SP</Text>
@@ -188,13 +188,13 @@ export default function RewardsScreen() {
 
           {isPremium ? (
             <View style={s.premiumBanner}>
-              <Text style={{ fontSize: 15 }}>👑</Text>
+              <Text style={{ fontSize: 13 }}>👑</Text>
               <Text style={s.premiumTx}>Premium active — all rewards unlocked</Text>
             </View>
           ) : (
             <Pressable onPress={() => dispatch({ type: A.GO_PREMIUM })} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ fontSize: 15 }}>👑</Text>
+                <Text style={{ fontSize: 13 }}>👑</Text>
                 <Text style={s.premiumTx}>Go Premium to unlock every reward</Text>
               </View>
               <Text style={s.premiumCta}>Subscribe →</Text>
@@ -244,54 +244,54 @@ function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
-    headerTitle: { fontSize: 26, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
+    headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
+    sectionTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
 
     hero: { position: 'relative', borderRadius: 28, padding: 22, overflow: 'hidden' },
-    heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 120, opacity: 0.14 },
-    heroLabel: { fontSize: 12.5, opacity: 0.85, fontWeight: '600', color: c.white },
-    heroLevel: { fontFamily: FONT.serif, fontSize: 32, marginTop: 2, color: c.white },
-    heroPoints: { fontSize: 13, opacity: 0.9, marginTop: 2, color: c.white },
-    heroProgress: { fontSize: 11.5, opacity: 0.85, marginTop: 7, color: c.white },
+    heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 118, opacity: 0.14 },
+    heroLabel: { fontSize: 10.5, opacity: 0.85, fontWeight: '600', color: c.white },
+    heroLevel: { fontFamily: FONT.serif, fontSize: 30, marginTop: 2, color: c.white },
+    heroPoints: { fontSize: 11, opacity: 0.9, marginTop: 2, color: c.white },
+    heroProgress: { fontSize: 9.5, opacity: 0.85, marginTop: 7, color: c.white },
     heroStatsRow: { flexDirection: 'row', gap: 20, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.22)' },
-    heroStatNum: { fontSize: 19, fontWeight: '700', color: c.white },
-    heroStatLbl: { fontSize: 11, opacity: 0.85, color: c.white, marginTop: 2 },
+    heroStatNum: { fontSize: 17, fontWeight: '700', color: c.white },
+    heroStatLbl: { fontSize: 9, opacity: 0.85, color: c.white, marginTop: 2 },
 
-    rewardTitle: { fontSize: 14, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
-    rewardDesc: { fontSize: 12, color: c.textMuted, lineHeight: 18 },
+    rewardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
+    rewardDesc: { fontSize: 10, color: c.textMuted, lineHeight: 18 },
 
     adRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.primarySoftBorder, borderStyle: 'dashed', borderRadius: 20, padding: 15 },
     adIconWrap: { width: 38, height: 38, borderRadius: 11, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
-    adCta: { fontSize: 13, fontWeight: '700', color: c.primaryDark },
+    adCta: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
 
     premiumBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.textPrimary, borderRadius: 16, padding: 12, marginTop: 12, marginBottom: 12 },
-    premiumTx: { fontSize: 12.5, fontWeight: '700', color: c.white, flexShrink: 1 },
-    premiumCta: { fontSize: 11.5, fontWeight: '700', color: c.primaryLight },
+    premiumTx: { fontSize: 10.5, fontWeight: '700', color: c.white, flexShrink: 1 },
+    premiumCta: { fontSize: 9.5, fontWeight: '700', color: c.primaryLight },
 
-    shopIntro: { fontSize: 12, color: c.textMuted, lineHeight: 18, marginTop: 4, marginBottom: 4 },
+    shopIntro: { fontSize: 10, color: c.textMuted, lineHeight: 18, marginTop: 4, marginBottom: 4 },
     shopRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, padding: 14 },
     shopIconWrap: { width: 52, height: 52, borderRadius: 14, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
-    shopName: { fontSize: 13.5, fontWeight: '700', color: c.textPrimary },
-    shopSub: { fontSize: 11.5, color: c.textMuted, marginTop: 2 },
+    shopName: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary },
+    shopSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2 },
     shopCta: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12 },
     shopCtaActive: { backgroundColor: c.primary },
     shopCtaInactive: { backgroundColor: c.border },
-    shopCtaTx: { fontSize: 11.5, fontWeight: '700', textAlign: 'center' },
+    shopCtaTx: { fontSize: 9.5, fontWeight: '700', textAlign: 'center' },
 
     challengeCard: { padding: 16 },
-    challengeTitle: { fontSize: 14, fontWeight: '600', color: c.textPrimary },
-    challengeReward: { fontSize: 12, fontWeight: '700', color: c.primaryDark },
-    challengeProgress: { fontSize: 11.5, color: c.textMuted, marginTop: 6 },
+    challengeTitle: { fontSize: 12, fontWeight: '600', color: c.textPrimary },
+    challengeReward: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
+    challengeProgress: { fontSize: 9.5, color: c.textMuted, marginTop: 6 },
 
     historyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border },
     historyIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: c.tertiarySoft, alignItems: 'center', justifyContent: 'center' },
-    historyLabel: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
-    historyDate: { fontSize: 11, color: c.textMuted, marginTop: 1 },
-    historyDelta: { fontSize: 13, fontWeight: '700' },
+    historyLabel: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
+    historyDate: { fontSize: 9, color: c.textMuted, marginTop: 1 },
+    historyDelta: { fontSize: 11, fontWeight: '700' },
 
     badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 },
     badge: { width: '30%', alignItems: 'center' },
     badgeIconWrap: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-    badgeLabel: { fontSize: 11, fontWeight: '600', marginTop: 8, textAlign: 'center', lineHeight: 15, color: c.textSecondary },
+    badgeLabel: { fontSize: 9, fontWeight: '600', marginTop: 8, textAlign: 'center', lineHeight: 15, color: c.textSecondary },
   });
 }

@@ -167,7 +167,7 @@ export default function HomeScreen() {
         <Pressable onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}>
           <Card style={s.levelStrip}>
             <LinearGradient colors={['#F6D9BE', '#F0C088']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.levelIconWrap}>
-              <Text style={{ fontSize: 19 }}>🌸</Text>
+              <Text style={{ fontSize: 17 }}>🌸</Text>
             </LinearGradient>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
@@ -200,7 +200,7 @@ export default function HomeScreen() {
           />
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Animated.Text style={{
-              fontSize: 19, marginTop: 1,
+              fontSize: 17, marginTop: 1,
               transform: [{ translateY: eggFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }],
             }}>
               🌼
@@ -244,39 +244,39 @@ function createStyles(c) {
     section: { paddingHorizontal: 24, marginBottom: 14 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 20 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1, minWidth: 0 },
-    greeting: { fontSize: 13, color: c.textMuted, fontWeight: '600', letterSpacing: 0.2 },
-    name: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
+    greeting: { fontSize: 11, color: c.textMuted, fontWeight: '600', letterSpacing: 0.2 },
+    name: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
     bellBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
     bellDot: { position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: c.primary, borderWidth: 1.5, borderColor: c.surface },
 
     hero: { borderRadius: 32, padding: 20, overflow: 'hidden' },
-    phaseLabel: { fontSize: 11, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
-    heroSerif: { fontFamily: FONT.serif, fontSize: 34, color: c.textPrimary, marginTop: 12, lineHeight: 40 },
+    phaseLabel: { fontSize: 9, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
+    heroSerif: { fontFamily: FONT.serif, fontSize: 32, color: c.textPrimary, marginTop: 12, lineHeight: 40 },
     heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 9, marginTop: 12, flexWrap: 'wrap' },
-    heroSerifSm: { fontFamily: FONT.serif, fontSize: 26, color: c.textPrimary },
-    heroSerifBig: { fontFamily: FONT.serif, fontSize: 44 },
-    predictedTx: { fontSize: 13.5, color: c.textMuted, marginTop: 8 },
+    heroSerifSm: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
+    heroSerifBig: { fontFamily: FONT.serif, fontSize: 42 },
+    predictedTx: { fontSize: 11.5, color: c.textMuted, marginTop: 8 },
     dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
-    dayLbl: { fontSize: 10.5, color: c.textDisabled, fontWeight: '600' },
+    dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
 
     loggedBadge: { backgroundColor: c.successSoft, borderWidth: 1.5, borderColor: c.successBorder, borderRadius: 22, paddingVertical: 14, alignItems: 'center' },
-    loggedTx: { fontSize: 13, fontWeight: '700', color: c.success },
+    loggedTx: { fontSize: 11, fontWeight: '700', color: c.success },
 
     levelStrip: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
     levelIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-    levelName: { fontSize: 13.5, fontWeight: '700', color: c.textPrimary },
-    levelSp: { fontSize: 11, color: c.textMuted },
-    levelProgress: { fontSize: 10.5, color: c.textDisabled, marginTop: 5 },
-    chevron: { fontSize: 12, fontWeight: '700', color: c.primaryDark },
+    levelName: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary },
+    levelSp: { fontSize: 9, color: c.textMuted },
+    levelProgress: { fontSize: 8.5, color: c.textDisabled, marginTop: 5 },
+    chevron: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
 
     ovCard: { borderRadius: 22, padding: 17, overflow: 'hidden' },
-    ovTitle: { fontSize: 14, fontWeight: '700', color: c.tertiary },
-    ovBody: { fontSize: 13, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
+    ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiary },
+    ovBody: { fontSize: 11, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
 
-    sectionTitle: { fontSize: 15.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
+    sectionTitle: { fontSize: 13.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
     fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
     fyImage: { width: '100%', height: 118, backgroundColor: c.surfaceAlt },
-    fyTag: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-    fyTitle: { fontSize: 13.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
+    fyTag: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+    fyTitle: { fontSize: 11.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
   });
 }

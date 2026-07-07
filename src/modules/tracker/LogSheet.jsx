@@ -52,7 +52,7 @@ function FlowPicker({ value, onChange, colors, s }) {
                   <View key={i} style={[s.flowDot, { backgroundColor: sel ? colors.primary : colors.border }]} />
                 ))}
               </View>
-              <Text style={[s.chipTx, { fontSize: 11, marginTop: 5 }, sel && s.chipTxSel]}>{f.label}</Text>
+              <Text style={[s.chipTx, { fontSize: 9, marginTop: 5 }, sel && s.chipTxSel]}>{f.label}</Text>
             </Pressable>
           );
         })}
@@ -137,17 +137,17 @@ export default function LogSheet() {
 function createStyles(c) {
   return StyleSheet.create({
     section: { marginBottom: 20 },
-    secLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 10 },
+    secLabel: { fontSize: 11, fontWeight: '700', color: c.textSecondary, marginBottom: 10 },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 99, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border },
     chipRect: { borderRadius: 16, flexBasis: '22%', flexGrow: 1, justifyContent: 'center' },
     chipSel: { backgroundColor: c.primarySoft, borderColor: c.primary },
-    chipEmoji: { fontSize: 14 },
-    chipTx: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+    chipEmoji: { fontSize: 12 },
+    chipTx: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
     chipTxSel: { color: c.primaryDark },
     flowChip: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 9, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, minWidth: 56 },
     flowDots: { flexDirection: 'row', gap: 2, flexWrap: 'wrap', justifyContent: 'center', width: 36 },
     flowDot: { width: 7, height: 7, borderRadius: 4 },
-    notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 14, color: c.textPrimary, minHeight: 80 },
+    notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 12, color: c.textPrimary, minHeight: 80 },
   });
 }

@@ -78,9 +78,9 @@ function createStyles(c) {
   return StyleSheet.create({
     row: { flexDirection: 'row', gap: 7 },
     col: { flex: 1, alignItems: 'center', gap: 5 },
-    dow: { fontSize: 9, fontWeight: '700', color: c.textFaint },
+    dow: { fontSize: 7, fontWeight: '700', color: c.textFaint },
     cellWrap: { width: '100%' },
     cell: { width: '100%', height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-    mark: { fontSize: 11, fontWeight: '700' },
+    mark: { fontSize: 9, fontWeight: '700' },
   });
 }
