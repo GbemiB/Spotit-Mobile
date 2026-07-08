@@ -28,7 +28,7 @@ function PulseRing({ color }) {
 }
 
 export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLength }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
 
   const cells = useMemo(() => {
@@ -45,7 +45,7 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
         label: off === 0 ? 'Today' : DAYS_SHORT[d.getDay()],
         mark: d.getDate(),
         isOvulation: ph.key === 'ovulation',
-        phaseColor: ph.color,
+        isFertile: ph.key === 'fertile',
       });
     }
     return out;
@@ -63,9 +63,13 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
                 <Text style={[s.mark, { color: colors.white }]}>●</Text>
               </LinearGradient>
             </View>
+          ) : c.isFertile ? (
+            <View style={[s.cell, { backgroundColor: isDark ? 'rgba(95,169,140,0.22)' : 'rgba(95,169,140,0.18)' }]}>
+              <Text style={[s.mark, { color: '#5FA98C' }]}>{c.mark}</Text>
+            </View>
           ) : (
-            <View style={[s.cell, { backgroundColor: c.phaseColor + '26' }]}>
-              <Text style={[s.mark, { color: c.phaseColor }]}>{c.mark}</Text>
+            <View style={[s.cell, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F4E7E2' }]}>
+              <Text style={[s.mark, { color: isDark ? 'rgba(255,255,255,0.4)' : '#B9A9A2' }]}>{c.mark}</Text>
             </View>
           )}
         </View>

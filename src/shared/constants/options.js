@@ -1,9 +1,8 @@
 export const FLOW = [
-  { id: 'spotting', label: 'Spotting', icon: '·'  },
-  { id: 'light',    label: 'Light',    icon: '🩸' },
-  { id: 'medium',   label: 'Medium',   icon: '🩸' },
-  { id: 'heavy',    label: 'Heavy',    icon: '🩸' },
-  { id: 'vheavy',   label: 'V.heavy',  icon: '🩸' },
+  { id: 'spotting', label: 'Spotting', icon: '·'      },
+  { id: 'light',    label: 'Light',    icon: '🩸'     },
+  { id: 'medium',   label: 'Medium',   icon: '🩸🩸'   },
+  { id: 'heavy',    label: 'Heavy',    icon: '🩸🩸🩸' }
 ];
 
 export const MOODS = [

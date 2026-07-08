@@ -63,7 +63,6 @@ export default function BottomNav({ screen, dispatch }) {
           >
             <Icon size={22} color={iconColor} />
             <Text style={[s.tabLabel, { color: iconColor }]}>{tab.label}</Text>
-            {active && <View style={s.activeDot} />}
           </Pressable>
         );
       })}
@@ -85,7 +84,6 @@ function createStyles(c) {
     },
     tab:       { alignItems: 'center', gap: 4, width: 56, paddingBottom: 2 },
     tabLabel:  { fontSize: 10, fontWeight: '700' },
-    activeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: c.primary, marginTop: 2 },
     fabWrap:   { marginTop: -22, width: 56, alignItems: 'center' },
     fab: {
       width: 54,

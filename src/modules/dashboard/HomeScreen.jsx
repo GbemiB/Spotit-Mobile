@@ -13,7 +13,6 @@ import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
-import Button from '../../components/ui/Button.jsx';
 
 const FOR_YOU = [
   { tag: 'Education', tagColor: '#C04E68', title: 'Understanding your fertile window', image: require('../../../assets/lifestyle.png') },
@@ -142,7 +141,7 @@ export default function HomeScreen() {
             </View>
           )}
           <Text style={s.predictedTx}>
-            Predicted {formatDisplayDate(nextP)} · <Text style={{ color: colors.success, fontWeight: '700' }}>{confidenceLabel} confidence</Text>
+            Predicted {formatDisplayDate(nextP)} · <Text style={{ color: colors.success, fontWeight: '600' }}>{confidenceLabel} confidence</Text>
           </Text>
           <View style={{ marginTop: 16 }}>
             <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
@@ -158,7 +157,19 @@ export default function HomeScreen() {
       <View style={s.section}>
         {loggedToday
           ? <View style={s.loggedBadge}><Text style={s.loggedTx}>✓ Logged today</Text></View>
-          : <Button onPress={() => dispatch({ type: A.OPEN_LOG })}>Log today · earn 80 SP</Button>
+          : (
+            <Pressable onPress={() => dispatch({ type: A.OPEN_LOG })}>
+              <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.logCtaTitle}>Log today</Text>
+                  <Text style={s.logCtaSub}>Flow, symptoms & mood · earn 80 SP</Text>
+                </View>
+                <View style={s.logCtaPlusWrap}>
+                  <Text style={s.logCtaPlus}>+</Text>
+                </View>
+              </LinearGradient>
+            </Pressable>
+          )
         }
       </View>
 
@@ -262,6 +273,16 @@ function createStyles(c) {
     loggedBadge: { backgroundColor: c.successSoft, borderWidth: 1.5, borderColor: c.successBorder, borderRadius: 22, paddingVertical: 14, alignItems: 'center' },
     loggedTx: { fontSize: 11, fontWeight: '700', color: c.success },
 
+    logCta: {
+      borderRadius: 22, paddingVertical: 15, paddingHorizontal: 18,
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      shadowColor: c.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.28, shadowRadius: 18, elevation: 6,
+    },
+    logCtaTitle: { color: c.white, fontWeight: '700', fontSize: 14 },
+    logCtaSub: { color: 'rgba(255,255,255,0.82)', fontSize: 10.5, marginTop: 1 },
+    logCtaPlusWrap: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', marginLeft: 12 },
+    logCtaPlus: { color: c.white, fontSize: 20, fontWeight: '300' },
+
     levelStrip: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
     levelIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
     levelName: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary },
@@ -270,7 +291,7 @@ function createStyles(c) {
     chevron: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
 
     ovCard: { borderRadius: 22, padding: 17, overflow: 'hidden' },
-    ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiary },
+    ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep },
     ovBody: { fontSize: 11, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
 
     sectionTitle: { fontSize: 13.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },

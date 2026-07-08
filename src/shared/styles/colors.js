@@ -29,6 +29,9 @@ export const light = {
 
   tertiary:     '#D6A24E',
   tertiarySoft: '#FBF1E0',
+  // Warm brown accent for "insight" copy (ovulation card title, digest card
+  // title) — distinct from the gold `tertiary` used for dots/highlights.
+  tertiaryDeep: '#A9663D',
 
   background: '#FBF6F4',
   surface:    '#FFFFFF',
@@ -96,6 +99,7 @@ export const dark = {
 
   tertiary:     '#E0B564',
   tertiarySoft: 'rgba(214,162,78,0.16)',
+  tertiaryDeep: '#F0A868',
 
   background: '#181214',
   surface:    '#221A1D',

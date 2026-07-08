@@ -41,10 +41,10 @@ export default function CalendarScreen() {
             <Pressable onPress={() => dispatch({ type: A.PREV_MONTH })} style={s.navBtn}>
               <Text style={s.navArrow}>‹</Text>
             </Pressable>
-            <Text style={s.monthTitle}>{MONTHS[viewMonth]} {viewYear}</Text>
             <Pressable onPress={() => dispatch({ type: A.NEXT_MONTH })} style={s.navBtn}>
               <Text style={s.navArrow}>›</Text>
             </Pressable>
+            <Text style={s.monthTitle}>{MONTHS[viewMonth]} {viewYear}</Text>
           </View>
         </View>
         <Text style={s.screenSub}>Tap any day to see what you logged.</Text>

@@ -35,8 +35,8 @@ function createStyles(c) {
   return StyleSheet.create({
     wrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, height: 110, marginTop: 16 },
     col: { flex: 1, alignItems: 'center', gap: 6 },
-    val: { fontSize: 11, fontWeight: '700' },
+    val: { fontSize: 9, fontWeight: '700' },
     bar: { width: '100%', borderRadius: 8 },
-    mo: { fontSize: 10, color: c.textDisabled, fontWeight: '600' },
+    mo: { fontSize: 8, color: c.textDisabled, fontWeight: '600' },
   });
 }

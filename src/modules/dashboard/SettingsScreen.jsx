@@ -18,17 +18,17 @@ const THEME_OPTIONS = [
   { key: 'system', label: 'System' },
 ];
 
-function Row({ icon, iconBg, label, sub, right, last, s }) {
+function Row({ icon, iconBg, label, sub, right, last, s, compact }) {
   return (
-    <View style={[s.row, last && { borderBottomWidth: 0 }]}>
+    <View style={[compact ? s.notifRow : s.row, last && { borderBottomWidth: 0 }]}>
       {icon ? (
-        <View style={[s.rowIconWrap, { backgroundColor: iconBg }]}>
-          <Text style={{ fontSize: 14 }}>{icon}</Text>
+        <View style={[compact ? s.notifIconWrap : s.rowIconWrap, { backgroundColor: iconBg }]}>
+          <Text style={{ fontSize: compact ? 10 : 12 }}>{icon}</Text>
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Text style={s.rowLabel}>{label}</Text>
-        {sub ? <Text style={s.rowSub}>{sub}</Text> : null}
+        <Text style={compact ? s.notifLabel : s.rowLabel}>{label}</Text>
+        {sub ? <Text style={compact ? s.notifSub : s.rowSub}>{sub}</Text> : null}
       </View>
       {right}
     </View>
@@ -92,7 +92,6 @@ export default function SettingsScreen() {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.headerSub}>Preferences</Text>
           <Text style={s.headerTitle}>Profile</Text>
         </View>
 
@@ -161,6 +160,7 @@ export default function SettingsScreen() {
                 sub={n.sub}
                 right={<Toggle value={notifs[n.key]} onChange={() => dispatch({ type: A.TOGGLE_NOTIF, key: n.key })} />}
                 last={i === NOTIF_ROWS.length - 1}
+                compact
                 s={s}
               />
             ))}
@@ -233,8 +233,7 @@ function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 20 },
-    headerSub: { fontSize: 11, color: c.textMuted, fontWeight: '600', marginBottom: 2 },
-    headerTitle: { fontSize: 30, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
+    headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     profileHero: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 22, borderRadius: 24 },
     profileName: { fontSize: 11, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.3 },
     profileMeta: { fontSize: 10.5, color: c.textMuted, marginTop: 2 },
@@ -243,9 +242,15 @@ function createStyles(c) {
     themePill: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12 },
     themePillTx: { fontSize: 10.5, fontWeight: '700' },
     row: { flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: c.border },
-    rowIconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-    rowLabel: { fontSize: 11.5, color: c.textPrimary, fontWeight: '500' },
+    rowIconWrap: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    rowLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
     rowSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2 },
+    notifRow: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: c.border },
+    notifIconWrap: { width: 20, height: 20, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    // notifLabel: { fontSize: 12, color: c.textPrimary, fontWeight: '600' },
+    // notifSub: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+    notifLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
+    notifSub: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
     inlineInput: { fontSize: 12, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },

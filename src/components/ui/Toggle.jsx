@@ -10,15 +10,17 @@ export default function Toggle({ value, onChange, label, description }) {
     Animated.timing(anim, { toValue: value ? 1 : 0, duration: 180, useNativeDriver: false }).start();
   }, [value]);
 
-  const bgColor = anim.interpolate({ inputRange: [0, 1], outputRange: [colors.border, colors.primary] });
+  const bgColor = anim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(140,120,125,0.32)', colors.primary] });
   const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [3, 23] });
 
   return (
     <Pressable onPress={() => onChange(!value)} style={s.row}>
-      <View style={s.labelWrap}>
-        {label && <Text style={s.label}>{label}</Text>}
-        {description && <Text style={s.desc}>{description}</Text>}
-      </View>
+      {(label || description) && (
+        <View style={s.labelWrap}>
+          {label && <Text style={s.label}>{label}</Text>}
+          {description && <Text style={s.desc}>{description}</Text>}
+        </View>
+      )}
       <Animated.View style={[s.track, { backgroundColor: bgColor }]}>
         <Animated.View style={[s.thumb, { transform: [{ translateX: thumbX }] }]} />
       </Animated.View>

@@ -24,6 +24,9 @@ function weeklyDigest(logs) {
 export default function InsightsScreen() {
   const { state } = useApp();
   const { colors, isDark } = useTheme();
+  const digestBg = isDark ? '#2A1810' : '#FBF2EC';
+  const digestBody = isDark ? 'rgba(255,255,255,0.65)' : '#8A6E5E';
+  const regularBorder = isDark ? 'rgba(255,255,255,0.10)' : '#EAF1EC';
   const s = useMemo(() => createStyles(colors), [colors]);
   const { logs, cycleLength, periodLength, lastPeriodDate } = state;
   const insets = useSafeAreaInsets();
@@ -88,9 +91,9 @@ export default function InsightsScreen() {
 
         {/* Weekly digest */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
-          <View style={s.digestCard}>
+          <View style={[s.digestCard, { backgroundColor: digestBg }]}>
             <Text style={s.digestTitle}>This week's digest</Text>
-            <Text style={s.digestBody}>
+            <Text style={[s.digestBody, { color: digestBody }]}>
               {digest.topMood
                 ? <>Your average mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of 7 days.</>
                 : 'Log your mood and symptoms daily to see a personalized digest here.'}
@@ -100,8 +103,8 @@ export default function InsightsScreen() {
 
         {/* Regularity check */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <View style={s.regularRow}>
-            <View style={s.regularIcon}><Text style={{ color: colors.success, fontSize: 17 }}>✓</Text></View>
+          <View style={[s.regularRow, { borderColor: regularBorder }]}>
+            <View style={s.regularIcon}><Text style={{ color: colors.success, fontSize: 15 }}>✓</Text></View>
             <View>
               <Text style={s.regularTitle}>Your cycles look regular</Text>
               <Text style={s.regularSub}>No anomalies detected · not medical advice</Text>
@@ -117,30 +120,30 @@ function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
-    headerTitle: { fontSize: 26, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
+    headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
 
     hero: { borderRadius: 28, padding: 22, borderWidth: 1, borderColor: c.border },
-    heroLabel: { fontSize: 12.5, color: c.textMuted, fontWeight: '600' },
-    heroDate: { fontFamily: FONT.serif, fontSize: 38, color: c.primaryDark, marginTop: 4, letterSpacing: -0.5 },
+    heroLabel: { fontSize: 10.5, color: c.textMuted, fontWeight: '600' },
+    heroDate: { fontFamily: FONT.serif, fontSize: 36, color: c.primaryDark, marginTop: 4, letterSpacing: -0.5 },
     confPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 10, backgroundColor: c.successSoft, borderRadius: 99, paddingHorizontal: 11, paddingVertical: 5 },
     confDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.success },
-    confTx: { fontSize: 12, fontWeight: '600', color: c.success },
+    confTx: { fontSize: 10, fontWeight: '600', color: c.success },
 
     trendCard: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 24, padding: 20 },
-    trendTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
-    trendSub: { fontSize: 12.5, color: c.textMuted },
+    trendTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
+    trendSub: { fontSize: 10.5, color: c.textMuted },
     statsRow: { flexDirection: 'row', gap: 24, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border },
-    statNum: { fontFamily: FONT.serif, fontSize: 26, color: c.textPrimary },
-    statUnit: { fontSize: 14, color: c.textMuted },
-    statLbl: { fontSize: 11.5, color: c.textMuted, marginTop: 1 },
+    statNum: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
+    statUnit: { fontSize: 12, color: c.textMuted },
+    statLbl: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
 
     digestCard: { backgroundColor: c.tertiarySoft, borderRadius: 22, padding: 18 },
-    digestTitle: { fontSize: 14, fontWeight: '700', color: c.tertiary, marginBottom: 6 },
-    digestBody: { fontSize: 13.5, color: c.textSecondary, lineHeight: 20 },
+    digestTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep, marginBottom: 6 },
+    digestBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 18 },
 
     regularRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1, borderColor: c.successBorder, borderRadius: 22, padding: 16 },
     regularIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.successSoft, alignItems: 'center', justifyContent: 'center' },
-    regularTitle: { fontSize: 14, fontWeight: '700', color: c.textPrimary },
-    regularSub: { fontSize: 12.5, color: c.textMuted, marginTop: 1 },
+    regularTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
+    regularSub: { fontSize: 10.5, color: c.textMuted, marginTop: 1 },
   });
 }
