@@ -6,9 +6,15 @@ import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
 const MAX_HISTORY = 20;
 
 export const INIT = {
-  onboarded: true, // TEMP-DEV-PREVIEW
-  authDone: true, // TEMP-DEV-PREVIEW
+  onboarded: false,
+  authDone: false,
   authScreen: 'splash',
+  accessToken: null,
+  refreshToken: null,
+  userId: null,
+  pendingOtpId: null,
+  pendingEmail: null,
+  otpPurpose: null,
   resetEmail: null,
   userName: 'Gbemisola',
   goal: 'track',
@@ -35,7 +41,7 @@ export const INIT = {
     { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Jun 28' },
   ],
   // session
-  screen: 'settings', // TEMP-DEV-PREVIEW
+  screen: 'home',
   logOpen: false,
   logEditDate: null,
   toast: null,
@@ -190,8 +196,21 @@ export function reducer(state, action) {
     case A.SET_AUTH_SCREEN:
       if (action.screen === null) return { ...state, authScreen: null, authDone: true };
       return { ...state, authScreen: action.screen };
+    case A.AUTH_SUCCESS:
+      return {
+        ...state,
+        accessToken: action.accessToken,
+        refreshToken: action.refreshToken,
+        userId: action.userId,
+        onboarded: action.onboarded ?? state.onboarded,
+        authDone: true,
+        authScreen: null,
+        pendingOtpId: null,
+        pendingEmail: null,
+        otpPurpose: null,
+      };
     case A.LOGOUT:
-      return { ...state, authDone: false, authScreen: 'welcome' };
+      return { ...state, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
     case A.RESET_DATA:
       return { ...INIT, onboarded: false, authDone: false, authScreen: 'welcome', femPoints: 0, streak: 0, longestStreak: 0, logs: {}, screen: 'home' };
     default:

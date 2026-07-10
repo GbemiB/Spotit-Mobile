@@ -1,4 +1,4 @@
-import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
 import { useState, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { GoogleIcon } from '../../components/ui/icons.jsx';
+import * as authApi from '../../shared/api/auth.js';
 
 export default function LoginScreen() {
   const { dispatch } = useApp();
@@ -16,9 +17,29 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  function handleLogin() {
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: null });
+  const canSubmit = email.trim() && password.length > 0;
+
+  async function handleLogin() {
+    if (!canSubmit || loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      const data = await authApi.login({ email: email.trim(), password });
+      dispatch({
+        type: A.AUTH_SUCCESS,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        userId: data.user.userId,
+        onboarded: data.user.onboarded,
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSocial() {
@@ -61,9 +82,11 @@ export default function LoginScreen() {
               <Text style={s.forgotTx}>Forgot password?</Text>
             </Pressable>
 
-            <Pressable onPress={handleLogin} style={{ marginTop: 16 }}>
+            {error ? <Text style={s.errorTx}>{error}</Text> : null}
+
+            <Pressable disabled={!canSubmit || loading} onPress={handleLogin} style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}>
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-                <Text style={s.ctaTx}>Login</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Login</Text>}
               </LinearGradient>
             </Pressable>
 
@@ -101,6 +124,7 @@ function createStyles(c) {
     title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center' },
     form: { marginTop: 24 },
     field: { marginBottom: 18 },
+    errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
     input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },

@@ -4,7 +4,7 @@ import { reducer, INIT } from './reducer.js';
 import { A } from './actions.js';
 
 const PERSIST_KEYS = [
-  'onboarded','authDone','userName','goal','dob','cycleLength','periodLength','lastPeriodDate',
+  'onboarded','authDone','accessToken','refreshToken','userId','userName','goal','dob','cycleLength','periodLength','lastPeriodDate',
   'femPoints','streak','longestStreak','lastLogDate','lastClaimedDate','logs',
   'notifs','themePref','isPremium','history',
 ];

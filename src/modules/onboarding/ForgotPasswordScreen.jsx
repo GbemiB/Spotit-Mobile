@@ -1,4 +1,4 @@
-import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
 import { useState, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { LockIcon } from '../../components/ui/icons.jsx';
+import * as authApi from '../../shared/api/auth.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,12 +17,24 @@ export default function ForgotPasswordScreen() {
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const canSubmit = EMAIL_RE.test(email.trim());
 
-  function handleSend() {
-    dispatch({ type: A.UPDATE_SETTINGS, patch: { resetEmail: email.trim() } });
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
+  async function handleSend() {
+    if (!canSubmit || loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      await authApi.forgotPassword({ email: email.trim() });
+      dispatch({ type: A.UPDATE_SETTINGS, patch: { resetEmail: email.trim(), otpPurpose: 'password_reset', pendingOtpId: null } });
+      dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -49,9 +62,11 @@ export default function ForgotPasswordScreen() {
               <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" style={s.input} />
             </View>
 
-            <Pressable disabled={!canSubmit} onPress={handleSend} style={{ alignSelf: 'stretch', marginTop: 24, opacity: canSubmit ? 1 : 0.5 }}>
+            {error ? <Text style={s.errorTx}>{error}</Text> : null}
+
+            <Pressable disabled={!canSubmit || loading} onPress={handleSend} style={{ alignSelf: 'stretch', marginTop: 24, opacity: canSubmit && !loading ? 1 : 0.5 }}>
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-                <Text style={s.ctaTx}>Send Code</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Send Code</Text>}
               </LinearGradient>
             </Pressable>
 
@@ -77,6 +92,7 @@ function createStyles(c) {
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     form: { alignSelf: 'stretch', marginTop: 26 },
+    errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 16, textAlign: 'center' },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
     input: { fontSize: 15, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     cta: { alignSelf: 'stretch', paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

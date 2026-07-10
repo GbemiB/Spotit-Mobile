@@ -1,4 +1,4 @@
-import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
 import { useState, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,8 +6,8 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import StatusModal from '../../components/ui/StatusModal.jsx';
 import { CheckIcon, GoogleIcon } from '../../components/ui/icons.jsx';
+import * as authApi from '../../shared/api/auth.js';
 
 export default function SignupScreen() {
   const { dispatch } = useApp();
@@ -20,22 +20,34 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
   const canSubmit = firstName.trim() && lastName.trim() && email.trim() && password.length >= 8 && agreed && !passwordsMismatch;
 
-  function handleCreate() {
-    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-    if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
-    setShowSuccess(true);
-  }
-
-  function handleContinue() {
-    setShowSuccess(false);
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: null });
+  async function handleCreate() {
+    if (!canSubmit || loading) return;
+    setError('');
+    setLoading(true);
+    try {
+      const data = await authApi.signup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        password,
+      });
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
+      dispatch({ type: A.UPDATE_SETTINGS, patch: { pendingOtpId: data.otpId, pendingEmail: email.trim(), otpPurpose: 'signup' } });
+      dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSocial() {
@@ -106,9 +118,11 @@ export default function SignupScreen() {
               </Text>
             </Pressable>
 
-            <Pressable disabled={!canSubmit} onPress={handleCreate} style={{ marginTop: 16, opacity: canSubmit ? 1 : 0.5 }}>
+            {error ? <Text style={s.errorTx}>{error}</Text> : null}
+
+            <Pressable disabled={!canSubmit || loading} onPress={handleCreate} style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}>
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-                <Text style={s.ctaTx}>Create Account</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Create Account</Text>}
               </LinearGradient>
             </Pressable>
 
@@ -134,15 +148,6 @@ export default function SignupScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <StatusModal
-        visible={showSuccess}
-        variant="success"
-        title="Account created"
-        subtitle="Welcome to Spot it — let's get your cycle set up."
-        ctaLabel="Continue"
-        onCta={handleContinue}
-      />
     </LinearGradient>
   );
 }

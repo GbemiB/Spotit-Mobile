@@ -11,6 +11,7 @@ import Card from '../../components/ui/Card.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
+import * as authApi from '../../shared/api/auth.js';
 
 const THEME_OPTIONS = [
   { key: 'light', label: 'Light' },
@@ -70,7 +71,12 @@ export default function SettingsScreen() {
       'Your cycle data stays saved. You can log back in anytime.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: () => dispatch({ type: A.LOGOUT }) },
+        {
+          text: 'Log out', style: 'destructive', onPress: async () => {
+            await authApi.logout(state.accessToken).catch(() => {});
+            dispatch({ type: A.LOGOUT });
+          },
+        },
       ]
     );
   }
