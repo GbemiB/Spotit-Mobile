@@ -1,13 +1,23 @@
 import { View, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { FLOW, MOODS, SYMPTOMS } from '../../shared/constants/options.js';
-import { formatDisplayDate } from '../../shared/utils/cycle.js';
+import { formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
+import * as logsApi from '../../shared/api/logs.js';
+
+// Icons/emoji aren't part of the backend's log template (that's presentation, not data) —
+// map the returned ids back to the icon/emoji FLOW/MOODS already define locally.
+const FLOW_ICONS = Object.fromEntries(FLOW.map(f => [f.id, f.icon]));
+const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
+
+function toOptions(list, iconMap, key = 'icon') {
+  return list.map(o => ({ id: o.id, label: o.label, [key]: iconMap[o.id] }));
+}
 
 function SectionLabel({ children, s }) {
   return <Text style={s.secLabel}>{children}</Text>;
@@ -43,12 +53,12 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shap
   );
 }
 
-function FlowPicker({ value, onChange, s }) {
+function FlowPicker({ value, onChange, options, s }) {
   return (
     <View style={s.section}>
       <SectionLabel s={s}>Flow</SectionLabel>
       <View style={s.flowRow}>
-        {FLOW.map(f => {
+        {options.map(f => {
           const sel = value === f.id;
           return (
             <Pressable key={f.id} onPress={() => onChange(f.id)} style={[s.flowChip, sel && s.chipSel]}>
@@ -72,8 +82,49 @@ export default function LogSheet() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { logOpen, logEditDate, draftLog } = state;
+  const { logOpen, logEditDate, draftLog, accessToken } = state;
+  const date = logEditDate || todayISO();
   const dateLabel = logEditDate ? formatDisplayDate(logEditDate) : 'Today';
+
+  const [flowOptions, setFlowOptions] = useState(() => toOptions(FLOW, FLOW_ICONS));
+  const [moodOptions, setMoodOptions] = useState(() => toOptions(MOODS, MOOD_EMOJI, 'emoji'));
+  const [symptomOptions, setSymptomOptions] = useState(SYMPTOMS);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // The log template is what this sheet calls first to render flow/mood/symptom options —
+  // falls back to the local constants on failure so logging never blocks.
+  useEffect(() => {
+    logsApi.getTemplate(accessToken)
+      .then(data => {
+        if (data?.flow?.length) setFlowOptions(toOptions(data.flow, FLOW_ICONS));
+        if (data?.mood?.length) setMoodOptions(toOptions(data.mood, MOOD_EMOJI, 'emoji'));
+        if (data?.symptoms?.length) setSymptomOptions(data.symptoms);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    if (saving) return;
+    setError('');
+    setSaving(true);
+    try {
+      const data = await logsApi.saveLog(date, draftLog, accessToken);
+      dispatch({
+        type: A.SAVE_LOG,
+        date,
+        entry: { flow: data.flow, mood: data.mood, symptoms: data.symptoms, notes: data.notes, intimate: data.intimate },
+        pointsAwarded: data.pointsAwarded,
+        newBalance: data.newBalance,
+        streak: data.streak,
+        isNewEntry: data.isNewEntry,
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <BottomSheet open={logOpen} onClose={() => dispatch({ type: A.CLOSE_LOG })} title={`Log for ${dateLabel}`}>
@@ -82,11 +133,12 @@ export default function LogSheet() {
           <FlowPicker
             value={draftLog.flow}
             onChange={id => dispatch({ type: A.SET_DRAFT_FLOW, id })}
+            options={flowOptions}
             s={s}
           />
           <ChipGroup
             label="Mood"
-            items={MOODS}
+            items={moodOptions}
             selected={draftLog.mood}
             onSelect={id => dispatch({ type: A.SET_DRAFT_MOOD, id })}
             shape="rect"
@@ -94,7 +146,7 @@ export default function LogSheet() {
           />
           <ChipGroup
             label="Symptoms"
-            items={SYMPTOMS}
+            items={symptomOptions}
             selected={draftLog.symptoms}
             onSelect={id => dispatch({ type: A.TOGGLE_DRAFT_SYM, id })}
             multiSelect
@@ -124,15 +176,17 @@ export default function LogSheet() {
               textAlignVertical="top"
             />
           </View>
+
+          {error ? <Text style={s.errorTx}>{error}</Text> : null}
         </View>
 
         {/* Actions */}
         <View style={{ flexDirection: 'row', gap: 10, paddingTop: 12 }}>
           <View style={{ flex: 1 }}>
-            <Button variant="secondary" onPress={() => dispatch({ type: A.CLOSE_LOG })}>Cancel</Button>
+            <Button variant="secondary" onPress={() => dispatch({ type: A.CLOSE_LOG })} disabled={saving}>Cancel</Button>
           </View>
           <View style={{ flex: 2 }}>
-            <Button onPress={() => dispatch({ type: A.SAVE_LOG })}>Save entry →</Button>
+            <Button onPress={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save entry →'}</Button>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -162,5 +216,6 @@ function createStyles(c) {
     flowChip: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2, paddingVertical: 9, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border },
     flowIcon: { fontSize: 14 },
     notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 12, color: c.textPrimary, minHeight: 80 },
+    errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 4, textAlign: 'center' },
   });
 }

@@ -189,8 +189,8 @@ function createStyles(c) {
     subEmail: { color: c.authHeading, fontWeight: '700' },
     otpRow: { flexDirection: 'row', gap: 8, marginTop: 26 },
     otpBox: {
-      width: 40, height: 52, borderRadius: 12, borderWidth: 1.5, borderColor: c.authBorder,
-      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '700', color: c.authHeading,
+      width: 40, height: 52, borderRadius: 12, borderWidth: 1, borderColor: c.authBorder,
+      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '500', color: c.authHeading,
     },
     otpBoxFilled: { borderColor: c.authHeading },
     passwordForm: { alignSelf: 'stretch', marginTop: 22 },

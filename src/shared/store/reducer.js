@@ -1,5 +1,5 @@
 import { A } from './actions.js';
-import { toISO, todayISO } from '../utils/cycle.js';
+import { todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, DEFAULT_LAST_PERIOD } from '../constants/cycle.js';
 import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
 
@@ -20,7 +20,7 @@ export const INIT = {
   goal: 'track',
   dob: '',
   onboardStep: 0,
-  onboardDraft: { name: '', dob: '', lastPeriod: '', goal: 'track' },
+  onboardDraft: { name: '', dob: '', lastPeriod: '', goal: 'track', cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH },
   cycleLength: DEFAULT_CYCLE_LENGTH,
   periodLength: DEFAULT_PERIOD_LENGTH,
   lastPeriodDate: DEFAULT_LAST_PERIOD,
@@ -33,6 +33,9 @@ export const INIT = {
   notifs: { period: true, ovulation: true, dailyLog: true, digest: false },
   themePref: 'system',
   isPremium: false,
+  plan: null,
+  renewsAt: null,
+  autoRenew: false,
   history: [
     { icon: '🩸', label: 'Logged period start', delta: 50, date: 'Jun 16' },
     { icon: '📝', label: 'Daily mood & symptom log', delta: 30, date: 'Jun 22' },
@@ -49,6 +52,11 @@ export const INIT = {
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
   draftLog: { flow: null, mood: null, symptoms: [], notes: '', intimate: false },
+  // Backend-fetched reference data — not persisted, refetched each session.
+  cycleStatus: null,
+  calendarPhases: {},
+  contentFeed: null,
+  insights: { trends: null, digest: null, regularity: null },
 };
 
 function openLog(state, dateISO) {
@@ -71,31 +79,24 @@ function withHistory(state, entry) {
   return { ...state, history: [entry, ...state.history].slice(0, MAX_HISTORY) };
 }
 
-function saveLog(state) {
-  const date = state.logEditDate || todayISO();
+// Called after the server confirms a save (POST /logs/{date}) — points, balance, and streak
+// come back from PointsWriteService, so the client trusts them rather than recomputing locally.
+function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }) {
   const today = todayISO();
-  const isNew = !state.logs[date];
-  let { streak, longestStreak } = state;
-  if (date === today && isNew) {
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    streak = (state.lastLogDate === toISO(yest) || state.lastLogDate === today)
-      ? state.streak + 1 : 1;
-    longestStreak = Math.max(streak, state.longestStreak);
-  }
-  const earns = isNew && date === today;
-  const femPoints = earns ? state.femPoints + 80 : state.femPoints;
-  const toast = earns
-    ? { icon: '🔥', text: `Logged! +80 SP · ${streak}-day streak` }
-    : { icon: '✓', text: 'Entry updated' };
   let next = {
     ...state,
     logOpen: false,
-    logs: { ...state.logs, [date]: { ...state.draftLog } },
+    logs: { ...state.logs, [date]: entry },
     lastLogDate: date === today ? today : state.lastLogDate,
-    femPoints, streak, longestStreak, toast,
+    femPoints: newBalance,
+    streak,
+    longestStreak: Math.max(streak, state.longestStreak),
+    toast: pointsAwarded > 0
+      ? { icon: '🔥', text: `Logged! +${pointsAwarded} SP · ${streak}-day streak` }
+      : { icon: '✓', text: 'Entry updated' },
   };
-  if (earns) {
-    next = withHistory(next, { icon: '📝', label: 'Logged flow, mood & symptoms', delta: 80, date: 'Today' });
+  if (pointsAwarded > 0) {
+    next = withHistory(next, { icon: '📝', label: 'Logged flow, mood & symptoms', delta: pointsAwarded, date: 'Today' });
   }
   return next;
 }
@@ -123,9 +124,11 @@ export function reducer(state, action) {
         authDone: true,
         authScreen: null,
         userName: state.onboardDraft.name || 'Friend',
-        goal: state.onboardDraft.goal,
+        goal: action.goal || state.onboardDraft.goal,
         dob: state.onboardDraft.dob,
         lastPeriodDate: state.onboardDraft.lastPeriod || DEFAULT_LAST_PERIOD,
+        cycleLength: action.cycleLength ?? state.cycleLength,
+        periodLength: action.periodLength ?? state.periodLength,
         onboardStep: 0,
         screen: 'home',
       };
@@ -142,11 +145,21 @@ export function reducer(state, action) {
     case A.SET_DRAFT_INTIMATE:
       return { ...state, draftLog: { ...state.draftLog, intimate: action.value } };
     case A.SAVE_LOG:
-      return saveLog(state);
+      return applySavedLog(state, action);
     case A.DELETE_LOG: {
       const logs = { ...state.logs }; delete logs[action.date];
       return { ...state, logs };
     }
+    case A.LOGS_HYDRATED:
+      return { ...state, logs: { ...state.logs, ...action.logs } };
+    case A.CYCLE_STATUS_HYDRATED:
+      return { ...state, cycleStatus: action.status };
+    case A.CALENDAR_PHASES_HYDRATED:
+      return { ...state, calendarPhases: { ...state.calendarPhases, ...action.phases } };
+    case A.CONTENT_FEED_HYDRATED:
+      return { ...state, contentFeed: action.items };
+    case A.INSIGHTS_HYDRATED:
+      return { ...state, insights: { ...state.insights, ...action.insights } };
     case A.CLAIM_DAILY: {
       const today = todayISO();
       if (state.lastClaimedDate === today) return state;
@@ -161,8 +174,10 @@ export function reducer(state, action) {
       return { ...state, notifs: { ...state.notifs, [action.key]: !state.notifs[action.key] } };
     case A.SET_THEME:
       return { ...state, themePref: action.pref };
-    case A.GO_PREMIUM:
-      return { ...state, isPremium: true, toast: { icon: '👑', text: 'Premium unlocked' } };
+    case A.SUBSCRIPTION_UPDATED: {
+      const { isPremium, plan, renewsAt, autoRenew, toast } = action;
+      return { ...state, isPremium, plan, renewsAt, autoRenew, toast: toast ?? state.toast };
+    }
     case A.REDEEM: {
       const { product } = action;
       const lv = levelInfo(state.femPoints);

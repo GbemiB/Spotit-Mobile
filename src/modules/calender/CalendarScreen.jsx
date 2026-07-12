@@ -1,34 +1,70 @@
-import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { useMemo, useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { cycleDayOf, phaseFor, formatDisplayDate } from '../../shared/utils/cycle.js';
-import { MONTHS, PHASE_NOTES } from '../../shared/constants/cycle.js';
+import { cycleDayOf, phaseFor, formatDisplayDate, toISO } from '../../shared/utils/cycle.js';
+import { MONTHS, PHASE_NOTES, PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
+import * as logsApi from '../../shared/api/logs.js';
+import * as cycleApi from '../../shared/api/cycle.js';
 
 const PHASE_KEYS = [
-  { color: phases.period, label: 'Period' },
-  { color: phases.fertile, label: 'Fertile' },
-  { color: phases.ovulation, label: 'Ovulation' },
-  { color: phases.luteal, label: 'Luteal' },
-  { color: phases.follicular, label: 'Follicular' },
+  { color: phases.period, label: PHASE_LABELS.period },
+  { color: phases.fertile, label: PHASE_LABELS.fertile },
+  { color: phases.ovulation, label: PHASE_LABELS.ovulation },
+  { color: phases.luteal, label: PHASE_LABELS.luteal },
+  { color: phases.follicular, label: PHASE_LABELS.follicular },
 ];
 
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { viewYear, viewMonth, selDate, logs, cycleLength, periodLength, lastPeriodDate } = state;
+  const { viewYear, viewMonth, selDate, logs, cycleLength, periodLength, lastPeriodDate, accessToken, calendarPhases } = state;
   const insets = useSafeAreaInsets();
+  const [deleting, setDeleting] = useState(false);
 
   const cycleState = { lastPeriodDate, cycleLength, periodLength };
   const selLog = logs[selDate];
   const selCycleDay = cycleDayOf(selDate, lastPeriodDate, cycleLength);
-  const selPhase = phaseFor(selCycleDay, periodLength, cycleLength);
+  // Prefer the server-computed phase for the selected day when we've already fetched its
+  // month; falls back to the local calculation otherwise (same formula either way).
+  const selPhaseKey = calendarPhases[selDate] ?? phaseFor(selCycleDay, periodLength, cycleLength).key;
+  const selPhase = { key: selPhaseKey, label: PHASE_LABELS[selPhaseKey], color: phases[selPhaseKey] };
+
+  // Pull this month's saved entries and phases from the server whenever the visible month
+  // changes, so the grid and day card reflect real data instead of only local computation.
+  useEffect(() => {
+    const from = toISO(new Date(viewYear, viewMonth, 1));
+    const to = toISO(new Date(viewYear, viewMonth + 1, 0));
+    logsApi.getLogsInRange({ from, to }, accessToken)
+      .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
+      .catch(() => {});
+    cycleApi.getCalendar({ year: viewYear, month: viewMonth + 1 }, accessToken)
+      .then(data => {
+        const phasesByDate = {};
+        (data.days || []).forEach(d => { phasesByDate[d.date] = d.phase; });
+        dispatch({ type: A.CALENDAR_PHASES_HYDRATED, phases: phasesByDate });
+      })
+      .catch(() => {});
+  }, [viewYear, viewMonth]);
+
+  async function handleDelete() {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await logsApi.deleteLog(selDate, accessToken);
+      dispatch({ type: A.DELETE_LOG, date: selDate });
+    } catch (e) {
+      Alert.alert('Could not delete entry', e.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -68,6 +104,7 @@ export default function CalendarScreen() {
               selDate={selDate}
               logs={logs}
               cycleState={cycleState}
+              phaseByDate={calendarPhases}
               onSelect={d => dispatch({ type: A.SEL_DATE, date: d })}
             />
           </Card>
@@ -117,7 +154,7 @@ export default function CalendarScreen() {
                   <Button variant="secondary" onPress={() => dispatch({ type: A.OPEN_LOG, date: selDate })}>Edit</Button>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Button variant="danger" onPress={() => dispatch({ type: A.DELETE_LOG, date: selDate })}>Delete</Button>
+                  <Button variant="danger" onPress={handleDelete} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete'}</Button>
                 </View>
               </View>
             </Card>
@@ -139,8 +176,8 @@ function createStyles(c) {
     screenTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     monthNav: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     navBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
-    navArrow: { fontSize: 14, color: c.primaryDark, fontWeight: '600', lineHeight: 20 },
-    monthTitle: { fontSize: 12, fontWeight: '600', color: c.primaryDark },
+    navArrow: { fontSize: 14, color: c.primaryDark, fontWeight: '500', lineHeight: 20 },
+    monthTitle: { fontSize: 12, fontWeight: '500', color: c.primaryDark },
     screenSub: { fontSize: 11.5, color: c.textMuted, paddingHorizontal: 24, marginBottom: 18 },
     gridCard: {
       padding: 14, borderRadius: 28,
@@ -155,7 +192,7 @@ function createStyles(c) {
     selPhaseName: { fontFamily: FONT.serif, fontSize: 19, color: c.textPrimary },
     cdTx: { fontSize: 11, color: c.textMuted, marginLeft: 'auto' },
     phaseNote: { fontSize: 11, color: c.textSecondary, lineHeight: 20, marginTop: 8 },
-    logHeading: { fontSize: 10, fontWeight: '700', color: c.textSecondary, marginBottom: 12 },
+    logHeading: { fontSize: 10, fontWeight: '600', color: c.textSecondary, marginBottom: 12 },
     logRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     logKey: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
     logVal: { fontSize: 10, color: c.textPrimary, fontWeight: '600', textTransform: 'capitalize' },

@@ -1,5 +1,5 @@
-import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { View, ScrollView, Pressable, Platform, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -10,6 +10,7 @@ import { SHOP_PRODUCTS, CHALLENGES } from '../../shared/constants/rewards.js';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
+import * as billingApi from '../../shared/api/billing.js';
 
 function loggedDaysThisWeek(logs) {
   const now = new Date();
@@ -111,8 +112,48 @@ export default function RewardsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { femPoints, streak, longestStreak, logs, isPremium, history } = state;
+  const { femPoints, streak, longestStreak, logs, isPremium, autoRenew, history, accessToken } = state;
   const insets = useSafeAreaInsets();
+  const [billingLoading, setBillingLoading] = useState(false);
+
+  // No in-app-purchase module (react-native-iap / expo-in-app-purchases) is wired up yet,
+  // so there's no real store receipt to send — this is a stand-in, same pattern as the
+  // device registration id, so the write path (and the backend's active-subscription
+  // record) is real even though the "purchase" isn't. Swap for a real receipt once IAP
+  // is integrated; the request shape won't change.
+  async function handleSubscribe() {
+    if (billingLoading) return;
+    setBillingLoading(true);
+    try {
+      const data = await billingApi.subscribe({ planId: 'premium_monthly', platform: Platform.OS, receipt: 'dev-mock-receipt' }, accessToken);
+      dispatch({
+        type: A.SUBSCRIPTION_UPDATED,
+        isPremium: data.isPremium, plan: data.plan, renewsAt: data.renewsAt, autoRenew: data.autoRenew,
+        toast: { icon: '👑', text: 'Premium unlocked' },
+      });
+    } catch (e) {
+      dispatch({ type: A.SUBSCRIPTION_UPDATED, isPremium, plan: state.plan, renewsAt: state.renewsAt, autoRenew, toast: { icon: '🌸', text: e.message } });
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
+  async function handleCancelRenewal() {
+    if (billingLoading) return;
+    setBillingLoading(true);
+    try {
+      const data = await billingApi.cancel(accessToken);
+      dispatch({
+        type: A.SUBSCRIPTION_UPDATED,
+        isPremium: data.isPremium, plan: state.plan, renewsAt: data.accessUntil, autoRenew: data.autoRenew,
+        toast: { icon: '✓', text: 'Auto-renew turned off' },
+      });
+    } catch (e) {
+      dispatch({ type: A.SUBSCRIPTION_UPDATED, isPremium, plan: state.plan, renewsAt: state.renewsAt, autoRenew, toast: { icon: '🌸', text: e.message } });
+    } finally {
+      setBillingLoading(false);
+    }
+  }
 
   const level = levelInfo(femPoints);
   const totalLogs = Object.keys(logs).length;
@@ -187,17 +228,20 @@ export default function RewardsScreen() {
           <Text style={s.shopIntro}>Trade your Spotit points for free beauty & self-care products. Some items need a higher level or Premium.</Text>
 
           {isPremium ? (
-            <View style={s.premiumBanner}>
-              <Text style={{ fontSize: 13 }}>👑</Text>
-              <Text style={s.premiumTx}>Premium active — all rewards unlocked</Text>
-            </View>
+            <Pressable onPress={autoRenew ? handleCancelRenewal : undefined} disabled={billingLoading} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={{ fontSize: 13 }}>👑</Text>
+                <Text style={s.premiumTx}>Premium active — all rewards unlocked</Text>
+              </View>
+              {autoRenew && <Text style={s.premiumCta}>{billingLoading ? '…' : 'Turn off renewal'}</Text>}
+            </Pressable>
           ) : (
-            <Pressable onPress={() => dispatch({ type: A.GO_PREMIUM })} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
+            <Pressable onPress={handleSubscribe} disabled={billingLoading} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ fontSize: 13 }}>👑</Text>
                 <Text style={s.premiumTx}>Go Premium to unlock every reward</Text>
               </View>
-              <Text style={s.premiumCta}>Subscribe →</Text>
+              <Text style={s.premiumCta}>{billingLoading ? 'Subscribing…' : 'Subscribe →'}</Text>
             </Pressable>
           )}
 

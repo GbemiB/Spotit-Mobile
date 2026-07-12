@@ -5,8 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
+import { PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
+import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { BellIcon } from '../../components/ui/icons.jsx';
 import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
@@ -14,11 +15,22 @@ import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
 
-const FOR_YOU = [
-  { tag: 'Education', tagColor: '#C04E68', title: 'Understanding your fertile window', image: require('../../../assets/lifestyle.png') },
-  { tag: 'Nutrition', tagColor: '#3F8866', title: '5 foods that support ovulation', image: require('../../../assets/food.png') },
-  { tag: 'Sponsored', tagColor: '#B0A09A', title: 'Nourish prenatal multivitamins', image: require('../../../assets/product.png') },
+// Shown until the real feed (GET /content/feed) resolves, or if that request fails.
+const FOR_YOU_FALLBACK = [
+  { tag: 'Education', tagColor: '#C04E68', title: 'Understanding your fertile window', imageSource: require('../../../assets/lifestyle.png') },
+  { tag: 'Nutrition', tagColor: '#3F8866', title: '5 foods that support ovulation', imageSource: require('../../../assets/food.png') },
+  { tag: 'Sponsored', tagColor: '#B0A09A', title: 'Nourish prenatal multivitamins', imageSource: require('../../../assets/product.png') },
 ];
+
+// Content items don't carry a display color (that's presentation, not data) — derive a
+// stable one per tag instead of requiring admins to know a fixed tag->color mapping.
+const TAG_PALETTE = ['#C04E68', '#3F8866', '#8865B3', '#B58A3D'];
+function tagColorFor(item) {
+  if (item.sponsored) return '#B0A09A';
+  let hash = 0;
+  for (const ch of item.tag || '') hash = (hash * 31 + ch.charCodeAt(0)) % TAG_PALETTE.length;
+  return TAG_PALETTE[Math.abs(hash)];
+}
 
 function insightFor(phase, cycleLength) {
   const ovDay = cycleLength - 14;
@@ -63,20 +75,26 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs, cycleStatus, contentFeed } = state;
   const insets = useSafeAreaInsets();
 
   const today = todayISO();
-  const cycleDay = cycleDayOf(today, lastPeriodDate, cycleLength);
-  const phase = phaseFor(cycleDay, periodLength, cycleLength);
-  const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
-  const daysLeft = Math.max(0, Math.round((nextP - new Date()) / 86400000));
+  // Prefer the server-computed status (GET /cycle/current); fall back to the local
+  // calculation (same formula, mirrored in utils/cycle.js) until that resolves.
+  const cycleDay = cycleStatus?.cycleDay ?? cycleDayOf(today, lastPeriodDate, cycleLength);
+  const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
+  const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
+  const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
+  const daysLeft = cycleStatus ? cycleStatus.daysUntilNextPeriod : Math.max(0, Math.round((nextP - new Date()) / 86400000));
   const isDueToday = daysLeft === 0;
   const level = levelInfo(femPoints);
   const loggedToday = !!logs[today];
   const totalLogs = Object.keys(logs).length;
-  const confidenceLabel = totalLogs >= 3 ? 'High' : 'Estimated';
+  const confidenceLabel = cycleStatus ? (cycleStatus.confidence === 'high' ? 'High' : 'Estimated') : (totalLogs >= 3 ? 'High' : 'Estimated');
   const insight = insightFor(phase, cycleLength);
+  const feedItems = contentFeed
+    ? contentFeed.map(item => ({ id: item.id, tag: item.tag, title: item.title, tagColor: tagColorFor(item), imageSource: { uri: item.imageUrl } }))
+    : FOR_YOU_FALLBACK.map((c, i) => ({ id: i, ...c }));
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
@@ -231,12 +249,12 @@ export default function HomeScreen() {
       <View style={{ marginBottom: 8 }}>
         <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
         <Carousel style={{ marginTop: 11 }}>
-          {FOR_YOU.map((card, i) => (
+          {feedItems.map((card, i) => (
             <View
-              key={i}
-              style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === FOR_YOU.length - 1 ? 24 : 0 }]}
+              key={card.id}
+              style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}
             >
-              <Image source={card.image} style={s.fyImage} resizeMode="cover" />
+              <Image source={card.imageSource} style={s.fyImage} resizeMode="cover" />
               <View style={{ padding: 13 }}>
                 <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
                 <Text style={s.fyTitle}>{card.title}</Text>

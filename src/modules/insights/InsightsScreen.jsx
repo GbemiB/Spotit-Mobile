@@ -1,13 +1,16 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
-import { nextPeriodDate, formatDisplayDate, toISO, todayISO } from '../../shared/utils/cycle.js';
+import { A } from '../../shared/store/actions.js';
+import { nextPeriodDate, formatDisplayDate, toISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import TrendChart from '../../components/charts/TrendChart.jsx';
+import * as insightsApi from '../../shared/api/insights.js';
 
-function weeklyDigest(logs) {
+// Used until GET /insights/* resolves (or if it fails) — same shape the backend returns.
+function localDigest(logs) {
   const now = new Date();
   const days = [];
   for (let i = 6; i >= 0; i--) {
@@ -21,24 +24,48 @@ function weeklyDigest(logs) {
   return { loggedCount: entries.length, topMood };
 }
 
+function regularityCopy(regularity) {
+  if (!regularity || regularity.status === 'regular') {
+    return { title: 'Your cycles look regular', sub: 'No anomalies detected · not medical advice', ok: true };
+  }
+  const title = regularity.status === 'unusual_period_length' ? 'Unusual period length detected' : 'Your cycle length has varied';
+  const sub = (regularity.flags?.join(' ') || '') + (regularity.disclaimer ? ` ${regularity.disclaimer}` : '');
+  return { title, sub, ok: false };
+}
+
 export default function InsightsScreen() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const digestBg = isDark ? '#2A1810' : '#FBF2EC';
   const digestBody = isDark ? 'rgba(255,255,255,0.65)' : '#8A6E5E';
   const regularBorder = isDark ? 'rgba(255,255,255,0.10)' : '#EAF1EC';
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { logs, cycleLength, periodLength, lastPeriodDate } = state;
+  const { logs, cycleLength, periodLength, lastPeriodDate, accessToken, insights } = state;
   const insets = useSafeAreaInsets();
 
+  useEffect(() => {
+    insightsApi.getTrends(6, accessToken)
+      .then(trends => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { trends } }))
+      .catch(() => {});
+    insightsApi.getWeeklyDigest(accessToken)
+      .then(digest => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { digest } }))
+      .catch(() => {});
+    insightsApi.getRegularity(accessToken)
+      .then(regularity => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { regularity } }))
+      .catch(() => {});
+  }, []);
+
   const totalLogs = Object.keys(logs).length;
-  const trendData = [27, 28, 28, 29, cycleLength, cycleLength];
-  const avgCycle = Math.round(trendData.reduce((a, b) => a + b, 0) / trendData.length);
-  const variation = Math.round((Math.max(...trendData) - Math.min(...trendData)) / 2);
+  const trends = insights.trends;
+  const trendData = trends?.cycleLengths?.length ? trends.cycleLengths : [27, 28, 28, 29, cycleLength, cycleLength];
+  const avgCycle = trends?.avgCycleLength ?? Math.round(trendData.reduce((a, b) => a + b, 0) / trendData.length);
+  const avgPeriod = trends?.avgPeriodLength ?? periodLength;
+  const variation = trends?.variationDays ?? Math.round((Math.max(...trendData) - Math.min(...trendData)) / 2);
 
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
   const confidenceLabel = totalLogs >= 3 ? 'High' : 'Estimated';
-  const digest = weeklyDigest(logs);
+  const digest = insights.digest ?? localDigest(logs);
+  const regularity = regularityCopy(insights.regularity);
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -78,7 +105,7 @@ export default function InsightsScreen() {
                 <Text style={s.statLbl}>Avg cycle</Text>
               </View>
               <View>
-                <Text style={s.statNum}>{periodLength}<Text style={s.statUnit}>d</Text></Text>
+                <Text style={s.statNum}>{avgPeriod}<Text style={s.statUnit}>d</Text></Text>
                 <Text style={s.statLbl}>Avg period</Text>
               </View>
               <View>
@@ -103,11 +130,13 @@ export default function InsightsScreen() {
 
         {/* Regularity check */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <View style={[s.regularRow, { borderColor: regularBorder }]}>
-            <View style={s.regularIcon}><Text style={{ color: colors.success, fontSize: 15 }}>✓</Text></View>
-            <View>
-              <Text style={s.regularTitle}>Your cycles look regular</Text>
-              <Text style={s.regularSub}>No anomalies detected · not medical advice</Text>
+          <View style={[s.regularRow, { borderColor: regularity.ok ? regularBorder : colors.warningSoft }]}>
+            <View style={[s.regularIcon, !regularity.ok && { backgroundColor: colors.warningSoft }]}>
+              <Text style={{ color: regularity.ok ? colors.success : colors.warning, fontSize: 15 }}>{regularity.ok ? '✓' : '!'}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.regularTitle}>{regularity.title}</Text>
+              <Text style={s.regularSub}>{regularity.sub}</Text>
             </View>
           </View>
         </View>

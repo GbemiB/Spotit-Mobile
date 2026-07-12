@@ -1,5 +1,5 @@
-import { View, ScrollView, Pressable, Alert, StyleSheet, Platform } from 'react-native';
-import { useMemo } from 'react';
+import { View, ScrollView, Pressable, StyleSheet, Platform } from 'react-native';
+import { useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
@@ -11,6 +11,7 @@ import Card from '../../components/ui/Card.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
+import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
 
 const THEME_OPTIONS = [
@@ -61,35 +62,21 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const level = levelInfo(femPoints);
 
+  const [confirming, setConfirming] = useState(null); // 'logout' | 'reset' | null
+
   function patch(obj) {
     dispatch({ type: A.UPDATE_SETTINGS, patch: obj });
   }
 
-  function handleLogout() {
-    Alert.alert(
-      'Log out',
-      'Your cycle data stays saved. You can log back in anytime.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out', style: 'destructive', onPress: async () => {
-            await authApi.logout(state.accessToken).catch(() => {});
-            dispatch({ type: A.LOGOUT });
-          },
-        },
-      ]
-    );
+  async function confirmLogout() {
+    setConfirming(null);
+    await authApi.logout(state.accessToken).catch(() => {});
+    dispatch({ type: A.LOGOUT });
   }
 
-  function handleReset() {
-    Alert.alert(
-      'Reset all data',
-      'This will erase all your logs, SpotPoints, and settings. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset', style: 'destructive', onPress: () => dispatch({ type: A.RESET_DATA }) },
-      ]
-    );
+  function confirmReset() {
+    setConfirming(null);
+    dispatch({ type: A.RESET_DATA });
   }
 
   return (
@@ -216,7 +203,7 @@ export default function SettingsScreen() {
             <Pressable style={s.row} onPress={() => { }}>
               <Text style={s.rowLabel}>Export my data</Text>
             </Pressable>
-            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={handleLogout}>
+            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={() => setConfirming('logout')}>
               <Text style={[s.rowLabel, { color: colors.error }]}>Sign out</Text>
             </Pressable>
           </Card>
@@ -227,10 +214,29 @@ export default function SettingsScreen() {
           <SectionHeader title="Data" />
           <Card style={{ padding: 18, marginTop: 10 }}>
             <Text style={s.dangerNote}>Resetting will permanently delete all your logs, SpotPoints, and settings.</Text>
-            <Button variant="danger" onPress={handleReset}>Reset all data</Button>
+            <Button variant="danger" onPress={() => setConfirming('reset')}>Reset all data</Button>
           </Card>
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={confirming === 'logout'}
+        title="Log out"
+        message="Your cycle data stays saved. You can log back in anytime."
+        confirmLabel="Log out"
+        destructive
+        onConfirm={confirmLogout}
+        onCancel={() => setConfirming(null)}
+      />
+      <ConfirmModal
+        visible={confirming === 'reset'}
+        title="Reset all data"
+        message="This will erase all your logs, SpotPoints, and settings. This cannot be undone."
+        confirmLabel="Reset"
+        destructive
+        onConfirm={confirmReset}
+        onCancel={() => setConfirming(null)}
+      />
     </View>
   );
 }

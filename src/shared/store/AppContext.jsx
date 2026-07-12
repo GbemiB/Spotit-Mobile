@@ -5,8 +5,9 @@ import { A } from './actions.js';
 
 const PERSIST_KEYS = [
   'onboarded','authDone','accessToken','refreshToken','userId','userName','goal','dob','cycleLength','periodLength','lastPeriodDate',
+  'onboardStep','onboardDraft',
   'femPoints','streak','longestStreak','lastLogDate','lastClaimedDate','logs',
-  'notifs','themePref','isPremium','history',
+  'notifs','themePref','isPremium','plan','renewsAt','autoRenew','history',
 ];
 
 const AppCtx = createContext(null);

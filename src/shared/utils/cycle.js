@@ -1,4 +1,5 @@
 import { phases } from '../styles/colors.js';
+import { PHASE_LABELS } from '../constants/cycle.js';
 
 export function toISO(date) {
   const d = new Date(date);
@@ -22,11 +23,13 @@ export function cycleDayOf(dateISO, lastPeriodDate, cycleLength) {
 
 export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
   const ovDay = cycleLength - 14;
-  if (cycleDay <= periodLength) return { key: 'period', label: 'Period', color: phases.period };
-  if (cycleDay === ovDay) return { key: 'ovulation', label: 'Ovulation', color: phases.ovulation };
-  if (cycleDay >= ovDay - 4 && cycleDay < ovDay) return { key: 'fertile', label: 'Fertile', color: phases.fertile };
-  if (cycleDay > ovDay) return { key: 'luteal', label: 'Luteal', color: phases.luteal };
-  return { key: 'follicular', label: 'Follicular', color: phases.follicular };
+  let key;
+  if (cycleDay <= periodLength) key = 'period';
+  else if (cycleDay === ovDay) key = 'ovulation';
+  else if (cycleDay >= ovDay - 4 && cycleDay < ovDay) key = 'fertile';
+  else if (cycleDay > ovDay) key = 'luteal';
+  else key = 'follicular';
+  return { key, label: PHASE_LABELS[key], color: phases[key] };
 }
 
 export function nextPeriodDate(lastPeriodDate, cycleLength) {

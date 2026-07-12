@@ -6,6 +6,16 @@ export const MONTHS = ['January','February','March','April','May','June','July',
 export const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 export const DAYS_SHORT = ['S','M','T','W','T','F','S'];
 
+// Mirrors the backend's CyclePhase enum (com.spotit.api.cycle.CyclePhase) — single source
+// for phase display text so it isn't hand-copied wherever a phase gets rendered.
+export const PHASE_LABELS = {
+  period:     'Period',
+  follicular: 'Follicular',
+  fertile:    'Fertile',
+  ovulation:  'Ovulation',
+  luteal:     'Luteal',
+};
+
 export const PHASE_NOTES = {
   period:     'Menstruation phase. Rest and gentle movement help with cramps.',
   follicular: 'Follicular phase. Energy typically rises after your period.',
