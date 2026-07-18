@@ -6,7 +6,6 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { GoogleIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
 
 export default function LoginScreen() {
@@ -40,10 +39,6 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleSocial() {
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: null });
   }
 
   return (
@@ -90,19 +85,6 @@ export default function LoginScreen() {
               </LinearGradient>
             </Pressable>
 
-            <View style={s.dividerRow}>
-              <View style={s.dividerLine} />
-              <Text style={s.dividerTx}>OR</Text>
-              <View style={s.dividerLine} />
-            </View>
-
-            <View style={{ gap: 10 }}>
-              <Pressable style={s.socialBtn} onPress={handleSocial}>
-                <GoogleIcon size={16} />
-                <Text style={s.socialTx}>Continue With Google</Text>
-              </Pressable>
-            </View>
-
             <View style={s.footer}>
               <Text style={s.footerTx}>New here? </Text>
               <Pressable onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' })}>
@@ -133,11 +115,6 @@ function createStyles(c) {
     forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.authAccent },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 16 },
-    dividerLine: { flex: 1, height: 1, backgroundColor: c.authBorder },
-    dividerTx: { fontSize: 10.5, color: c.authLabel },
-    socialBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, height: 46, borderRadius: 10, borderWidth: 1.5, borderColor: c.authHeading },
-    socialTx: { fontSize: 13, fontWeight: '600', color: c.authHeading },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
     footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },

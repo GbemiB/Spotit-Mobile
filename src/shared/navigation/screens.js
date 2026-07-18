@@ -2,7 +2,6 @@ import SplashScreen from '../../modules/onboarding/SplashScreen.jsx';
 import WelcomeScreen from '../../modules/onboarding/WelcomeScreen.jsx';
 import LoginScreen from '../../modules/onboarding/LoginScreen.jsx';
 import SignupScreen from '../../modules/onboarding/SignupScreen.jsx';
-import TermsScreen from '../../modules/onboarding/TermsScreen.jsx';
 import ForgotPasswordScreen from '../../modules/onboarding/ForgotPasswordScreen.jsx';
 import OtpVerifyScreen from '../../modules/onboarding/OtpVerifyScreen.jsx';
 import OnboardingScreen from '../../modules/onboarding/OnboardingScreen.jsx';
@@ -18,7 +17,6 @@ export const AUTH_SCREENS = {
   welcome: WelcomeScreen,
   login: LoginScreen,
   signup: SignupScreen,
-  terms: TermsScreen,
   'forgot-password': ForgotPasswordScreen,
   'otp-verify': OtpVerifyScreen,
 };

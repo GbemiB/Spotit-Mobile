@@ -2,7 +2,7 @@ import { View, Pressable, KeyboardAvoidingView, Platform, StyleSheet } from 'rea
 import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { FLOW, MOODS, SYMPTOMS } from '../../shared/constants/options.js';
+import { FLOW, MOODS, SYMPTOMS, SYMPTOM_CATEGORIES } from '../../shared/constants/options.js';
 import { formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
@@ -14,9 +14,26 @@ import * as logsApi from '../../shared/api/logs.js';
 // map the returned ids back to the icon/emoji FLOW/MOODS already define locally.
 const FLOW_ICONS = Object.fromEntries(FLOW.map(f => [f.id, f.icon]));
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
+// `category` is presentation-only (the backend's symptom list is just id+label) — tag the
+// server-returned options using the same grouping SYMPTOMS defines locally.
+const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
 
 function toOptions(list, iconMap, key = 'icon') {
   return list.map(o => ({ id: o.id, label: o.label, [key]: iconMap[o.id] }));
+}
+
+function withCategory(list) {
+  return list.map(o => ({ ...o, category: SYMPTOM_CATEGORY_BY_ID[o.id] || 'Other' }));
+}
+
+function groupByCategory(options) {
+  const byCategory = {};
+  options.forEach(o => {
+    const cat = o.category || 'Other';
+    (byCategory[cat] ||= []).push(o);
+  });
+  const known = SYMPTOM_CATEGORIES.filter(cat => byCategory[cat]?.length).map(cat => ({ category: cat, items: byCategory[cat] }));
+  return byCategory.Other ? [...known, { category: 'Other', items: byCategory.Other }] : known;
 }
 
 function SectionLabel({ children, s }) {
@@ -48,6 +65,35 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shap
             </Pressable>
           );
         })}
+      </View>
+    </View>
+  );
+}
+
+// Grouped by body area (Head, Body, Pelvis, Fluid, Skin, Mood) so a long symptom list stays
+// scannable — plain multi-select chips, same interaction as Mood, just sectioned.
+function SymptomPicker({ options, selected, onToggle, s }) {
+  const groups = useMemo(() => groupByCategory(options), [options]);
+
+  return (
+    <View style={s.section}>
+      <SectionLabel s={s}>Symptoms</SectionLabel>
+      <View style={{ gap: 14 }}>
+        {groups.map(g => (
+          <View key={g.category}>
+            <Text style={s.categoryLabel}>{g.category}</Text>
+            <View style={s.chipRow}>
+              {g.items.map(item => {
+                const sel = selected.includes(item.id);
+                return (
+                  <Pressable key={item.id} onPress={() => onToggle(item.id)} style={[s.chip, sel && s.chipSel]}>
+                    <Text style={[s.chipTx, sel && s.chipTxSel]}>{item.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -99,7 +145,7 @@ export default function LogSheet() {
       .then(data => {
         if (data?.flow?.length) setFlowOptions(toOptions(data.flow, FLOW_ICONS));
         if (data?.mood?.length) setMoodOptions(toOptions(data.mood, MOOD_EMOJI, 'emoji'));
-        if (data?.symptoms?.length) setSymptomOptions(data.symptoms);
+        if (data?.symptoms?.length) setSymptomOptions(withCategory(data.symptoms));
       })
       .catch(() => {});
   }, []);
@@ -144,12 +190,10 @@ export default function LogSheet() {
             shape="rect"
             s={s}
           />
-          <ChipGroup
-            label="Symptoms"
-            items={symptomOptions}
+          <SymptomPicker
+            options={symptomOptions}
             selected={draftLog.symptoms}
-            onSelect={id => dispatch({ type: A.TOGGLE_DRAFT_SYM, id })}
-            multiSelect
+            onToggle={id => dispatch({ type: A.TOGGLE_DRAFT_SYM, id })}
             s={s}
           />
 
@@ -217,5 +261,6 @@ function createStyles(c) {
     flowIcon: { fontSize: 14 },
     notesInput: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, padding: 14, fontSize: 12, color: c.textPrimary, minHeight: 80 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 4, textAlign: 'center' },
+    categoryLabel: { fontSize: 9.5, fontWeight: '700', color: c.textFaint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
   });
 }

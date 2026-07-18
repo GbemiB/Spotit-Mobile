@@ -16,18 +16,27 @@ export const MOODS = [
   { id: 'emotional', emoji: '🥺', label: 'Emotional' },
 ];
 
+// `category` is presentation-only (the backend's /logs/template just returns id+label) — it
+// groups the symptom picker into scannable sections instead of one long flat chip list.
+export const SYMPTOM_CATEGORIES = ['Head', 'Body', 'Pelvis', 'Fluid', 'Skin', 'Mood'];
+
 export const SYMPTOMS = [
-  { id: 'cramps',     label: 'Cramps'         },
-  { id: 'headache',   label: 'Headache'        },
-  { id: 'bloating',   label: 'Bloating'        },
-  { id: 'tender',     label: 'Tender breasts'  },
-  { id: 'fatigue',    label: 'Fatigue'         },
-  { id: 'nausea',     label: 'Nausea'          },
-  { id: 'backpain',   label: 'Back pain'       },
-  { id: 'acne',       label: 'Acne'            },
-  { id: 'moodswings', label: 'Mood swings'     },
-  { id: 'insomnia',   label: 'Insomnia'        },
-  { id: 'discharge',  label: 'Discharge'       },
+  { id: 'headache',   label: 'Headache',       category: 'Head'   },
+  { id: 'dizziness',  label: 'Dizziness',      category: 'Head'   },
+  { id: 'cramps',     label: 'Cramps',         category: 'Body'   },
+  { id: 'backpain',   label: 'Back pain',      category: 'Body'   },
+  { id: 'fatigue',    label: 'Fatigue',        category: 'Body'   },
+  { id: 'jointpain',  label: 'Joint pain',     category: 'Body'   },
+  { id: 'nausea',     label: 'Nausea',         category: 'Body'   },
+  { id: 'bloating',   label: 'Bloating',       category: 'Pelvis' },
+  { id: 'tender',     label: 'Tender breasts', category: 'Pelvis' },
+  { id: 'pelvicpain', label: 'Pelvic pain',    category: 'Pelvis' },
+  { id: 'discharge',  label: 'Discharge',      category: 'Fluid'  },
+  { id: 'sweating',   label: 'Night sweats',   category: 'Fluid'  },
+  { id: 'acne',       label: 'Acne',           category: 'Skin'   },
+  { id: 'moodswings', label: 'Mood swings',    category: 'Mood'   },
+  { id: 'insomnia',   label: 'Insomnia',       category: 'Mood'   },
+  { id: 'anxiety',    label: 'Anxiety',        category: 'Mood'   },
 ];
 
 export const GOALS = [

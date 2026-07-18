@@ -5,9 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
+import { CheckIcon } from '../../components/ui/icons.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { CheckIcon, GoogleIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
+import TermsScreen from './TermsScreen.jsx';
 
 export default function SignupScreen() {
   const { dispatch } = useApp();
@@ -20,6 +21,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,17 +43,21 @@ export default function SignupScreen() {
       });
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
-      dispatch({ type: A.UPDATE_SETTINGS, patch: { pendingOtpId: data.otpId, pendingEmail: email.trim(), otpPurpose: 'signup' } });
+      dispatch({
+        type: A.UPDATE_SETTINGS,
+        patch: {
+          pendingOtpId: data.otpId,
+          pendingEmail: email.trim(),
+          otpPurpose: 'signup',
+          otpExpiresAt: Date.now() + data.expiresInSeconds * 1000,
+        },
+      });
       dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleSocial() {
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: null });
   }
 
   return (
@@ -71,15 +77,13 @@ export default function SignupScreen() {
             <Text style={s.title}>Create your account</Text>
 
             <View style={s.form}>
-              <View style={s.nameRow}>
-                <View style={s.nameField}>
-                  <Text style={s.label}>First name</Text>
-                  <TextInput value={firstName} onChangeText={setFirstName} placeholder="" style={s.input} />
-                </View>
-                <View style={s.nameField}>
-                  <Text style={s.label}>Last name</Text>
-                  <TextInput value={lastName} onChangeText={setLastName} placeholder="" style={s.input} />
-                </View>
+              <View style={s.field}>
+                <Text style={s.label}>First name</Text>
+                <TextInput value={firstName} onChangeText={setFirstName} placeholder="" style={s.input} />
+              </View>
+              <View style={s.field}>
+                <Text style={s.label}>Last name</Text>
+                <TextInput value={lastName} onChangeText={setLastName} placeholder="" style={s.input} />
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Email</Text>
@@ -113,10 +117,16 @@ export default function SignupScreen() {
               </View>
               <Text style={s.agreeTx}>
                 I agree to the{' '}
-                <Text style={s.agreeLink} onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'terms' })}>Terms of Service</Text>
-                {' '}and <Text style={s.agreeLink}>Privacy Policy</Text>
+                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>Terms of Service</Text>
+                {' '}and <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>Privacy Policy</Text>
               </Text>
             </Pressable>
+
+            <TermsScreen
+              visible={showTerms}
+              onAgree={() => { setAgreed(true); setShowTerms(false); }}
+              onClose={() => setShowTerms(false)}
+            />
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
@@ -125,19 +135,6 @@ export default function SignupScreen() {
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Create Account</Text>}
               </LinearGradient>
             </Pressable>
-
-            <View style={s.dividerRow}>
-              <View style={s.dividerLine} />
-              <Text style={s.dividerTx}>OR</Text>
-              <View style={s.dividerLine} />
-            </View>
-
-            <View style={{ gap: 10 }}>
-              <Pressable style={s.socialBtn} onPress={handleSocial}>
-                <GoogleIcon size={16} />
-                <Text style={s.socialTx}>Continue With Google</Text>
-              </Pressable>
-            </View>
 
             <View style={s.footer}>
               <Text style={s.footerTx}>Already have an account? </Text>
@@ -156,12 +153,10 @@ function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
-    body: { paddingHorizontal: 26, paddingTop: 20 },
-    title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center' },
+    body: { paddingHorizontal: 26, paddingTop: 8 },
+    title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center', marginTop: 24},
     form: { marginTop: 24 },
     field: { marginBottom: 8 },
-    nameRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-    nameField: { flex: 1 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
@@ -174,11 +169,6 @@ function createStyles(c) {
     agreeLink: { color: c.authAccent, fontWeight: '700' },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18, marginBottom: 16 },
-    dividerLine: { flex: 1, height: 1, backgroundColor: c.authBorder },
-    dividerTx: { fontSize: 10.5, color: c.authLabel },
-    socialBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, height: 46, borderRadius: 10, borderWidth: 1.5, borderColor: c.authHeading },
-    socialTx: { fontSize: 13, fontWeight: '600', color: c.authHeading },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
     footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },

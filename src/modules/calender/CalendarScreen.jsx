@@ -5,12 +5,19 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { cycleDayOf, phaseFor, formatDisplayDate, toISO } from '../../shared/utils/cycle.js';
 import { MONTHS, PHASE_NOTES, PHASE_LABELS } from '../../shared/constants/cycle.js';
+import { SYMPTOMS } from '../../shared/constants/options.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
+
+const SYMPTOM_LABELS = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.label]));
+
+function symptomSummary(symptoms) {
+  return symptoms.map(id => SYMPTOM_LABELS[id] || id).join(', ');
+}
 
 const PHASE_KEYS = [
   { color: phases.period, label: PHASE_LABELS.period },
@@ -34,7 +41,7 @@ export default function CalendarScreen() {
   // Prefer the server-computed phase for the selected day when we've already fetched its
   // month; falls back to the local calculation otherwise (same formula either way).
   const selPhaseKey = calendarPhases[selDate] ?? phaseFor(selCycleDay, periodLength, cycleLength).key;
-  const selPhase = { key: selPhaseKey, label: PHASE_LABELS[selPhaseKey], color: phases[selPhaseKey] };
+  const selPhase = { key: selPhaseKey, label: PHASE_LABELS[selPhaseKey] || 'No data yet', color: phases[selPhaseKey] };
 
   // Pull this month's saved entries and phases from the server whenever the visible month
   // changes, so the grid and day card reflect real data instead of only local computation.
@@ -117,9 +124,9 @@ export default function CalendarScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8 }}>
               <View style={[s.phaseDot, { backgroundColor: selPhase.color }]} />
               <Text style={s.selPhaseName}>{selPhase.label}</Text>
-              <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>
+              {selCycleDay != null && <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>}
             </View>
-            <Text style={s.phaseNote}>{PHASE_NOTES[selPhase.key]}</Text>
+            <Text style={s.phaseNote}>{selPhase.key ? PHASE_NOTES[selPhase.key] : "Log your last period to see cycle phases here."}</Text>
           </Card>
 
           {selLog ? (
@@ -140,7 +147,7 @@ export default function CalendarScreen() {
               {selLog.symptoms?.length > 0 && (
                 <View style={s.logRow}>
                   <Text style={s.logKey}>Symptoms</Text>
-                  <Text style={[s.logVal, { flex: 1, textAlign: 'right' }]}>{selLog.symptoms.join(', ')}</Text>
+                  <Text style={[s.logVal, { flex: 1, textAlign: 'right' }]}>{symptomSummary(selLog.symptoms)}</Text>
                 </View>
               )}
               {selLog.notes ? (

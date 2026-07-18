@@ -27,8 +27,16 @@ export default function ForgotPasswordScreen() {
     setError('');
     setLoading(true);
     try {
-      await authApi.forgotPassword({ email: email.trim() });
-      dispatch({ type: A.UPDATE_SETTINGS, patch: { resetEmail: email.trim(), otpPurpose: 'password_reset', pendingOtpId: null } });
+      const data = await authApi.forgotPassword({ email: email.trim() });
+      dispatch({
+        type: A.UPDATE_SETTINGS,
+        patch: {
+          resetEmail: email.trim(),
+          otpPurpose: 'password_reset',
+          pendingOtpId: null,
+          otpExpiresAt: Date.now() + data.expiresInSeconds * 1000,
+        },
+      });
       dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
     } catch (e) {
       setError(e.message);

@@ -1,6 +1,6 @@
 import { A } from './actions.js';
 import { todayISO } from '../utils/cycle.js';
-import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, DEFAULT_LAST_PERIOD } from '../constants/cycle.js';
+import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
 import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
 
 const MAX_HISTORY = 20;
@@ -15,6 +15,7 @@ export const INIT = {
   pendingOtpId: null,
   pendingEmail: null,
   otpPurpose: null,
+  otpExpiresAt: null,
   resetEmail: null,
   userName: 'Gbemisola',
   goal: 'track',
@@ -23,7 +24,7 @@ export const INIT = {
   onboardDraft: { name: '', dob: '', lastPeriod: '', goal: 'track', cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH },
   cycleLength: DEFAULT_CYCLE_LENGTH,
   periodLength: DEFAULT_PERIOD_LENGTH,
-  lastPeriodDate: DEFAULT_LAST_PERIOD,
+  lastPeriodDate: null,
   femPoints: 1840,
   streak: 6,
   longestStreak: 12,
@@ -86,6 +87,8 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
   let next = {
     ...state,
     logOpen: false,
+    logEditDate: null,
+    draftLog: { ...INIT.draftLog },
     logs: { ...state.logs, [date]: entry },
     lastLogDate: date === today ? today : state.lastLogDate,
     femPoints: newBalance,
@@ -110,7 +113,7 @@ export function reducer(state, action) {
     case A.OPEN_LOG:
       return openLog(state, action.date || todayISO());
     case A.CLOSE_LOG:
-      return { ...state, logOpen: false, logEditDate: null };
+      return { ...state, logOpen: false, logEditDate: null, draftLog: { ...INIT.draftLog } };
     case A.ONBOARD_FIELD:
       return { ...state, onboardDraft: { ...state.onboardDraft, [action.field]: action.value } };
     case A.NEXT_ONBOARD:
@@ -126,7 +129,7 @@ export function reducer(state, action) {
         userName: state.onboardDraft.name || 'Friend',
         goal: action.goal || state.onboardDraft.goal,
         dob: state.onboardDraft.dob,
-        lastPeriodDate: state.onboardDraft.lastPeriod || DEFAULT_LAST_PERIOD,
+        lastPeriodDate: state.onboardDraft.lastPeriod || null,
         cycleLength: action.cycleLength ?? state.cycleLength,
         periodLength: action.periodLength ?? state.periodLength,
         onboardStep: 0,
@@ -223,9 +226,26 @@ export function reducer(state, action) {
         pendingOtpId: null,
         pendingEmail: null,
         otpPurpose: null,
+        otpExpiresAt: null,
       };
+    case A.TOKENS_REFRESHED:
+      // POST /auth/refresh only rotates the access token — refreshToken is omitted from the
+      // action and stays whatever's already in state.
+      return { ...state, accessToken: action.accessToken };
     case A.LOGOUT:
-      return { ...state, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
+      // Clears the onboarding draft (dob, last period, cycle/period length, goal) too — otherwise
+      // the next login on this device (same account or a different one) lands back on the
+      // onboarding calendar still showing whatever was previously picked.
+      return {
+        ...state,
+        authDone: false,
+        authScreen: 'welcome',
+        accessToken: null,
+        refreshToken: null,
+        userId: null,
+        onboardStep: INIT.onboardStep,
+        onboardDraft: { ...INIT.onboardDraft },
+      };
     case A.RESET_DATA:
       return { ...INIT, onboarded: false, authDone: false, authScreen: 'welcome', femPoints: 0, streak: 0, longestStreak: 0, logs: {}, screen: 'home' };
     default:

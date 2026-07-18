@@ -13,6 +13,7 @@ export function daysInMonth(year, month) {
 }
 
 export function cycleDayOf(dateISO, lastPeriodDate, cycleLength) {
+  if (!lastPeriodDate) return null;
   const target = new Date(dateISO);
   const start = new Date(lastPeriodDate);
   target.setHours(12, 0, 0, 0);
@@ -22,6 +23,7 @@ export function cycleDayOf(dateISO, lastPeriodDate, cycleLength) {
 }
 
 export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
+  if (cycleDay == null) return { key: null, label: null, color: null };
   const ovDay = cycleLength - 14;
   let key;
   if (cycleDay <= periodLength) key = 'period';
@@ -33,6 +35,7 @@ export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
 }
 
 export function nextPeriodDate(lastPeriodDate, cycleLength) {
+  if (!lastPeriodDate) return null;
   const today = new Date();
   today.setHours(12, 0, 0, 0);
   const start = new Date(lastPeriodDate);
@@ -46,6 +49,7 @@ export function nextPeriodDate(lastPeriodDate, cycleLength) {
 }
 
 export function formatDisplayDate(isoOrDate) {
+  if (!isoOrDate) return null;
   const d = new Date(isoOrDate);
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 }

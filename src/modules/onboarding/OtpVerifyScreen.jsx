@@ -1,5 +1,5 @@
 import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -11,6 +11,17 @@ import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
 
 const CODE_LENGTH = 6;
+
+function remainingSeconds(expiresAt) {
+  if (!expiresAt) return 0;
+  return Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+}
+
+function formatCountdown(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export default function OtpVerifyScreen() {
   const { state, dispatch } = useApp();
@@ -27,13 +38,22 @@ export default function OtpVerifyScreen() {
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [resent, setResent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [resetDone, setResetDone] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
 
   const code = digits.join('');
   const passwordsMismatch = isReset && confirmPassword.length > 0 && newPassword !== confirmPassword;
   const canVerify = code.length === CODE_LENGTH && (!isReset || (newPassword.length >= 8 && !passwordsMismatch));
+  const expired = secondsLeft <= 0;
+
+  useEffect(() => {
+    setSecondsLeft(remainingSeconds(state.otpExpiresAt));
+    const id = setInterval(() => setSecondsLeft(remainingSeconds(state.otpExpiresAt)), 1000);
+    return () => clearInterval(id);
+  }, [state.otpExpiresAt]);
 
   function setDigitAt(i, value) {
     const clean = value.replace(/[^0-9]/g, '').slice(-1);
@@ -70,6 +90,9 @@ export default function OtpVerifyScreen() {
         });
       }
     } catch (e) {
+      if (e.errorCode === 'otp_expired') {
+        setSecondsLeft(0);
+      }
       setError(e.message);
     } finally {
       setLoading(false);
@@ -77,15 +100,28 @@ export default function OtpVerifyScreen() {
   }
 
   async function handleResend() {
-    if (!isReset || loading) return;
+    if (!expired || loading || resending) return;
+    setError('');
+    setResending(true);
     try {
-      await authApi.forgotPassword({ email });
+      const data = isReset
+        ? await authApi.forgotPassword({ email })
+        : await authApi.resendOtp({ otpId: state.pendingOtpId });
+      dispatch({
+        type: A.UPDATE_SETTINGS,
+        patch: {
+          otpExpiresAt: Date.now() + data.expiresInSeconds * 1000,
+          ...(isReset ? {} : { pendingOtpId: data.otpId }),
+        },
+      });
       setDigits(Array(CODE_LENGTH).fill(''));
       inputRefs.current[0]?.focus();
       setResent(true);
       setTimeout(() => setResent(false), 3000);
     } catch (e) {
       setError(e.message);
+    } finally {
+      setResending(false);
     }
   }
 
@@ -157,11 +193,17 @@ export default function OtpVerifyScreen() {
               </LinearGradient>
             </Pressable>
 
-            {isReset && (
-              <Pressable style={s.resendBtn} onPress={handleResend}>
-                <Text style={s.resendTx}>{resent ? 'Code resent ✓' : "Didn't get it? Resend Code"}</Text>
-              </Pressable>
-            )}
+            <Pressable style={s.resendBtn} onPress={handleResend} disabled={!expired || resending}>
+              <Text style={[s.resendTx, !expired && s.resendTxDisabled]}>
+                {resent
+                  ? 'Code resent ✓'
+                  : resending
+                  ? 'Sending…'
+                  : expired
+                  ? "Didn't get it? Resend Code"
+                  : `Resend code in ${formatCountdown(secondsLeft)}`}
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -190,7 +232,7 @@ function createStyles(c) {
     otpRow: { flexDirection: 'row', gap: 8, marginTop: 26 },
     otpBox: {
       width: 40, height: 52, borderRadius: 12, borderWidth: 1, borderColor: c.authBorder,
-      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '500', color: c.authHeading,
+      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '300', color: c.authHeading,
     },
     otpBoxFilled: { borderColor: c.authHeading },
     passwordForm: { alignSelf: 'stretch', marginTop: 22 },
@@ -205,5 +247,6 @@ function createStyles(c) {
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     resendBtn: { alignItems: 'center', marginTop: 24 },
     resendTx: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
+    resendTxDisabled: { color: c.authLabel, fontWeight: '600' },
   });
 }

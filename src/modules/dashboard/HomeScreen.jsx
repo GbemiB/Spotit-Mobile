@@ -1,5 +1,5 @@
 import { View, ScrollView, Pressable, Image, Animated, StyleSheet } from 'react-native';
-import { useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -14,6 +14,8 @@ import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
+import * as logsApi from '../../shared/api/logs.js';
+
 
 // Shown until the real feed (GET /content/feed) resolves, or if that request fails.
 const FOR_YOU_FALLBACK = [
@@ -75,17 +77,25 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs, cycleStatus, contentFeed } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs, cycleStatus, contentFeed, accessToken } = state;
   const insets = useSafeAreaInsets();
+  const [dailyLogPoints, setDailyLogPoints] = useState(null);
+
+  useEffect(() => {
+    logsApi.getTemplate(accessToken)
+      .then(data => { if (data?.basePoints != null) setDailyLogPoints(data.basePoints); })
+      .catch(() => {});
+  }, []);
 
   const today = todayISO();
   // Prefer the server-computed status (GET /cycle/current); fall back to the local
   // calculation (same formula, mirrored in utils/cycle.js) until that resolves.
   const cycleDay = cycleStatus?.cycleDay ?? cycleDayOf(today, lastPeriodDate, cycleLength);
+  const hasCycleData = cycleDay != null;
   const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
   const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
-  const daysLeft = cycleStatus ? cycleStatus.daysUntilNextPeriod : Math.max(0, Math.round((nextP - new Date()) / 86400000));
+  const daysLeft = hasCycleData ? (cycleStatus ? cycleStatus.daysUntilNextPeriod : Math.max(0, Math.round((nextP - new Date()) / 86400000))) : null;
   const isDueToday = daysLeft === 0;
   const level = levelInfo(femPoints);
   const loggedToday = !!logs[today];
@@ -98,6 +108,7 @@ export default function HomeScreen() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
+  const firstName = userName?.trim().split(/\s+/)[0] || userName;
 
   const eggFloat = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -126,7 +137,7 @@ export default function HomeScreen() {
         <View style={s.headerLeft}>
           <Avatar name={userName} onPress={goSettings} />
           <View style={{ minWidth: 0 }}>
-            <Text style={s.greeting}>{greeting} <Text style={s.name}>{userName}</Text></Text>
+            <Text style={s.greeting}>{greeting} <Text style={s.name}>{firstName}</Text></Text>
           </View>
         </View>
         <Pressable onPress={goSettings} style={s.bellBtn}>
@@ -148,26 +159,36 @@ export default function HomeScreen() {
             color={isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC'}
             style={{ bottom: -60, left: -50 }}
           />
-          <Text style={s.phaseLabel}>{phase.label} · Day {cycleDay} of {cycleLength}</Text>
-          {isDueToday ? (
-            <Text style={s.heroSerif}>Your period starts <Text style={[s.heroSerif, { color: colors.primary }]}>today</Text></Text>
+          {hasCycleData ? (
+            <>
+              <Text style={s.phaseLabel}>{phase.label} · Day {cycleDay} of {cycleLength}</Text>
+              {isDueToday ? (
+                <Text style={s.heroSerif}>Your period starts <Text style={[s.heroSerif, { color: colors.primary }]}>today</Text></Text>
+              ) : (
+                <View style={s.heroRow}>
+                  <Text style={s.heroSerifSm}>Your period starts in</Text>
+                  <Text style={[s.heroSerifBig, { color: colors.primary }]}>{daysLeft}</Text>
+                  <Text style={s.heroSerifSm}>days</Text>
+                </View>
+              )}
+              <Text style={s.predictedTx}>
+                Predicted {formatDisplayDate(nextP)} · <Text style={{ color: colors.success, fontWeight: '600' }}>{confidenceLabel} confidence</Text>
+              </Text>
+              <View style={{ marginTop: 16 }}>
+                <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
+              </View>
+              <View style={s.dayRow}>
+                <Text style={s.dayLbl}>Day 1</Text>
+                <Text style={s.dayLbl}>Day {cycleLength}</Text>
+              </View>
+            </>
           ) : (
-            <View style={s.heroRow}>
-              <Text style={s.heroSerifSm}>Your period starts in</Text>
-              <Text style={[s.heroSerifBig, { color: colors.primary }]}>{daysLeft}</Text>
-              <Text style={s.heroSerifSm}>days</Text>
-            </View>
+            <>
+              <Text style={s.phaseLabel}>No period logged yet</Text>
+              <Text style={s.heroSerif}>Log a period to see your predictions</Text>
+              <Text style={s.predictedTx}>Track today's flow and we'll start predicting your next cycle.</Text>
+            </>
           )}
-          <Text style={s.predictedTx}>
-            Predicted {formatDisplayDate(nextP)} · <Text style={{ color: colors.success, fontWeight: '600' }}>{confidenceLabel} confidence</Text>
-          </Text>
-          <View style={{ marginTop: 16 }}>
-            <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
-          </View>
-          <View style={s.dayRow}>
-            <Text style={s.dayLbl}>Day 1</Text>
-            <Text style={s.dayLbl}>Day {cycleLength}</Text>
-          </View>
         </Card>
       </View>
 
@@ -180,7 +201,7 @@ export default function HomeScreen() {
               <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={s.logCtaTitle}>Log today</Text>
-                  <Text style={s.logCtaSub}>Flow, symptoms & mood · earn 80 SP</Text>
+                  <Text style={s.logCtaSub}>Flow, symptoms & mood · earn {dailyLogPoints} SP</Text>
                 </View>
                 <View style={s.logCtaPlusWrap}>
                   <Text style={s.logCtaPlus}>+</Text>

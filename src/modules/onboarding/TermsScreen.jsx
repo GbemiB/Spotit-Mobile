@@ -1,9 +1,7 @@
-import { View, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, Modal, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useApp } from '../../shared/store/AppContext.jsx';
-import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { DocumentIcon } from '../../components/ui/icons.jsx';
 
@@ -34,48 +32,45 @@ const SECTIONS = [
   },
 ];
 
-export default function TermsScreen() {
-  const { dispatch } = useApp();
+export default function TermsScreen({ visible, onAgree, onClose }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
-  function goBack() {
-    dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
-  }
-
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
-      <Pressable onPress={goBack} style={s.back}>
-        <Text style={s.backTx}>← Back</Text>
-      </Pressable>
-      <View style={s.headerRow}>
-        <DocumentIcon size={18} color={colors.authHeading} />
-        <Text style={s.headerTitle}>Terms & Conditions</Text>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 20, gap: 14 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={s.updated}>Last updated June 2026</Text>
-
-        {SECTIONS.map((sec) => (
-          <View key={sec.title}>
-            <Text style={s.sectionTitle}>{sec.title}</Text>
-            <Text style={s.sectionBody}>{sec.body}</Text>
-          </View>
-        ))}
-      </ScrollView>
-
-      <View style={[s.footer, { paddingBottom: insets.bottom + 22 }]}>
-        <Pressable onPress={goBack}>
-          <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-            <Text style={s.ctaTx}>I Agree</Text>
-          </LinearGradient>
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={[s.screen, { paddingTop: insets.top }]}>
+        <Pressable onPress={onClose} style={s.back}>
+          <Text style={s.backTx}>← Back</Text>
         </Pressable>
+        <View style={s.headerRow}>
+          <DocumentIcon size={18} color={colors.authHeading} />
+          <Text style={s.headerTitle}>Terms & Conditions</Text>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 20, gap: 14 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={s.updated}>Last updated June 2026</Text>
+
+          {SECTIONS.map((sec) => (
+            <View key={sec.title}>
+              <Text style={s.sectionTitle}>{sec.title}</Text>
+              <Text style={s.sectionBody}>{sec.body}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        <View style={[s.footer, { paddingBottom: insets.bottom + 22 }]}>
+          <Pressable onPress={onAgree}>
+            <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
+              <Text style={s.ctaTx}>I Agree</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </Modal>
   );
 }
 

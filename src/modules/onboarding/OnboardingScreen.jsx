@@ -346,8 +346,8 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
-            {/* Progress (onboardStep/onboardDraft) is persisted, so closing here and logging
-                back in later resumes exactly where the user left off. */}
+            {/* LOGOUT clears onboardStep/onboardDraft too, so the next login (same account or a
+                different one) starts onboarding fresh instead of showing stale picks. */}
             <Pressable onPress={() => dispatch({ type: A.LOGOUT })} hitSlop={10} style={s.closeBtn}>
               <Text style={s.closeBtnTx}>✕</Text>
             </Pressable>

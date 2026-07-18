@@ -24,8 +24,13 @@ function localDigest(logs) {
   return { loggedCount: entries.length, topMood };
 }
 
+// `ok` drives the card's visual treatment: true = success (green check), false = warning
+// (amber !), null = neutral (nothing to judge yet — not the same as "looks fine").
 function regularityCopy(regularity) {
-  if (!regularity || regularity.status === 'regular') {
+  if (!regularity || regularity.status === 'insufficient_data') {
+    return { title: 'Not enough data yet', sub: 'Log at least one period to see your regularity check here.', ok: null };
+  }
+  if (regularity.status === 'regular') {
     return { title: 'Your cycles look regular', sub: 'No anomalies detected · not medical advice', ok: true };
   }
   const title = regularity.status === 'unusual_period_length' ? 'Unusual period length detected' : 'Your cycle length has varied';
@@ -40,7 +45,7 @@ export default function InsightsScreen() {
   const digestBody = isDark ? 'rgba(255,255,255,0.65)' : '#8A6E5E';
   const regularBorder = isDark ? 'rgba(255,255,255,0.10)' : '#EAF1EC';
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { logs, cycleLength, periodLength, lastPeriodDate, accessToken, insights } = state;
+  const { logs, cycleLength, lastPeriodDate, accessToken, insights } = state;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -57,10 +62,10 @@ export default function InsightsScreen() {
 
   const totalLogs = Object.keys(logs).length;
   const trends = insights.trends;
-  const trendData = trends?.cycleLengths?.length ? trends.cycleLengths : [27, 28, 28, 29, cycleLength, cycleLength];
-  const avgCycle = trends?.avgCycleLength ?? Math.round(trendData.reduce((a, b) => a + b, 0) / trendData.length);
-  const avgPeriod = trends?.avgPeriodLength ?? periodLength;
-  const variation = trends?.variationDays ?? Math.round((Math.max(...trendData) - Math.min(...trendData)) / 2);
+  // A single cycle-length value (real or the backend's own default-cycle-length fallback) can't
+  // show a trend or variation — need at least two logged cycles before that means anything.
+  const trendData = trends?.cycleLengths ?? [];
+  const hasTrendData = trendData.length >= 2;
 
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
   const confidenceLabel = totalLogs >= 3 ? 'High' : 'Estimated';
@@ -82,12 +87,18 @@ export default function InsightsScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }}
             style={s.hero}
           >
-            <Text style={s.heroLabel}>Next period predicted</Text>
-            <Text style={s.heroDate}>{formatDisplayDate(nextP)}</Text>
-            <View style={s.confPill}>
-              <View style={s.confDot} />
-              <Text style={s.confTx}>{confidenceLabel} confidence</Text>
-            </View>
+            {nextP ? (
+              <>
+                <Text style={s.heroLabel}>Next period predicted</Text>
+                <Text style={s.heroDate}>{formatDisplayDate(nextP)}</Text>
+                <View style={s.confPill}>
+                  <View style={s.confDot} />
+                  <Text style={s.confTx}>{confidenceLabel} confidence</Text>
+                </View>
+              </>
+            ) : (
+              <Text style={s.heroLabel}>Log your last period to see a prediction here</Text>
+            )}
           </LinearGradient>
         </View>
 
@@ -96,23 +107,29 @@ export default function InsightsScreen() {
           <View style={s.trendCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={s.trendTitle}>Cycle length</Text>
-              <Text style={s.trendSub}>Last 6 cycles</Text>
+              {hasTrendData && <Text style={s.trendSub}>Last {trendData.length} cycles</Text>}
             </View>
-            <TrendChart data={trendData} />
-            <View style={s.statsRow}>
-              <View>
-                <Text style={s.statNum}>{avgCycle}<Text style={s.statUnit}>d</Text></Text>
-                <Text style={s.statLbl}>Avg cycle</Text>
-              </View>
-              <View>
-                <Text style={s.statNum}>{avgPeriod}<Text style={s.statUnit}>d</Text></Text>
-                <Text style={s.statLbl}>Avg period</Text>
-              </View>
-              <View>
-                <Text style={s.statNum}>±{variation}<Text style={s.statUnit}>d</Text></Text>
-                <Text style={s.statLbl}>Variation</Text>
-              </View>
-            </View>
+            {hasTrendData ? (
+              <>
+                <TrendChart data={trendData} />
+                <View style={s.statsRow}>
+                  <View>
+                    <Text style={s.statNum}>{trends.avgCycleLength}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statLbl}>Avg cycle</Text>
+                  </View>
+                  <View>
+                    <Text style={s.statNum}>{trends.avgPeriodLength}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statLbl}>Avg period</Text>
+                  </View>
+                  <View>
+                    <Text style={s.statNum}>±{trends.variationDays}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statLbl}>Variation</Text>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <Text style={s.trendEmptyTx}>Log at least two periods to see your cycle length trend here.</Text>
+            )}
           </View>
         </View>
 
@@ -130,9 +147,11 @@ export default function InsightsScreen() {
 
         {/* Regularity check */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <View style={[s.regularRow, { borderColor: regularity.ok ? regularBorder : colors.warningSoft }]}>
-            <View style={[s.regularIcon, !regularity.ok && { backgroundColor: colors.warningSoft }]}>
-              <Text style={{ color: regularity.ok ? colors.success : colors.warning, fontSize: 15 }}>{regularity.ok ? '✓' : '!'}</Text>
+          <View style={[s.regularRow, { borderColor: regularity.ok === true ? regularBorder : regularity.ok === false ? colors.warningSoft : colors.border }]}>
+            <View style={[s.regularIcon, { backgroundColor: regularity.ok === true ? colors.successSoft : regularity.ok === false ? colors.warningSoft : colors.surfaceAlt }]}>
+              <Text style={{ color: regularity.ok === true ? colors.success : regularity.ok === false ? colors.warning : colors.textMuted, fontSize: 15 }}>
+                {regularity.ok === true ? '✓' : regularity.ok === false ? '!' : '·'}
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.regularTitle}>{regularity.title}</Text>
@@ -161,6 +180,7 @@ function createStyles(c) {
     trendCard: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 24, padding: 20 },
     trendTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
     trendSub: { fontSize: 10.5, color: c.textMuted },
+    trendEmptyTx: { fontSize: 11.5, color: c.textMuted, lineHeight: 17, marginTop: 14 },
     statsRow: { flexDirection: 'row', gap: 24, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border },
     statNum: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
     statUnit: { fontSize: 12, color: c.textMuted },
@@ -170,8 +190,8 @@ function createStyles(c) {
     digestTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep, marginBottom: 6 },
     digestBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 18 },
 
-    regularRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1, borderColor: c.successBorder, borderRadius: 22, padding: 16 },
-    regularIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.successSoft, alignItems: 'center', justifyContent: 'center' },
+    regularRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1, borderRadius: 22, padding: 16 },
+    regularIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
     regularTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
     regularSub: { fontSize: 10.5, color: c.textMuted, marginTop: 1 },
   });

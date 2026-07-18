@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, useSta
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { reducer, INIT } from './reducer.js';
 import { A } from './actions.js';
+import { configureAuthClient } from '../api/client.js';
 
 const PERSIST_KEYS = [
   'onboarded','authDone','accessToken','refreshToken','userId','userName','goal','dob','cycleLength','periodLength','lastPeriodDate',
@@ -16,6 +17,19 @@ export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, INIT);
   const [ready, setReady] = useState(false);
   const ttRef = useRef(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // Wire client.js's 401 handler to live auth state — it's a plain module outside React, so it
+  // can't read state/dispatch directly. Registered once; the closures below always read the
+  // latest state via stateRef instead of capturing this render's state.
+  useEffect(() => {
+    configureAuthClient({
+      getRefreshToken: () => stateRef.current.refreshToken,
+      onTokensRefreshed: ({ accessToken }) => dispatch({ type: A.TOKENS_REFRESHED, accessToken }),
+      onSessionExpired: () => dispatch({ type: A.LOGOUT }),
+    });
+  }, []);
 
   // Load persisted state on mount
   useEffect(() => {

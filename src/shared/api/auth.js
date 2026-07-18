@@ -8,6 +8,10 @@ export function verifyOtp({ otpId, code }) {
   return apiRequest('/auth/otp/verify', { method: 'POST', body: { otpId, code } });
 }
 
+export function resendOtp({ otpId }) {
+  return apiRequest('/auth/otp/resend', { method: 'POST', body: { otpId } });
+}
+
 export function login({ email, password }) {
   return apiRequest('/auth/login', { method: 'POST', body: { email, password } });
 }
