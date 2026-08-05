@@ -16,12 +16,12 @@ export default function BottomSheet({ open, onClose, title, children }) {
           {title && (
             <View style={s.titleRow}>
               <Text style={s.title}>{title}</Text>
-              <Pressable onPress={onClose}><Text style={s.cancel}>Cancel</Text></Pressable>
+              <Pressable onPress={onClose}>
+                <Text style={s.cancel}>Cancel</Text>
+              </Pressable>
             </View>
           )}
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {children}
-          </ScrollView>
+          <ScrollView showsVerticalScrollIndicator={false}>{children}</ScrollView>
         </View>
       </View>
     </Modal>
@@ -31,15 +31,18 @@ export default function BottomSheet({ open, onClose, title, children }) {
 function createStyles(c) {
   return StyleSheet.create({
     container: { flex: 1, justifyContent: 'flex-end' },
-    overlay:   { ...StyleSheet.absoluteFillObject, backgroundColor: c.overlay },
+    overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: c.overlay },
     sheet: {
       backgroundColor: c.background,
-      borderTopLeftRadius: 28, borderTopRightRadius: 28,
-      maxHeight: '90%', paddingHorizontal: 22, paddingBottom: 40,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      maxHeight: '90%',
+      paddingHorizontal: 22,
+      paddingBottom: 40,
     },
-    handle:   { width: 40, height: 5, borderRadius: 99, backgroundColor: c.border, alignSelf: 'center', marginTop: 10, marginBottom: 16 },
+    handle: { width: 40, height: 5, borderRadius: 99, backgroundColor: c.border, alignSelf: 'center', marginTop: 10, marginBottom: 16 },
     titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-    title:    { fontSize: 21, fontWeight: '700', color: c.textPrimary },
-    cancel:   { fontSize: 13.5, fontWeight: '600', color: c.textMuted },
+    title: { fontSize: 21, fontWeight: '700', color: c.textPrimary },
+    cancel: { fontSize: 13.5, fontWeight: '600', color: c.textMuted },
   });
 }

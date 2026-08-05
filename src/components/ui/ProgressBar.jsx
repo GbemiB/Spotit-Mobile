@@ -13,7 +13,8 @@ export default function ProgressBar({ value, pct, color, colors, trackColor, tra
     <View style={[{ height, borderRadius: 999, backgroundColor: trackBg, overflow: 'hidden' }, style]}>
       <LinearGradient
         colors={fillColors}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={{ height: '100%', width, borderRadius: 999 }}
       />
     </View>

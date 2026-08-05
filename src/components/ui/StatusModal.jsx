@@ -8,9 +8,7 @@ export default function StatusModal({ visible, variant = 'success', title, subti
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const isSuccess = variant === 'success';
-  const iconBg = isSuccess
-    ? (isDark ? 'rgba(95,169,140,0.18)' : '#E7F2EB')
-    : (isDark ? 'rgba(211,59,59,0.18)' : '#FBE7E7');
+  const iconBg = isSuccess ? (isDark ? 'rgba(95,169,140,0.18)' : '#E7F2EB') : isDark ? 'rgba(211,59,59,0.18)' : '#FBE7E7';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCta}>
@@ -39,9 +37,19 @@ function createStyles(c) {
   return StyleSheet.create({
     overlay: { flex: 1, backgroundColor: c.overlay, alignItems: 'center', justifyContent: 'center', padding: 24 },
     card: {
-      width: '100%', maxWidth: 360, backgroundColor: c.surface, borderRadius: 22, padding: 28,
-      alignItems: 'center', borderWidth: 1, borderColor: c.border,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.22, shadowRadius: 34, elevation: 12,
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: c.surface,
+      borderRadius: 22,
+      padding: 28,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: c.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 14 },
+      shadowOpacity: 0.22,
+      shadowRadius: 34,
+      elevation: 12,
     },
     iconCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
     iconEmoji: { fontSize: 26 },

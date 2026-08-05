@@ -14,12 +14,15 @@ function localDigest(logs) {
   const now = new Date();
   const days = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now); d.setDate(d.getDate() - i);
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
     days.push(toISO(d));
   }
   const entries = days.map(d => logs[d]).filter(Boolean);
   const moodCounts = {};
-  entries.forEach(e => { if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1; });
+  entries.forEach(e => {
+    if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
+  });
   const topMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   return { loggedCount: entries.length, topMood };
 }
@@ -49,13 +52,16 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    insightsApi.getTrends(6, accessToken)
+    insightsApi
+      .getTrends(6, accessToken)
       .then(trends => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { trends } }))
       .catch(() => {});
-    insightsApi.getWeeklyDigest(accessToken)
+    insightsApi
+      .getWeeklyDigest(accessToken)
       .then(digest => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { digest } }))
       .catch(() => {});
-    insightsApi.getRegularity(accessToken)
+    insightsApi
+      .getRegularity(accessToken)
       .then(regularity => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { regularity } }))
       .catch(() => {});
   }, []);
@@ -75,7 +81,6 @@ export default function InsightsScreen() {
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-
         <View style={s.header}>
           <Text style={s.headerTitle}>Insights</Text>
         </View>
@@ -84,7 +89,8 @@ export default function InsightsScreen() {
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <LinearGradient
             colors={isDark ? ['#241319', '#2A1610'] : ['#fff', '#FDF4F0']}
-            start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.6, y: 1 }}
             style={s.hero}
           >
             {nextP ? (
@@ -114,15 +120,24 @@ export default function InsightsScreen() {
                 <TrendChart data={trendData} />
                 <View style={s.statsRow}>
                   <View>
-                    <Text style={s.statNum}>{trends.avgCycleLength}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statNum}>
+                      {trends.avgCycleLength}
+                      <Text style={s.statUnit}>d</Text>
+                    </Text>
                     <Text style={s.statLbl}>Avg cycle</Text>
                   </View>
                   <View>
-                    <Text style={s.statNum}>{trends.avgPeriodLength}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statNum}>
+                      {trends.avgPeriodLength}
+                      <Text style={s.statUnit}>d</Text>
+                    </Text>
                     <Text style={s.statLbl}>Avg period</Text>
                   </View>
                   <View>
-                    <Text style={s.statNum}>±{trends.variationDays}<Text style={s.statUnit}>d</Text></Text>
+                    <Text style={s.statNum}>
+                      ±{trends.variationDays}
+                      <Text style={s.statUnit}>d</Text>
+                    </Text>
                     <Text style={s.statLbl}>Variation</Text>
                   </View>
                 </View>
@@ -136,20 +151,43 @@ export default function InsightsScreen() {
         {/* Weekly digest */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <View style={[s.digestCard, { backgroundColor: digestBg }]}>
-            <Text style={s.digestTitle}>This week's digest</Text>
+            <Text style={s.digestTitle}>This week&apos;s digest</Text>
             <Text style={[s.digestBody, { color: digestBody }]}>
-              {digest.topMood
-                ? <>Your average mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of 7 days.</>
-                : 'Log your mood and symptoms daily to see a personalized digest here.'}
+              {digest.topMood ? (
+                <>
+                  Your average mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of 7
+                  days.
+                </>
+              ) : (
+                'Log your mood and symptoms daily to see a personalized digest here.'
+              )}
             </Text>
           </View>
         </View>
 
         {/* Regularity check */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <View style={[s.regularRow, { borderColor: regularity.ok === true ? regularBorder : regularity.ok === false ? colors.warningSoft : colors.border }]}>
-            <View style={[s.regularIcon, { backgroundColor: regularity.ok === true ? colors.successSoft : regularity.ok === false ? colors.warningSoft : colors.surfaceAlt }]}>
-              <Text style={{ color: regularity.ok === true ? colors.success : regularity.ok === false ? colors.warning : colors.textMuted, fontSize: 15 }}>
+          <View
+            style={[
+              s.regularRow,
+              { borderColor: regularity.ok === true ? regularBorder : regularity.ok === false ? colors.warningSoft : colors.border },
+            ]}
+          >
+            <View
+              style={[
+                s.regularIcon,
+                {
+                  backgroundColor:
+                    regularity.ok === true ? colors.successSoft : regularity.ok === false ? colors.warningSoft : colors.surfaceAlt,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: regularity.ok === true ? colors.success : regularity.ok === false ? colors.warning : colors.textMuted,
+                  fontSize: 15,
+                }}
+              >
                 {regularity.ok === true ? '✓' : regularity.ok === false ? '!' : '·'}
               </Text>
             </View>
@@ -173,7 +211,17 @@ function createStyles(c) {
     hero: { borderRadius: 28, padding: 22, borderWidth: 1, borderColor: c.border },
     heroLabel: { fontSize: 10.5, color: c.textMuted, fontWeight: '600' },
     heroDate: { fontFamily: FONT.serif, fontSize: 36, color: c.primaryDark, marginTop: 4, letterSpacing: -0.5 },
-    confPill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 10, backgroundColor: c.successSoft, borderRadius: 99, paddingHorizontal: 11, paddingVertical: 5 },
+    confPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      alignSelf: 'flex-start',
+      marginTop: 10,
+      backgroundColor: c.successSoft,
+      borderRadius: 99,
+      paddingHorizontal: 11,
+      paddingVertical: 5,
+    },
     confDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.success },
     confTx: { fontSize: 10, fontWeight: '600', color: c.success },
 
@@ -190,7 +238,15 @@ function createStyles(c) {
     digestTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep, marginBottom: 6 },
     digestBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 18 },
 
-    regularRow: { flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1, borderRadius: 22, padding: 16 },
+    regularRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 13,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderRadius: 22,
+      padding: 16,
+    },
     regularIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
     regularTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
     regularSub: { fontSize: 10.5, color: c.textMuted, marginTop: 1 },

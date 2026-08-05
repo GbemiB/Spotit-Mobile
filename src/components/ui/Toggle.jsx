@@ -36,8 +36,17 @@ function createStyles(c) {
     desc: { fontSize: 12.5, color: c.textMuted, marginTop: 2 },
     track: { width: 48, height: 28, borderRadius: 14 },
     thumb: {
-      position: 'absolute', top: 3, width: 22, height: 22, borderRadius: 11, backgroundColor: c.white,
-      shadowColor: c.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+      position: 'absolute',
+      top: 3,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: c.white,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+      elevation: 2,
     },
   });
 }

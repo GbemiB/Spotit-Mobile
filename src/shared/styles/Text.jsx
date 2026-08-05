@@ -12,11 +12,13 @@ export function OnboardingFontScope({ children }) {
 
 export function weightFont(set, weight) {
   const map = {
-    '400': set.regular, normal: set.regular,
-    '500': set.medium,
-    '600': set.semiBold,
-    '700': set.bold, bold: set.bold,
-    '800': set.extraBold,
+    400: set.regular,
+    normal: set.regular,
+    500: set.medium,
+    600: set.semiBold,
+    700: set.bold,
+    bold: set.bold,
+    800: set.extraBold,
   };
   return map[String(weight)] || set.regular;
 }

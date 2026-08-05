@@ -8,9 +8,7 @@ import { useTheme, Text } from '../../shared/styles/index.js';
 function PulseRing({ color }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.timing(anim, { toValue: 1, duration: 2200, useNativeDriver: true })
-    );
+    const loop = Animated.loop(Animated.timing(anim, { toValue: 1, duration: 2200, useNativeDriver: true }));
     loop.start();
     return () => loop.stop();
   }, []);
@@ -18,8 +16,14 @@ function PulseRing({ color }) {
     <Animated.View
       pointerEvents="none"
       style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9,
-        borderWidth: 2, borderColor: color,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: color,
         opacity: anim.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.5, 0.15, 0] }),
         transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
       }}
@@ -55,7 +59,9 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
     <View style={s.row}>
       {cells.map(c => (
         <View key={c.key} style={s.col}>
-          <Text style={s.dow} numberOfLines={1} adjustsFontSizeToFit>{c.label}</Text>
+          <Text style={s.dow} numberOfLines={1} adjustsFontSizeToFit>
+            {c.label}
+          </Text>
           {c.isOvulation ? (
             <View style={s.cellWrap}>
               <PulseRing color={colors.primary} />

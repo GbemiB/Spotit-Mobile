@@ -54,7 +54,7 @@ export default function TermsScreen({ visible, onAgree, onClose }) {
         >
           <Text style={s.updated}>Last updated June 2026</Text>
 
-          {SECTIONS.map((sec) => (
+          {SECTIONS.map(sec => (
             <View key={sec.title}>
               <Text style={s.sectionTitle}>{sec.title}</Text>
               <Text style={s.sectionBody}>{sec.body}</Text>
@@ -79,7 +79,16 @@ function createStyles(c) {
     screen: { flex: 1, backgroundColor: c.background },
     back: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 4 },
     backTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
-    headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: c.border },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 22,
+      paddingTop: 10,
+      paddingBottom: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
     headerTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
     updated: { fontSize: 10.5, color: c.textFaint },
     sectionTitle: { fontSize: 12.5, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },

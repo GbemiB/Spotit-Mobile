@@ -1,7 +1,6 @@
 import { A } from './actions.js';
 import { todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
-import { levelInfo, LEVEL_ORDER } from '../utils/levels.js';
 
 const MAX_HISTORY = 20;
 
@@ -17,17 +16,24 @@ export const INIT = {
   otpPurpose: null,
   otpExpiresAt: null,
   resetEmail: null,
-  userName: 'Gbemisola',
+  userName: 'Friend',
   goal: 'track',
   dob: '',
   onboardStep: 0,
-  onboardDraft: { name: '', dob: '', lastPeriod: '', goal: 'track', cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH },
+  onboardDraft: {
+    name: '',
+    dob: '',
+    lastPeriod: '',
+    goal: 'track',
+    cycleLength: DEFAULT_CYCLE_LENGTH,
+    periodLength: DEFAULT_PERIOD_LENGTH,
+  },
   cycleLength: DEFAULT_CYCLE_LENGTH,
   periodLength: DEFAULT_PERIOD_LENGTH,
   lastPeriodDate: null,
-  femPoints: 1840,
-  streak: 6,
-  longestStreak: 12,
+  femPoints: 0,
+  streak: 0,
+  longestStreak: 0,
   lastLogDate: null,
   lastClaimedDate: null,
   logs: {},
@@ -37,13 +43,10 @@ export const INIT = {
   plan: null,
   renewsAt: null,
   autoRenew: false,
-  history: [
-    { icon: '🩸', label: 'Logged period start', delta: 50, date: 'Jun 16' },
-    { icon: '📝', label: 'Daily mood & symptom log', delta: 30, date: 'Jun 22' },
-    { icon: '📚', label: 'Read a health article', delta: 20, date: 'Jun 27' },
-    { icon: '✅', label: 'Weekly health check-in', delta: 100, date: 'Jun 28' },
-    { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Jun 28' },
-  ],
+  history: [],
+  badges: [],
+  challenges: [],
+  shopProducts: [],
   // session
   screen: 'home',
   logOpen: false,
@@ -94,20 +97,61 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
     femPoints: newBalance,
     streak,
     longestStreak: Math.max(streak, state.longestStreak),
-    toast: pointsAwarded > 0
-      ? { icon: '🔥', text: `Logged! +${pointsAwarded} SP · ${streak}-day streak` }
-      : { icon: '✓', text: 'Entry updated' },
+    toast:
+      pointsAwarded > 0
+        ? { icon: '🔥', text: `Logged! +${pointsAwarded} SP · ${streak}-day streak` }
+        : { icon: '✓', text: 'Entry updated' },
   };
   if (pointsAwarded > 0) {
-    next = withHistory(next, { icon: '📝', label: 'Logged flow, mood & symptoms', delta: pointsAwarded, date: 'Today' });
+    next = withHistory(next, { icon: '📝', label: 'Logged flow, mood & symptoms', delta: pointsAwarded, date: todayISO() });
+  }
+  return next;
+}
+
+// Called after PUT /logs/period confirms a period-start save — flow is set across every
+// date in the range, but the richer entry (mood/symptoms/notes/intimate) only applies to
+// `date` (the period's first day), matching what the backend actually persisted per-day.
+function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, pointsAwarded, newBalance, streak }) {
+  const today = todayISO();
+  const logs = { ...state.logs };
+  dates.forEach(d => {
+    logs[d] = d === date ? entry : { ...(logs[d] || {}), flow };
+  });
+  let next = {
+    ...state,
+    logOpen: false,
+    logEditDate: null,
+    draftLog: { ...INIT.draftLog },
+    logs,
+    lastPeriodDate: lastPeriodDate ?? state.lastPeriodDate,
+    lastLogDate: dates.includes(today) ? today : state.lastLogDate,
+    femPoints: newBalance,
+    streak,
+    longestStreak: Math.max(streak, state.longestStreak),
+    toast:
+      pointsAwarded > 0
+        ? { icon: '🔥', text: `Logged! +${pointsAwarded} SP · ${streak}-day streak` }
+        : { icon: '✓', text: 'Period logged' },
+  };
+  if (pointsAwarded > 0) {
+    next = withHistory(next, { icon: '📝', label: 'Logged period', delta: pointsAwarded, date: todayISO() });
   }
   return next;
 }
 
 export function reducer(state, action) {
   switch (action.type) {
-    case A.HYDRATE:
-      return { ...state, ...action.payload };
+    case A.HYDRATE: {
+      const merged = { ...state, ...action.payload };
+      // Guards against corrupted/partial persisted state (e.g. a write interrupted between
+      // COMPLETE_ONBOARD and AUTH_SUCCESS) — authDone with no token would otherwise render
+      // the main app with every authenticated call permanently and silently 401ing, and no
+      // token means apiRequest's 401-retry never fires (it's gated on options.token) either.
+      if (merged.authDone && !merged.accessToken) {
+        return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
+      }
+      return merged;
+    }
     case A.GO:
       return { ...state, screen: action.screen };
     case A.OPEN_LOG:
@@ -141,7 +185,10 @@ export function reducer(state, action) {
       return { ...state, draftLog: { ...state.draftLog, mood: action.id } };
     case A.TOGGLE_DRAFT_SYM: {
       const syms = state.draftLog.symptoms;
-      return { ...state, draftLog: { ...state.draftLog, symptoms: syms.includes(action.id) ? syms.filter(x => x !== action.id) : [...syms, action.id] } };
+      return {
+        ...state,
+        draftLog: { ...state.draftLog, symptoms: syms.includes(action.id) ? syms.filter(x => x !== action.id) : [...syms, action.id] },
+      };
     }
     case A.SET_DRAFT_NOTES:
       return { ...state, draftLog: { ...state.draftLog, notes: action.value } };
@@ -149,8 +196,11 @@ export function reducer(state, action) {
       return { ...state, draftLog: { ...state.draftLog, intimate: action.value } };
     case A.SAVE_LOG:
       return applySavedLog(state, action);
+    case A.SAVE_LOG_PERIOD:
+      return applySavedPeriod(state, action);
     case A.DELETE_LOG: {
-      const logs = { ...state.logs }; delete logs[action.date];
+      const logs = { ...state.logs };
+      delete logs[action.date];
       return { ...state, logs };
     }
     case A.LOGS_HYDRATED:
@@ -163,50 +213,109 @@ export function reducer(state, action) {
       return { ...state, contentFeed: action.items };
     case A.INSIGHTS_HYDRATED:
       return { ...state, insights: { ...state.insights, ...action.insights } };
-    case A.CLAIM_DAILY: {
-      const today = todayISO();
-      if (state.lastClaimedDate === today) return state;
-      const next = { ...state, lastClaimedDate: today, femPoints: state.femPoints + 50, toast: { icon: '🎁', text: 'Daily reward claimed · +50 SP' } };
-      return withHistory(next, { icon: '🎁', label: 'Daily check-in bonus', delta: 50, date: 'Today' });
+    // Rewards/shop/settings mutations below all echo a server response (PointsWriteService /
+    // ShopWriteService / ChallengeWriteService are the source of truth for balances) — the
+    // client applies what came back rather than computing deltas itself.
+    case A.DAILY_CLAIM_RESULT: {
+      const { pointsAwarded, newBalance, alreadyClaimedToday } = action;
+      if (alreadyClaimedToday) return { ...state, toast: { icon: '🎁', text: 'Already claimed today — come back tomorrow' } };
+      const next = {
+        ...state,
+        lastClaimedDate: todayISO(),
+        femPoints: newBalance,
+        toast: { icon: '🎁', text: `Daily reward claimed · +${pointsAwarded} SP` },
+      };
+      return withHistory(next, { icon: '🎁', label: 'Daily check-in bonus', delta: pointsAwarded, date: todayISO() });
     }
-    case A.WATCH_AD: {
-      const next = { ...state, femPoints: state.femPoints + 100, toast: { icon: '🎬', text: '+100 SpotPoints earned' } };
-      return withHistory(next, { icon: '🎬', label: 'Watched a rewarded ad', delta: 100, date: 'Today' });
+    case A.AD_WATCH_RESULT: {
+      const { pointsAwarded, newBalance } = action;
+      const next = { ...state, femPoints: newBalance, toast: { icon: '🎬', text: `+${pointsAwarded} SpotPoints earned` } };
+      return withHistory(next, { icon: '🎬', label: 'Watched a rewarded ad', delta: pointsAwarded, date: todayISO() });
+    }
+    case A.CHALLENGE_CLAIM_RESULT: {
+      const { challengeId, pointsAwarded, newBalance } = action;
+      const next = {
+        ...state,
+        femPoints: newBalance,
+        challenges: state.challenges.map(c => (c.id === challengeId ? { ...c, claimed: true } : c)),
+        toast: { icon: '🏆', text: `Challenge reward claimed · +${pointsAwarded} SP` },
+      };
+      return withHistory(next, { icon: '🏆', label: 'Claimed a challenge reward', delta: pointsAwarded, date: todayISO() });
+    }
+    case A.REDEEM_RESULT: {
+      const { productId, productName, pointsSpent, newBalance } = action;
+      const next = {
+        ...state,
+        femPoints: newBalance,
+        shopProducts: state.shopProducts.map(p => (p.id === productId ? { ...p, locked: true, lockReason: 'redeemed' } : p)),
+        toast: { icon: '🎉', text: `${productName} is on its way!` },
+      };
+      return withHistory(next, { icon: '🎁', label: `Redeemed ${productName}`, delta: -pointsSpent, date: todayISO() });
     }
     case A.TOGGLE_NOTIF:
       return { ...state, notifs: { ...state.notifs, [action.key]: !state.notifs[action.key] } };
+    case A.NOTIFICATIONS_HYDRATED:
+    case A.NOTIFICATIONS_UPDATED:
+      return { ...state, notifs: { period: action.period, ovulation: action.ovulation, dailyLog: action.dailyLog, digest: action.digest } };
     case A.SET_THEME:
       return { ...state, themePref: action.pref };
     case A.SUBSCRIPTION_UPDATED: {
       const { isPremium, plan, renewsAt, autoRenew, toast } = action;
       return { ...state, isPremium, plan, renewsAt, autoRenew, toast: toast ?? state.toast };
     }
-    case A.REDEEM: {
-      const { product } = action;
-      const lv = levelInfo(state.femPoints);
-      const levelOk = LEVEL_ORDER.indexOf(lv.name) >= LEVEL_ORDER.indexOf(product.minLevel);
-      const premiumOk = !product.premium || state.isPremium;
-      if (!levelOk || !premiumOk) {
-        return { ...state, toast: { icon: '🌸', text: !levelOk ? `Unlocks at ${product.minLevel}` : 'Premium only' } };
-      }
-      if (state.femPoints < product.fp) {
-        return { ...state, toast: { icon: '🌸', text: 'Not enough Spotit points yet' } };
-      }
-      const next = { ...state, femPoints: state.femPoints - product.fp, toast: { icon: '🎉', text: `${product.name} is on its way!` } };
-      return withHistory(next, { icon: '🎁', label: `Redeemed ${product.name}`, delta: -product.fp, date: 'Today' });
+    case A.PROFILE_HYDRATED:
+    case A.PROFILE_UPDATED: {
+      // GET/PATCH /users/me both return the complete current profile (not a partial patch
+      // echo) — assign every field as-is, including nulls, rather than falling back to the
+      // old state on a nullish value (e.g. a genuinely-cleared lastPeriodDate).
+      const { firstName, lastName, goal, dob, cycleLength, periodLength, lastPeriodDate, themePref, isPremium } = action;
+      const userName = [firstName, lastName].filter(Boolean).join(' ').trim();
+      return {
+        ...state,
+        userName: userName || state.userName,
+        goal,
+        dob,
+        cycleLength,
+        periodLength,
+        lastPeriodDate,
+        themePref,
+        isPremium,
+      };
     }
+    case A.REWARDS_HYDRATED: {
+      const { points, streak, longestStreak } = action;
+      return { ...state, femPoints: points, streak, longestStreak: Math.max(longestStreak, state.longestStreak) };
+    }
+    case A.BADGES_HYDRATED:
+      return { ...state, badges: action.badges };
+    case A.CHALLENGES_HYDRATED:
+      return { ...state, challenges: action.challenges };
+    case A.SHOP_PRODUCTS_HYDRATED:
+      return { ...state, shopProducts: action.products };
+    case A.HISTORY_HYDRATED:
+      return { ...state, history: action.entries };
+    case A.SHOW_TOAST:
+      return { ...state, toast: { icon: action.icon, text: action.text } };
     case A.CLEAR_TOAST:
       return { ...state, toast: null };
     case A.SEL_DATE:
       return { ...state, selDate: action.date };
     case A.PREV_MONTH: {
-      let m = state.viewMonth - 1, y = state.viewYear;
-      if (m < 0) { m = 11; y--; }
+      let m = state.viewMonth - 1,
+        y = state.viewYear;
+      if (m < 0) {
+        m = 11;
+        y--;
+      }
       return { ...state, viewMonth: m, viewYear: y };
     }
     case A.NEXT_MONTH: {
-      let m = state.viewMonth + 1, y = state.viewYear;
-      if (m > 11) { m = 0; y++; }
+      let m = state.viewMonth + 1,
+        y = state.viewYear;
+      if (m > 11) {
+        m = 0;
+        y++;
+      }
       return { ...state, viewMonth: m, viewYear: y };
     }
     case A.UPDATE_SETTINGS:
@@ -247,7 +356,17 @@ export function reducer(state, action) {
         onboardDraft: { ...INIT.onboardDraft },
       };
     case A.RESET_DATA:
-      return { ...INIT, onboarded: false, authDone: false, authScreen: 'welcome', femPoints: 0, streak: 0, longestStreak: 0, logs: {}, screen: 'home' };
+      return {
+        ...INIT,
+        onboarded: false,
+        authDone: false,
+        authScreen: 'welcome',
+        femPoints: 0,
+        streak: 0,
+        longestStreak: 0,
+        logs: {},
+        screen: 'home',
+      };
     default:
       return state;
   }

@@ -66,7 +66,10 @@ export default function WelcomeScreen() {
               <Image source={slide.image} style={s.photo} resizeMode="cover" />
               <View style={[s.dots, { bottom: 16 }]}>
                 {SLIDES.map((_, d) => (
-                  <View key={d} style={[s.dot, { width: d === i ? 16 : 5, backgroundColor: d === i ? '#fff' : 'rgba(255,255,255,0.55)' }]} />
+                  <View
+                    key={d}
+                    style={[s.dot, { width: d === i ? 16 : 5, backgroundColor: d === i ? '#fff' : 'rgba(255,255,255,0.55)' }]}
+                  />
                 ))}
               </View>
             </View>
@@ -82,7 +85,9 @@ export default function WelcomeScreen() {
                   </Pressable>
                 ) : (
                   <View style={s.footerRow}>
-                    <Text style={s.counter}>{i + 1}/{SLIDES.length}</Text>
+                    <Text style={s.counter}>
+                      {i + 1}/{SLIDES.length}
+                    </Text>
                     <Pressable onPress={goNext}>
                       <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.arrowBtn}>
                         <ChevronRightIcon size={15} color="#fff" />
@@ -106,7 +111,9 @@ export default function WelcomeScreen() {
         onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' })}
         style={[s.loginLink, { paddingBottom: insets.bottom + 14 }]}
       >
-        <Text style={s.loginLinkTx}>Already have an account? <Text style={{ color: colors.authAccent, fontWeight: '700' }}>Login</Text></Text>
+        <Text style={s.loginLinkTx}>
+          Already have an account? <Text style={{ color: colors.authAccent, fontWeight: '700' }}>Login</Text>
+        </Text>
       </Pressable>
     </LinearGradient>
   );
@@ -119,7 +126,14 @@ function createStyles(c) {
     photo: { width: '100%', height: '100%' },
     dots: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', gap: 6, justifyContent: 'center' },
     dot: { height: 5, borderRadius: 99 },
-    skip: { position: 'absolute', right: 16, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 99, backgroundColor: 'rgba(0,0,0,0.28)' },
+    skip: {
+      position: 'absolute',
+      right: 16,
+      paddingHorizontal: 11,
+      paddingVertical: 5,
+      borderRadius: 99,
+      backgroundColor: 'rgba(0,0,0,0.28)',
+    },
     skipTx: { fontSize: 11, fontWeight: '600', color: '#fff' },
     content: { flex: 1, paddingHorizontal: 26, paddingTop: 10, paddingBottom: 20 },
     title: { fontSize: 22, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading },

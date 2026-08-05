@@ -104,9 +104,7 @@ export default function OtpVerifyScreen() {
     setError('');
     setResending(true);
     try {
-      const data = isReset
-        ? await authApi.forgotPassword({ email })
-        : await authApi.resendOtp({ otpId: state.pendingOtpId });
+      const data = isReset ? await authApi.forgotPassword({ email }) : await authApi.resendOtp({ otpId: state.pendingOtpId });
       dispatch({
         type: A.UPDATE_SETTINGS,
         patch: {
@@ -135,7 +133,9 @@ export default function OtpVerifyScreen() {
         >
           <View style={s.header}>
             <LogoMark size={76} />
-            <Text style={s.wordmark}>Spot<Text style={{ color: colors.primary }}> it</Text></Text>
+            <Text style={s.wordmark}>
+              Spot<Text style={{ color: colors.primary }}> it</Text>
+            </Text>
           </View>
 
           <View style={s.body}>
@@ -143,16 +143,21 @@ export default function OtpVerifyScreen() {
               <EnvelopeIcon size={20} />
             </View>
             <Text style={s.title}>{isReset ? 'Reset your password' : 'Enter the code'}</Text>
-            <Text style={s.sub}>We sent a {CODE_LENGTH}-digit code to{'\n'}<Text style={s.subEmail}>{email || 'your email'}</Text></Text>
+            <Text style={s.sub}>
+              We sent a {CODE_LENGTH}-digit code to{'\n'}
+              <Text style={s.subEmail}>{email || 'your email'}</Text>
+            </Text>
 
             <View style={s.otpRow}>
               {digits.map((d, i) => (
                 <TextInput
                   key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
+                  ref={el => {
+                    inputRefs.current[i] = el;
+                  }}
                   value={d}
-                  onChangeText={(v) => setDigitAt(i, v)}
-                  onKeyPress={(e) => onKeyPress(i, e)}
+                  onChangeText={v => setDigitAt(i, v)}
+                  onKeyPress={e => onKeyPress(i, e)}
                   keyboardType="number-pad"
                   maxLength={1}
                   style={[s.otpBox, d && s.otpBoxFilled]}
@@ -165,7 +170,12 @@ export default function OtpVerifyScreen() {
                 <View style={s.field}>
                   <Text style={s.label}>New password</Text>
                   <View style={s.passRow}>
-                    <TextInput value={newPassword} onChangeText={setNewPassword} secureTextEntry={!showPass} style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                    <TextInput
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      secureTextEntry={!showPass}
+                      style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
+                    />
                     <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
                       <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
                     </Pressable>
@@ -175,19 +185,28 @@ export default function OtpVerifyScreen() {
                 <View style={s.field}>
                   <Text style={s.label}>Confirm password</Text>
                   <View style={[s.passRow, passwordsMismatch && { borderBottomColor: colors.error }]}>
-                    <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPass} style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                    <TextInput
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={!showConfirmPass}
+                      style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
+                    />
                     <Pressable onPress={() => setShowConfirmPass(v => !v)} hitSlop={8}>
                       <Text style={s.showTx}>{showConfirmPass ? 'Hide' : 'Show'}</Text>
                     </Pressable>
                   </View>
-                  {passwordsMismatch && <Text style={s.errorTx}>Passwords don't match</Text>}
+                  {passwordsMismatch && <Text style={s.errorTx}>Passwords don&apos;t match</Text>}
                 </View>
               </View>
             )}
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
-            <Pressable disabled={!canVerify || loading} onPress={handleVerify} style={{ marginTop: 24, opacity: canVerify && !loading ? 1 : 0.5, alignSelf: 'stretch' }}>
+            <Pressable
+              disabled={!canVerify || loading}
+              onPress={handleVerify}
+              style={{ marginTop: 24, opacity: canVerify && !loading ? 1 : 0.5, alignSelf: 'stretch' }}
+            >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>{isReset ? 'Reset Password' : 'Verify'}</Text>}
               </LinearGradient>
@@ -198,10 +217,10 @@ export default function OtpVerifyScreen() {
                 {resent
                   ? 'Code resent ✓'
                   : resending
-                  ? 'Sending…'
-                  : expired
-                  ? "Didn't get it? Resend Code"
-                  : `Resend code in ${formatCountdown(secondsLeft)}`}
+                    ? 'Sending…'
+                    : expired
+                      ? "Didn't get it? Resend Code"
+                      : `Resend code in ${formatCountdown(secondsLeft)}`}
               </Text>
             </Pressable>
           </View>
@@ -225,20 +244,43 @@ function createStyles(c) {
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
-    iconBadge: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(220,90,116,0.14)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    iconBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: 'rgba(220,90,116,0.14)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     subEmail: { color: c.authHeading, fontWeight: '700' },
     otpRow: { flexDirection: 'row', gap: 8, marginTop: 26 },
     otpBox: {
-      width: 40, height: 52, borderRadius: 12, borderWidth: 1, borderColor: c.authBorder,
-      backgroundColor: c.authInputBg, textAlign: 'center', fontSize: 20, fontWeight: '300', color: c.authHeading,
+      width: 40,
+      height: 52,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.authBorder,
+      backgroundColor: c.authInputBg,
+      textAlign: 'center',
+      fontSize: 20,
+      fontWeight: '300',
+      color: c.authHeading,
     },
     otpBoxFilled: { borderColor: c.authHeading },
     passwordForm: { alignSelf: 'stretch', marginTop: 22 },
     field: { marginBottom: 8 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
-    input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    input: {
+      fontSize: 12,
+      fontWeight: '400',
+      color: c.authHeading,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: c.authBorderStrong,
+    },
     passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },

@@ -51,7 +51,9 @@ export default function LoginScreen() {
         >
           <View style={s.header}>
             <LogoMark size={76} />
-            <Text style={s.wordmark}>Spot<Text style={{ color: colors.primary }}> it</Text></Text>
+            <Text style={s.wordmark}>
+              Spot<Text style={{ color: colors.primary }}> it</Text>
+            </Text>
           </View>
 
           <View style={s.body}>
@@ -65,7 +67,12 @@ export default function LoginScreen() {
               <View style={s.field}>
                 <Text style={s.label}>Password</Text>
                 <View style={s.passRow}>
-                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!showPass} style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPass}
+                    style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
+                  />
                   <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
                     <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
                   </Pressable>
@@ -79,7 +86,11 @@ export default function LoginScreen() {
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
-            <Pressable disabled={!canSubmit || loading} onPress={handleLogin} style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}>
+            <Pressable
+              disabled={!canSubmit || loading}
+              onPress={handleLogin}
+              style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}
+            >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Login</Text>}
               </LinearGradient>
@@ -108,7 +119,14 @@ function createStyles(c) {
     field: { marginBottom: 18 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
-    input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    input: {
+      fontSize: 12,
+      fontWeight: '400',
+      color: c.authHeading,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: c.authBorderStrong,
+    },
     passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     forgotBtn: { alignItems: 'flex-end', marginTop: 10 },

@@ -5,10 +5,35 @@ import { A } from './actions.js';
 import { configureAuthClient } from '../api/client.js';
 
 const PERSIST_KEYS = [
-  'onboarded','authDone','accessToken','refreshToken','userId','userName','goal','dob','cycleLength','periodLength','lastPeriodDate',
-  'onboardStep','onboardDraft',
-  'femPoints','streak','longestStreak','lastLogDate','lastClaimedDate','logs',
-  'notifs','themePref','isPremium','plan','renewsAt','autoRenew','history',
+  'onboarded',
+  'authDone',
+  'accessToken',
+  'refreshToken',
+  'userId',
+  'userName',
+  'goal',
+  'dob',
+  'cycleLength',
+  'periodLength',
+  'lastPeriodDate',
+  'onboardStep',
+  'onboardDraft',
+  'femPoints',
+  'streak',
+  'longestStreak',
+  'lastLogDate',
+  'lastClaimedDate',
+  'logs',
+  'notifs',
+  'themePref',
+  'isPremium',
+  'plan',
+  'renewsAt',
+  'autoRenew',
+  'history',
+  'badges',
+  'challenges',
+  'shopProducts',
 ];
 
 const AppCtx = createContext(null);
@@ -47,7 +72,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!ready) return;
     const data = {};
-    PERSIST_KEYS.forEach(k => { data[k] = state[k]; });
+    PERSIST_KEYS.forEach(k => {
+      data[k] = state[k];
+    });
     AsyncStorage.setItem('spotit_state', JSON.stringify(data));
   }, [state, ready]);
 
@@ -59,11 +86,7 @@ export function AppProvider({ children }) {
     }
   }, [state.toast]);
 
-  return (
-    <AppCtx.Provider value={{ state, dispatch, ready }}>
-      {children}
-    </AppCtx.Provider>
-  );
+  return <AppCtx.Provider value={{ state, dispatch, ready }}>{children}</AppCtx.Provider>;
 }
 
 export function useApp() {

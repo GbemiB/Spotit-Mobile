@@ -70,7 +70,9 @@ export default function SignupScreen() {
         >
           <View style={s.header}>
             <LogoMark size={76} />
-            <Text style={s.wordmark}>Spot<Text style={{ color: colors.primary }}> it</Text></Text>
+            <Text style={s.wordmark}>
+              Spot<Text style={{ color: colors.primary }}> it</Text>
+            </Text>
           </View>
 
           <View style={s.body}>
@@ -87,12 +89,25 @@ export default function SignupScreen() {
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Email</Text>
-                <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="" style={s.input} />
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholder=""
+                  style={s.input}
+                />
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Password</Text>
                 <View style={s.passRow}>
-                  <TextInput value={password} onChangeText={setPassword} secureTextEntry={!showPass} placeholder="" style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPass}
+                    placeholder=""
+                    style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
+                  />
                   <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
                     <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
                   </Pressable>
@@ -102,12 +117,18 @@ export default function SignupScreen() {
               <View style={s.field}>
                 <Text style={s.label}>Confirm password</Text>
                 <View style={[s.passRow, passwordsMismatch && { borderBottomColor: colors.error }]}>
-                  <TextInput value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPass} placeholder="" style={[s.input, { flex: 1, borderBottomWidth: 0 }]} />
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPass}
+                    placeholder=""
+                    style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
+                  />
                   <Pressable onPress={() => setShowConfirmPass(v => !v)} hitSlop={8}>
                     <Text style={s.showTx}>{showConfirmPass ? 'Hide' : 'Show'}</Text>
                   </Pressable>
                 </View>
-                {passwordsMismatch && <Text style={s.errorTx}>Passwords don't match</Text>}
+                {passwordsMismatch && <Text style={s.errorTx}>Passwords don&apos;t match</Text>}
               </View>
             </View>
 
@@ -117,20 +138,32 @@ export default function SignupScreen() {
               </View>
               <Text style={s.agreeTx}>
                 I agree to the{' '}
-                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>Terms of Service</Text>
-                {' '}and <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>Privacy Policy</Text>
+                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>
+                  Terms of Service
+                </Text>{' '}
+                and{' '}
+                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>
+                  Privacy Policy
+                </Text>
               </Text>
             </Pressable>
 
             <TermsScreen
               visible={showTerms}
-              onAgree={() => { setAgreed(true); setShowTerms(false); }}
+              onAgree={() => {
+                setAgreed(true);
+                setShowTerms(false);
+              }}
               onClose={() => setShowTerms(false)}
             />
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
-            <Pressable disabled={!canSubmit || loading} onPress={handleCreate} style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}>
+            <Pressable
+              disabled={!canSubmit || loading}
+              onPress={handleCreate}
+              style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}
+            >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Create Account</Text>}
               </LinearGradient>
@@ -154,17 +187,41 @@ function createStyles(c) {
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 8 },
-    title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center', marginTop: 24},
+    title: {
+      fontSize: 25,
+      fontWeight: '600',
+      letterSpacing: -0.2,
+      lineHeight: 29,
+      color: c.authHeading,
+      textAlign: 'center',
+      marginTop: 24,
+    },
     form: { marginTop: 24 },
     field: { marginBottom: 8 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
-    input: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    input: {
+      fontSize: 12,
+      fontWeight: '400',
+      color: c.authHeading,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: c.authBorderStrong,
+    },
     passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
     showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 6 },
     agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 10, fontSize: 10 },
-    checkbox: { width: 15, height: 15, borderRadius: 2, borderWidth: 1.5, borderColor: c.primary, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
+    checkbox: {
+      width: 15,
+      height: 15,
+      borderRadius: 2,
+      borderWidth: 1.5,
+      borderColor: c.primary,
+      marginTop: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     agreeTx: { flex: 1, fontSize: 11.5, color: c.textSecondary, lineHeight: 17 },
     agreeLink: { color: c.authAccent, fontWeight: '700' },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

@@ -9,7 +9,8 @@ export default function TrendChart({ data, labels }) {
   const s = useMemo(() => createStyles(colors), [colors]);
   const values = data || [29, 28, 27, 28, 29, 28];
   const months = labels || MONTHS_SHORT.slice(0, values.length);
-  const min = 24, max = 32;
+  const min = 24,
+    max = 32;
 
   return (
     <View style={s.wrap}>
@@ -19,10 +20,11 @@ export default function TrendChart({ data, labels }) {
         return (
           <View key={i} style={s.col}>
             <Text style={[s.val, { color: cur ? colors.primaryDark : colors.textDisabled }]}>{v}</Text>
-            {cur
-              ? <LinearGradient colors={colors.gradient.primaryAccent} style={[s.bar, { height: h }]} />
-              : <View style={[s.bar, { height: h, backgroundColor: colors.border }]} />
-            }
+            {cur ? (
+              <LinearGradient colors={colors.gradient.primaryAccent} style={[s.bar, { height: h }]} />
+            ) : (
+              <View style={[s.bar, { height: h, backgroundColor: colors.border }]} />
+            )}
             <Text style={s.mo}>{months[i]}</Text>
           </View>
         );

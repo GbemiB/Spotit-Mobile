@@ -1,6 +1,7 @@
 import { View, StyleSheet, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useFonts,
+import {
+  useFonts,
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
@@ -29,6 +30,9 @@ import * as devicesApi from './src/shared/api/devices.js';
 import * as cycleApi from './src/shared/api/cycle.js';
 import * as contentApi from './src/shared/api/content.js';
 import * as billingApi from './src/shared/api/billing.js';
+import * as usersApi from './src/shared/api/users.js';
+import * as rewardsApi from './src/shared/api/rewards.js';
+import * as shopApi from './src/shared/api/shop.js';
 import { toISO } from './src/shared/utils/cycle.js';
 import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
 
@@ -44,7 +48,8 @@ function AppContent() {
     const today = new Date();
     const from = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 60));
     const to = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14));
-    logsApi.getLogsInRange({ from, to }, accessToken)
+    logsApi
+      .getLogsInRange({ from, to }, accessToken)
       .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
       .catch(() => {});
   }, [authDone, onboarded]);
@@ -69,7 +74,8 @@ function AppContent() {
   // calculation until this resolves, and whenever it fails (offline, etc).
   useEffect(() => {
     if (!authDone || !onboarded) return;
-    cycleApi.getCurrent(accessToken)
+    cycleApi
+      .getCurrent(accessToken)
       .then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status }))
       .catch(() => {});
   }, [authDone, onboarded]);
@@ -77,7 +83,8 @@ function AppContent() {
   // Public content feed for the Home screen's "For you today" carousel.
   useEffect(() => {
     if (!authDone || !onboarded) return;
-    contentApi.getFeed(10, accessToken)
+    contentApi
+      .getFeed(10, accessToken)
       .then(data => dispatch({ type: A.CONTENT_FEED_HYDRATED, items: data.items || [] }))
       .catch(() => {});
   }, [authDone, onboarded]);
@@ -85,20 +92,78 @@ function AppContent() {
   // Real subscription status from the backend replaces the old client-only isPremium flag.
   useEffect(() => {
     if (!authDone || !onboarded) return;
-    billingApi.getStatus(accessToken)
-      .then(data => dispatch({
-        type: A.SUBSCRIPTION_UPDATED,
-        isPremium: data.isPremium, plan: data.plan, renewsAt: data.renewsAt, autoRenew: data.autoRenew,
-      }))
+    billingApi
+      .getStatus(accessToken)
+      .then(data =>
+        dispatch({
+          type: A.SUBSCRIPTION_UPDATED,
+          isPremium: data.isPremium,
+          plan: data.plan,
+          renewsAt: data.renewsAt,
+          autoRenew: data.autoRenew,
+        }),
+      )
+      .catch(() => {});
+  }, [authDone, onboarded]);
+
+  // Full profile — cycle/period length, goal, dob, name, theme — as persisted server-side.
+  // Needed so a fresh install / different device lands on the real values instead of local
+  // defaults; AsyncStorage's cached copy only covers the same device/session.
+  useEffect(() => {
+    if (!authDone || !onboarded) return;
+    usersApi
+      .getProfile(accessToken)
+      .then(data => dispatch({ type: A.PROFILE_HYDRATED, ...data }))
+      .catch(() => {});
+    usersApi
+      .getNotifications(accessToken)
+      .then(data => dispatch({ type: A.NOTIFICATIONS_HYDRATED, ...data }))
+      .catch(() => {});
+  }, [authDone, onboarded]);
+
+  // SpotPoints balance/streak, badges, weekly challenges, and the shop catalog — all
+  // server-computed (PointsWriteService et al.), so this is the source of truth rather
+  // than anything derived from local logs.
+  useEffect(() => {
+    if (!authDone || !onboarded) return;
+    rewardsApi
+      .getSummary(accessToken)
+      .then(data => dispatch({ type: A.REWARDS_HYDRATED, ...data }))
+      .catch(() => {});
+    rewardsApi
+      .getBadges(accessToken)
+      .then(badges => dispatch({ type: A.BADGES_HYDRATED, badges }))
+      .catch(() => {});
+    rewardsApi
+      .getChallenges(accessToken)
+      .then(challenges => dispatch({ type: A.CHALLENGES_HYDRATED, challenges }))
+      .catch(() => {});
+    rewardsApi
+      .getHistory({ limit: 20 }, accessToken)
+      .then(data => dispatch({ type: A.HISTORY_HYDRATED, entries: data.entries || [] }))
+      .catch(() => {});
+    shopApi
+      .getProducts(accessToken)
+      .then(products => dispatch({ type: A.SHOP_PRODUCTS_HYDRATED, products }))
       .catch(() => {});
   }, [authDone, onboarded]);
 
   if (!authDone) {
     const AuthScreen = AUTH_SCREENS[authScreen];
-    if (AuthScreen) return <OnboardingFontScope><AuthScreen /></OnboardingFontScope>;
+    if (AuthScreen)
+      return (
+        <OnboardingFontScope>
+          <AuthScreen />
+        </OnboardingFontScope>
+      );
   }
 
-  if (!onboarded) return <OnboardingFontScope><OnboardingScreen /></OnboardingFontScope>;
+  if (!onboarded)
+    return (
+      <OnboardingFontScope>
+        <OnboardingScreen />
+      </OnboardingFontScope>
+    );
 
   const Screen = TAB_SCREENS[screen] || DEFAULT_TAB_SCREEN;
 

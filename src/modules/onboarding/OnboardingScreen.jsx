@@ -64,15 +64,25 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
 
   function prevMonth() {
     if (atMinMonth) return;
-    let m = viewMonth - 1, y = viewYear;
-    if (m < 0) { m = 11; y -= 1; }
-    setViewMonth(m); setViewYear(y);
+    let m = viewMonth - 1,
+      y = viewYear;
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    }
+    setViewMonth(m);
+    setViewYear(y);
   }
   function nextMonth() {
     if (atMaxMonth) return;
-    let m = viewMonth + 1, y = viewYear;
-    if (m > 11) { m = 0; y += 1; }
-    setViewMonth(m); setViewYear(y);
+    let m = viewMonth + 1,
+      y = viewYear;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+    setViewMonth(m);
+    setViewYear(y);
   }
 
   return (
@@ -81,13 +91,19 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
         <Pressable onPress={prevMonth} disabled={atMinMonth} hitSlop={8} style={{ opacity: atMinMonth ? 0.3 : 1 }}>
           <Text style={s.pickerNav}>‹</Text>
         </Pressable>
-        <Text style={s.pickerTitle}>{MONTHS[viewMonth]} {viewYear}</Text>
+        <Text style={s.pickerTitle}>
+          {MONTHS[viewMonth]} {viewYear}
+        </Text>
         <Pressable onPress={nextMonth} disabled={atMaxMonth} hitSlop={8} style={{ opacity: atMaxMonth ? 0.3 : 1 }}>
           <Text style={s.pickerNav}>›</Text>
         </Pressable>
       </View>
       <View style={s.pickerDow}>
-        {DAYS_SHORT.map((x, i) => <Text key={i} style={s.pickerDowTx}>{x}</Text>)}
+        {DAYS_SHORT.map((x, i) => (
+          <Text key={i} style={s.pickerDowTx}>
+            {x}
+          </Text>
+        ))}
       </View>
       <View style={s.pickerGrid}>
         {cells.map((d, i) => {
@@ -98,9 +114,7 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
           return (
             <Pressable key={i} disabled={disabled} onPress={() => onSelect(date)} style={s.pickerCell}>
               <View style={[s.pickerDayCircle, isSel && { backgroundColor: colors.primary }]}>
-                <Text style={[s.pickerDayTx, isSel && { color: colors.white }, disabled && { color: colors.authLabel }]}>
-                  {d}
-                </Text>
+                <Text style={[s.pickerDayTx, isSel && { color: colors.white }, disabled && { color: colors.authLabel }]}>{d}</Text>
               </View>
             </Pressable>
           );
@@ -114,7 +128,10 @@ function StepDots({ total, current, colors, s }) {
   return (
     <View style={s.dots}>
       {Array.from({ length: total }, (_, i) => (
-        <View key={i} style={[s.dot, { width: i === current ? 20 : 8, backgroundColor: i === current ? colors.primary : colors.authBorder }]} />
+        <View
+          key={i}
+          style={[s.dot, { width: i === current ? 20 : 8, backgroundColor: i === current ? colors.primary : colors.authBorder }]}
+        />
       ))}
     </View>
   );
@@ -134,9 +151,7 @@ function DateField({ value, placeholder, onChange, maximumDate, minimumDate, col
     <View>
       <Pressable onPress={() => setShow(v => !v)} style={s.dateField}>
         <CalendarIcon size={16} />
-        <Text style={[s.dateFieldTx, !value && { color: colors.authLabel }]}>
-          {value ? formatDateDisplay(value) : placeholder}
-        </Text>
+        <Text style={[s.dateFieldTx, !value && { color: colors.authLabel }]}>{value ? formatDateDisplay(value) : placeholder}</Text>
       </Pressable>
       {show && (
         <CalendarDatePicker
@@ -187,12 +202,18 @@ function AboutYouStep({ draft, dispatch, colors, s }) {
         colors={colors}
         s={s}
       />
-      <Text style={s.fieldHint}>If you remember the first day of your last period, add it — otherwise skip and we'll estimate as you log.</Text>
+      <Text style={s.fieldHint}>
+        If you remember the first day of your last period, add it — otherwise skip and we&apos;ll estimate as you log.
+      </Text>
       <Pressable onPress={() => dispatch({ type: A.ONBOARD_FIELD, field: 'lastPeriod', value: '' })}>
-        <Text style={s.skipTx}>I don't remember</Text>
+        <Text style={s.skipTx}>I don&apos;t remember</Text>
       </Pressable>
 
-      <Pressable disabled={!dobComplete} onPress={() => dispatch({ type: A.NEXT_ONBOARD })} style={{ marginTop: 24, opacity: dobComplete ? 1 : 0.5 }}>
+      <Pressable
+        disabled={!dobComplete}
+        onPress={() => dispatch({ type: A.NEXT_ONBOARD })}
+        style={{ marginTop: 24, opacity: dobComplete ? 1 : 0.5 }}
+      >
         <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
           <Text style={s.ctaTx}>Continue</Text>
         </LinearGradient>
@@ -226,18 +247,24 @@ function CycleStep({ draft, dispatch, colors, s }) {
     <View>
       <Text style={s.eyebrow}>STEP 2 OF 3</Text>
       <Text style={s.stepTitle}>Your cycle basics</Text>
-      <Text style={s.stepSub}>Rough numbers are fine — we'll refine these as you log.</Text>
+      <Text style={s.stepSub}>Rough numbers are fine — we&apos;ll refine these as you log.</Text>
 
       <View style={{ marginTop: 22, gap: 12 }}>
         <LengthStepper
-          label="Cycle length" hint="Days between periods"
-          value={draft.cycleLength} min={21} max={45}
+          label="Cycle length"
+          hint="Days between periods"
+          value={draft.cycleLength}
+          min={21}
+          max={45}
           onChange={v => dispatch({ type: A.ONBOARD_FIELD, field: 'cycleLength', value: v })}
           s={s}
         />
         <LengthStepper
-          label="Period length" hint="Days of bleeding"
-          value={draft.periodLength} min={2} max={10}
+          label="Period length"
+          hint="Days of bleeding"
+          value={draft.periodLength}
+          min={2}
+          max={10}
           onChange={v => dispatch({ type: A.ONBOARD_FIELD, field: 'periodLength', value: v })}
           s={s}
         />
@@ -262,13 +289,17 @@ function GoalsStep({ draft, dispatch, colors, s, goals, loading, error, onComple
     <View>
       <Text style={s.eyebrow}>STEP 3 OF 3</Text>
       <Text style={s.stepTitle}>What brings you to Spot it?</Text>
-      <Text style={s.stepSub}>We'll personalise your experience</Text>
+      <Text style={s.stepSub}>We&apos;ll personalise your experience</Text>
 
       <View style={{ gap: 10, marginTop: 22, marginBottom: 8 }}>
         {goals.map(g => {
           const sel = draft.goal === g.id;
           return (
-            <Pressable key={g.id} onPress={() => dispatch({ type: A.ONBOARD_FIELD, field: 'goal', value: g.id })} style={[s.goalCard, sel && s.goalCardSel]}>
+            <Pressable
+              key={g.id}
+              onPress={() => dispatch({ type: A.ONBOARD_FIELD, field: 'goal', value: g.id })}
+              style={[s.goalCard, sel && s.goalCardSel]}
+            >
               <Text style={s.goalIcon}>{GOAL_ICONS[g.id] || '🌸'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[s.goalLabel, sel && { color: colors.primaryDark }]}>{g.label}</Text>
@@ -313,8 +344,11 @@ export default function OnboardingScreen() {
   // The goals template is what the UI calls first to render the goals step —
   // falls back to the local GOALS constant if the request fails so onboarding never blocks.
   useEffect(() => {
-    onboardingApi.getTemplate(state.accessToken)
-      .then(data => { if (data?.goals?.length) setGoals(data.goals); })
+    onboardingApi
+      .getTemplate(state.accessToken)
+      .then(data => {
+        if (data?.goals?.length) setGoals(data.goals);
+      })
       .catch(() => {});
   }, []);
 
@@ -323,13 +357,16 @@ export default function OnboardingScreen() {
     setError('');
     setLoading(true);
     try {
-      const data = await onboardingApi.completeOnboarding({
-        dob: onboardDraft.dob,
-        lastPeriodDate: onboardDraft.lastPeriod,
-        goal: onboardDraft.goal,
-        cycleLength: onboardDraft.cycleLength,
-        periodLength: onboardDraft.periodLength,
-      }, state.accessToken);
+      const data = await onboardingApi.completeOnboarding(
+        {
+          dob: onboardDraft.dob,
+          lastPeriodDate: onboardDraft.lastPeriod,
+          goal: onboardDraft.goal,
+          cycleLength: onboardDraft.cycleLength,
+          periodLength: onboardDraft.periodLength,
+        },
+        state.accessToken,
+      );
       dispatch({ type: A.COMPLETE_ONBOARD, goal: data.goal, cycleLength: data.cycleLength, periodLength: data.periodLength });
     } catch (e) {
       setError(e.message);
@@ -353,7 +390,16 @@ export default function OnboardingScreen() {
             </Pressable>
           </View>
           <StepDots total={STEPS.length} current={onboardStep} colors={colors} s={s} />
-          <StepComp draft={onboardDraft} dispatch={dispatch} colors={colors} s={s} goals={goals} loading={loading} error={error} onComplete={handleComplete} />
+          <StepComp
+            draft={onboardDraft}
+            dispatch={dispatch}
+            colors={colors}
+            s={s}
+            goals={goals}
+            loading={loading}
+            error={error}
+            onComplete={handleComplete}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -369,9 +415,27 @@ function createStyles(c) {
     stepSub: { fontSize: 12, color: c.authBody, marginTop: 6, lineHeight: 18 },
     fieldLabel: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700', marginBottom: 8 },
     fieldHint: { fontSize: 11.5, color: c.authBody, marginBottom: 10, lineHeight: 16 },
-    dateField: { height: 48, borderRadius: 12, backgroundColor: c.authInputBg, borderWidth: 1, borderColor: c.authInputBorder, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10, marginBottom: 8 },
+    dateField: {
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: c.authInputBg,
+      borderWidth: 1,
+      borderColor: c.authInputBorder,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      gap: 10,
+      marginBottom: 8,
+    },
     dateFieldTx: { fontSize: 12, fontWeight: '400', color: c.authHeading },
-    pickerCard: { backgroundColor: c.authInputBg, borderWidth: 1, borderColor: c.authInputBorder, borderRadius: 16, padding: 14, marginBottom: 8 },
+    pickerCard: {
+      backgroundColor: c.authInputBg,
+      borderWidth: 1,
+      borderColor: c.authInputBorder,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 8,
+    },
     pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
     pickerNav: { fontSize: 14, fontWeight: '400', color: c.authHeading, paddingHorizontal: 8 },
     pickerTitle: { fontSize: 12, fontWeight: '400', color: c.authHeading },
@@ -387,17 +451,52 @@ function createStyles(c) {
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    backBtn: { flex: 1, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: c.authInputBg, borderWidth: 1, borderColor: c.authInputBorder },
+    backBtn: {
+      flex: 1,
+      height: 50,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.authInputBg,
+      borderWidth: 1,
+      borderColor: c.authInputBorder,
+    },
     backBtnTx: { fontSize: 13, fontWeight: '600', color: c.authHeading },
-    goalCard: { backgroundColor: c.authInputBg, borderWidth: 1.5, borderColor: c.authInputBorder, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+    goalCard: {
+      backgroundColor: c.authInputBg,
+      borderWidth: 1.5,
+      borderColor: c.authInputBorder,
+      borderRadius: 18,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+    },
     goalCardSel: { backgroundColor: c.primarySoft, borderColor: c.primary },
     goalIcon: { fontSize: 24 },
     goalLabel: { fontSize: 13, fontWeight: '700', color: c.authHeading, marginBottom: 2 },
     goalDesc: { fontSize: 10.5, color: c.authBody },
-    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.authInputBg, borderWidth: 1, borderColor: c.authInputBorder, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16 },
+    stepperRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: c.authInputBg,
+      borderWidth: 1,
+      borderColor: c.authInputBorder,
+      borderRadius: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
     stepperLabel: { fontSize: 12, fontWeight: '400', color: c.authHeading },
     stepperHint: { fontSize: 11, color: c.authBody, marginTop: 2 },
-    stepperCtrl: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.authBorder, borderRadius: 12, overflow: 'hidden' },
+    stepperCtrl: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: c.authBorder,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
     stepBtnCtrl: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
     stepBtnTx: { fontSize: 17, color: c.primary, fontWeight: '600', lineHeight: 22 },
     stepVal: { fontSize: 12, fontWeight: '400', color: c.authHeading, paddingHorizontal: 10 },

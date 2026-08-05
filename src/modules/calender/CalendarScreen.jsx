@@ -48,17 +48,21 @@ export default function CalendarScreen() {
   useEffect(() => {
     const from = toISO(new Date(viewYear, viewMonth, 1));
     const to = toISO(new Date(viewYear, viewMonth + 1, 0));
-    logsApi.getLogsInRange({ from, to }, accessToken)
+    logsApi
+      .getLogsInRange({ from, to }, accessToken)
       .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
       .catch(() => {});
-    cycleApi.getCalendar({ year: viewYear, month: viewMonth + 1 }, accessToken)
+    cycleApi
+      .getCalendar({ year: viewYear, month: viewMonth + 1 }, accessToken)
       .then(data => {
         const phasesByDate = {};
-        (data.days || []).forEach(d => { phasesByDate[d.date] = d.phase; });
+        (data.days || []).forEach(d => {
+          phasesByDate[d.date] = d.phase;
+        });
         dispatch({ type: A.CALENDAR_PHASES_HYDRATED, phases: phasesByDate });
       })
       .catch(() => {});
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, lastPeriodDate]);
 
   async function handleDelete() {
     if (deleting) return;
@@ -76,7 +80,6 @@ export default function CalendarScreen() {
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-
         {/* Header */}
         <View style={s.headerRow}>
           <Text style={s.screenTitle}>Calendar</Text>
@@ -87,7 +90,9 @@ export default function CalendarScreen() {
             <Pressable onPress={() => dispatch({ type: A.NEXT_MONTH })} style={s.navBtn}>
               <Text style={s.navArrow}>›</Text>
             </Pressable>
-            <Text style={s.monthTitle}>{MONTHS[viewMonth]} {viewYear}</Text>
+            <Text style={s.monthTitle}>
+              {MONTHS[viewMonth]} {viewYear}
+            </Text>
           </View>
         </View>
         <Text style={s.screenSub}>Tap any day to see what you logged.</Text>
@@ -126,7 +131,7 @@ export default function CalendarScreen() {
               <Text style={s.selPhaseName}>{selPhase.label}</Text>
               {selCycleDay != null && <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>}
             </View>
-            <Text style={s.phaseNote}>{selPhase.key ? PHASE_NOTES[selPhase.key] : "Log your last period to see cycle phases here."}</Text>
+            <Text style={s.phaseNote}>{selPhase.key ? PHASE_NOTES[selPhase.key] : 'Log your last period to see cycle phases here.'}</Text>
           </Card>
 
           {selLog ? (
@@ -158,17 +163,19 @@ export default function CalendarScreen() {
               ) : null}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
                 <View style={{ flex: 1 }}>
-                  <Button variant="secondary" onPress={() => dispatch({ type: A.OPEN_LOG, date: selDate })}>Edit</Button>
+                  <Button variant="secondary" onPress={() => dispatch({ type: A.OPEN_LOG, date: selDate })}>
+                    Edit
+                  </Button>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Button variant="danger" onPress={handleDelete} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete'}</Button>
+                  <Button variant="danger" onPress={handleDelete} disabled={deleting}>
+                    {deleting ? 'Deleting…' : 'Delete'}
+                  </Button>
                 </View>
               </View>
             </Card>
           ) : (
-            <Button onPress={() => dispatch({ type: A.OPEN_LOG, date: selDate })}>
-              + Log this day
-            </Button>
+            <Button onPress={() => dispatch({ type: A.OPEN_LOG, date: selDate })}>+ Log this day</Button>
           )}
         </View>
       </ScrollView>
@@ -179,7 +186,14 @@ export default function CalendarScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
-    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 20, marginBottom: 8 },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      marginBottom: 8,
+    },
     screenTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     monthNav: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     navBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
@@ -187,8 +201,13 @@ function createStyles(c) {
     monthTitle: { fontSize: 12, fontWeight: '500', color: c.primaryDark },
     screenSub: { fontSize: 11.5, color: c.textMuted, paddingHorizontal: 24, marginBottom: 18 },
     gridCard: {
-      padding: 14, borderRadius: 28,
-      shadowColor: c.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 20, elevation: 2,
+      padding: 14,
+      borderRadius: 28,
+      shadowColor: c.shadow,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.06,
+      shadowRadius: 20,
+      elevation: 2,
     },
     phaseKeyWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 24, marginTop: 18, marginBottom: 16 },
     phaseKeyItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
@@ -200,7 +219,14 @@ function createStyles(c) {
     cdTx: { fontSize: 11, color: c.textMuted, marginLeft: 'auto' },
     phaseNote: { fontSize: 11, color: c.textSecondary, lineHeight: 20, marginTop: 8 },
     logHeading: { fontSize: 10, fontWeight: '600', color: c.textSecondary, marginBottom: 12 },
-    logRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+    logRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
     logKey: { fontSize: 10, color: c.textMuted, fontWeight: '600' },
     logVal: { fontSize: 10, color: c.textPrimary, fontWeight: '600', textTransform: 'capitalize' },
   });

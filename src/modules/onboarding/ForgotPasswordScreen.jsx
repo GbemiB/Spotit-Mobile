@@ -55,7 +55,9 @@ export default function ForgotPasswordScreen() {
         >
           <View style={s.header}>
             <LogoMark size={76} />
-            <Text style={s.wordmark}>Spot<Text style={{ color: colors.primary }}> it</Text></Text>
+            <Text style={s.wordmark}>
+              Spot<Text style={{ color: colors.primary }}> it</Text>
+            </Text>
           </View>
 
           <View style={s.body}>
@@ -63,7 +65,7 @@ export default function ForgotPasswordScreen() {
               <LockIcon size={20} />
             </View>
             <Text style={s.title}>Forgot password?</Text>
-            <Text style={s.sub}>Enter the email on your account and we'll send a code to reset it.</Text>
+            <Text style={s.sub}>Enter the email on your account and we&apos;ll send a code to reset it.</Text>
 
             <View style={s.form}>
               <Text style={s.label}>Email</Text>
@@ -72,7 +74,11 @@ export default function ForgotPasswordScreen() {
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
-            <Pressable disabled={!canSubmit || loading} onPress={handleSend} style={{ alignSelf: 'stretch', marginTop: 24, opacity: canSubmit && !loading ? 1 : 0.5 }}>
+            <Pressable
+              disabled={!canSubmit || loading}
+              onPress={handleSend}
+              style={{ alignSelf: 'stretch', marginTop: 24, opacity: canSubmit && !loading ? 1 : 0.5 }}
+            >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Send Code</Text>}
               </LinearGradient>
@@ -96,13 +102,28 @@ function createStyles(c) {
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
-    iconBadge: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(220,90,116,0.14)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    iconBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: 'rgba(220,90,116,0.14)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     form: { alignSelf: 'stretch', marginTop: 26 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 16, textAlign: 'center' },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
-    input: { fontSize: 15, fontWeight: '400', color: c.authHeading, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
+    input: {
+      fontSize: 15,
+      fontWeight: '400',
+      color: c.authHeading,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: c.authBorderStrong,
+    },
     cta: { alignSelf: 'stretch', paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
