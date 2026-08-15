@@ -6,7 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { EnvelopeIcon } from '../../components/ui/icons.jsx';
+import { EnvelopeIcon, ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
 
@@ -41,12 +41,17 @@ export default function OtpVerifyScreen() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [resetDone, setResetDone] = useState(false);
+  // Reset-password is two steps: the code must check out before we ever ask for a new
+  // password. otpConfirmed flips true once /reset-password/verify-otp succeeds.
+  const [otpConfirmed, setOtpConfirmed] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
 
   const code = digits.join('');
+  const codeComplete = code.length === CODE_LENGTH;
   const passwordsMismatch = isReset && confirmPassword.length > 0 && newPassword !== confirmPassword;
-  const canVerify = code.length === CODE_LENGTH && (!isReset || (newPassword.length >= 8 && !passwordsMismatch));
+  const awaitingPassword = isReset && otpConfirmed;
+  const canVerify = awaitingPassword ? newPassword.length >= 8 && !passwordsMismatch : codeComplete;
   const expired = secondsLeft <= 0;
 
   useEffect(() => {
@@ -56,7 +61,22 @@ export default function OtpVerifyScreen() {
   }, [state.otpExpiresAt]);
 
   function setDigitAt(i, value) {
-    const clean = value.replace(/[^0-9]/g, '').slice(-1);
+    const clean = value.replace(/[^0-9]/g, '');
+    if (clean.length > 1) {
+      // A full code landed in one box — either OS one-time-code autofill (iOS QuickType
+      // suggests codes it finds in Mail) or the user pasting a code copied from the email.
+      // Spread it across the remaining boxes from the one that received it.
+      const next = [...digits];
+      let idx = i;
+      for (const ch of clean) {
+        if (idx >= CODE_LENGTH) break;
+        next[idx] = ch;
+        idx += 1;
+      }
+      setDigits(next);
+      inputRefs.current[Math.min(idx, CODE_LENGTH - 1)]?.focus();
+      return;
+    }
     const next = [...digits];
     next[i] = clean;
     setDigits(next);
@@ -71,14 +91,30 @@ export default function OtpVerifyScreen() {
     }
   }
 
+  function handleBack() {
+    if (isReset) {
+      dispatch({ type: A.UPDATE_SETTINGS, patch: { resetEmail: null, otpPurpose: null, otpExpiresAt: null } });
+      dispatch({ type: A.SET_AUTH_SCREEN, screen: 'forgot-password' });
+    } else {
+      dispatch({
+        type: A.UPDATE_SETTINGS,
+        patch: { pendingOtpId: null, pendingEmail: null, otpPurpose: null, otpExpiresAt: null },
+      });
+      dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
+    }
+  }
+
   async function handleVerify() {
     if (!canVerify || loading) return;
     setError('');
     setLoading(true);
     try {
-      if (isReset) {
+      if (awaitingPassword) {
         await authApi.resetPassword({ email, code, newPassword });
         setResetDone(true);
+      } else if (isReset) {
+        await authApi.verifyResetOtp({ email, code });
+        setOtpConfirmed(true);
       } else {
         const data = await authApi.verifyOtp({ otpId: state.pendingOtpId, code });
         dispatch({
@@ -113,6 +149,7 @@ export default function OtpVerifyScreen() {
         },
       });
       setDigits(Array(CODE_LENGTH).fill(''));
+      setOtpConfirmed(false);
       inputRefs.current[0]?.focus();
       setResent(true);
       setTimeout(() => setResent(false), 3000);
@@ -131,6 +168,12 @@ export default function OtpVerifyScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <View style={s.topBar}>
+            <Pressable onPress={handleBack} hitSlop={12} style={s.backBtn}>
+              <ChevronLeftIcon size={16} color={colors.authHeading} />
+            </Pressable>
+          </View>
+
           <View style={s.header}>
             <LogoMark size={76} />
             <Text style={s.wordmark}>
@@ -142,30 +185,40 @@ export default function OtpVerifyScreen() {
             <View style={s.iconBadge}>
               <EnvelopeIcon size={20} />
             </View>
-            <Text style={s.title}>{isReset ? 'Reset your password' : 'Enter the code'}</Text>
-            <Text style={s.sub}>
-              We sent a {CODE_LENGTH}-digit code to{'\n'}
-              <Text style={s.subEmail}>{email || 'your email'}</Text>
-            </Text>
+            <Text style={s.title}>{awaitingPassword ? 'Create new password' : isReset ? 'Reset your password' : 'Enter the code'}</Text>
+            {awaitingPassword ? (
+              <Text style={s.sub}>
+                Code verified ✓ Choose a new password for{'\n'}
+                <Text style={s.subEmail}>{email || 'your email'}</Text>
+              </Text>
+            ) : (
+              <Text style={s.sub}>
+                We sent a {CODE_LENGTH}-digit code to{'\n'}
+                <Text style={s.subEmail}>{email || 'your email'}</Text>
+              </Text>
+            )}
 
-            <View style={s.otpRow}>
-              {digits.map((d, i) => (
-                <TextInput
-                  key={i}
-                  ref={el => {
-                    inputRefs.current[i] = el;
-                  }}
-                  value={d}
-                  onChangeText={v => setDigitAt(i, v)}
-                  onKeyPress={e => onKeyPress(i, e)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  style={[s.otpBox, d && s.otpBoxFilled]}
-                />
-              ))}
-            </View>
+            {!awaitingPassword && (
+              <View style={s.otpRow}>
+                {digits.map((d, i) => (
+                  <TextInput
+                    key={i}
+                    ref={el => {
+                      inputRefs.current[i] = el;
+                    }}
+                    value={d}
+                    onChangeText={v => setDigitAt(i, v)}
+                    onKeyPress={e => onKeyPress(i, e)}
+                    keyboardType="number-pad"
+                    textContentType="oneTimeCode"
+                    autoComplete="one-time-code"
+                    style={[s.otpBox, d && s.otpBoxFilled]}
+                  />
+                ))}
+              </View>
+            )}
 
-            {isReset && (
+            {awaitingPassword && (
               <View style={s.passwordForm}>
                 <View style={s.field}>
                   <Text style={s.label}>New password</Text>
@@ -208,21 +261,27 @@ export default function OtpVerifyScreen() {
               style={{ marginTop: 24, opacity: canVerify && !loading ? 1 : 0.5, alignSelf: 'stretch' }}
             >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>{isReset ? 'Reset Password' : 'Verify'}</Text>}
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={s.ctaTx}>{awaitingPassword ? 'Reset Password' : isReset ? 'Verify Code' : 'Verify'}</Text>
+                )}
               </LinearGradient>
             </Pressable>
 
-            <Pressable style={s.resendBtn} onPress={handleResend} disabled={!expired || resending}>
-              <Text style={[s.resendTx, !expired && s.resendTxDisabled]}>
-                {resent
-                  ? 'Code resent ✓'
-                  : resending
-                    ? 'Sending…'
-                    : expired
-                      ? "Didn't get it? Resend Code"
-                      : `Resend code in ${formatCountdown(secondsLeft)}`}
-              </Text>
-            </Pressable>
+            {!awaitingPassword && (
+              <Pressable style={s.resendBtn} onPress={handleResend} disabled={!expired || resending}>
+                <Text style={[s.resendTx, !expired && s.resendTxDisabled]}>
+                  {resent
+                    ? 'Code resent ✓'
+                    : resending
+                      ? 'Sending…'
+                      : expired
+                        ? "Didn't get it? Resend Code"
+                        : `Resend code in ${formatCountdown(secondsLeft)}`}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -241,6 +300,16 @@ export default function OtpVerifyScreen() {
 
 function createStyles(c) {
   return StyleSheet.create({
+    topBar: { paddingHorizontal: 18 },
+    backBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.05)',
+      alignSelf: 'flex-start',
+    },
     header: { alignItems: 'center' },
     wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },

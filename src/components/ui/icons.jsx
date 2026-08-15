@@ -65,6 +65,14 @@ export function ChevronRightIcon({ size = 15, color = '#fff' }) {
   );
 }
 
+export function ChevronLeftIcon({ size = 15, color = '#fff' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M19 12H5M11 6l-6 6 6 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 export function LockIcon({ size = 20, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
