@@ -12,6 +12,7 @@ import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
+import TermsScreen from '../onboarding/TermsScreen.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
 
@@ -78,6 +79,7 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   function patch(obj) {
     dispatch({ type: A.UPDATE_SETTINGS, patch: obj });
@@ -198,7 +200,6 @@ export default function SettingsScreen() {
                 {level.name} · {femPoints.toLocaleString()} SP
               </Text>
             </View>
-            <Text style={s.editLink}>Edit</Text>
           </Card>
         </View>
 
@@ -275,11 +276,11 @@ export default function SettingsScreen() {
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
             <Row label="App" right={<Text style={s.metaTx}>Spot it</Text>} s={s} />
             <Row label="Version" right={<Text style={s.metaTx}>1.0.0</Text>} s={s} />
-            <Pressable style={s.row} onPress={() => {}}>
+            <Pressable style={s.row} onPress={() => setShowTerms(true)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Privacy Policy</Text>
               <Text style={s.chevron}>›</Text>
             </Pressable>
-            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={() => {}}>
+            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={() => setShowTerms(true)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Terms of Service</Text>
               <Text style={s.chevron}>›</Text>
             </Pressable>
@@ -350,6 +351,7 @@ export default function SettingsScreen() {
         onConfirm={confirmDelete}
         onCancel={() => setConfirming(null)}
       />
+      <TermsScreen visible={showTerms} onAgree={() => setShowTerms(false)} onClose={() => setShowTerms(false)} />
     </View>
   );
 }
@@ -362,7 +364,6 @@ function createStyles(c) {
     profileHero: { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 22, borderRadius: 24 },
     profileName: { fontSize: 11, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.3 },
     profileMeta: { fontSize: 10.5, color: c.textMuted, marginTop: 2 },
-    editLink: { fontSize: 10.5, fontWeight: '700', color: c.primaryDark },
     themeRow: {
       flexDirection: 'row',
       gap: 6,

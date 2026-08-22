@@ -135,6 +135,39 @@ describe('SAVE_LOG_PERIOD', () => {
     expect(next.logs['2026-07-11']).toEqual({ mood: 'sad', notes: 'rough day', flow: 'heavy' });
   });
 
+  test('clearedEntries removes stale flow-only days and preserves days with other data', () => {
+    // Simulates moving a period from Aug 1-5 to Aug 3-7: Aug 1 was flow-only (now fully
+    // cleared, should disappear from local state so its calendar dot stops showing), Aug 2
+    // had a note too (should stay, just with flow nulled).
+    const state = {
+      ...baseState,
+      logs: {
+        '2026-08-01': { flow: 'medium' },
+        '2026-08-02': { flow: 'medium', notes: 'cramping' },
+      },
+    };
+
+    const next = reducer(state, {
+      type: A.SAVE_LOG_PERIOD,
+      dates: ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07'],
+      date: '2026-08-03',
+      flow: 'medium',
+      entry: { flow: 'medium', mood: null, symptoms: [], notes: '', intimate: false },
+      lastPeriodDate: '2026-08-03',
+      pointsAwarded: 10,
+      newBalance: 110,
+      streak: 1,
+      clearedEntries: [
+        { date: '2026-08-01', flow: null, mood: null, symptoms: [], notes: null, intimate: false },
+        { date: '2026-08-02', flow: null, mood: null, symptoms: [], notes: 'cramping', intimate: false },
+      ],
+    });
+
+    expect(next.logs['2026-08-01']).toBeUndefined();
+    expect(next.logs['2026-08-02']).toEqual({ flow: null, mood: null, symptoms: [], notes: 'cramping', intimate: false });
+    expect(next.logs['2026-08-03']).toEqual({ flow: 'medium', mood: null, symptoms: [], notes: '', intimate: false });
+  });
+
   test('a null lastPeriodDate blocked by the backend guard falls back to existing state', () => {
     const state = { ...baseState, lastPeriodDate: '2026-07-05' };
 

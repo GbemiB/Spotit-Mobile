@@ -22,13 +22,12 @@ import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
 import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
 import { AUTH_SCREENS, OnboardingScreen, TAB_SCREENS, DEFAULT_TAB_SCREEN } from './src/shared/navigation/screens.js';
-import LogSheet from './src/modules/tracker/LogSheet.jsx';
+import PeriodPickerSheet from './src/modules/tracker/PeriodPickerSheet.jsx';
 import BottomNav from './src/components/nav/BottomNav.jsx';
 import Toast from './src/components/ui/Toast.jsx';
 import * as logsApi from './src/shared/api/logs.js';
 import * as devicesApi from './src/shared/api/devices.js';
 import * as cycleApi from './src/shared/api/cycle.js';
-import * as contentApi from './src/shared/api/content.js';
 import * as billingApi from './src/shared/api/billing.js';
 import * as usersApi from './src/shared/api/users.js';
 import * as rewardsApi from './src/shared/api/rewards.js';
@@ -39,7 +38,7 @@ import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/sha
 function AppContent() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
-  const { onboarded, authDone, authScreen, screen, logOpen, toast, accessToken } = state;
+  const { onboarded, authDone, authScreen, screen, periodPickerOpen, toast, accessToken } = state;
 
   // Home/Insights read state.logs directly without owning a fetch of their own — seed a
   // wide-enough window (covers the weekly digest and "logged today" check) once per session.
@@ -77,15 +76,6 @@ function AppContent() {
     cycleApi
       .getCurrent(accessToken)
       .then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status }))
-      .catch(() => {});
-  }, [authDone, onboarded]);
-
-  // Public content feed for the Home screen's "For you today" carousel.
-  useEffect(() => {
-    if (!authDone || !onboarded) return;
-    contentApi
-      .getFeed(10, accessToken)
-      .then(data => dispatch({ type: A.CONTENT_FEED_HYDRATED, items: data.items || [] }))
       .catch(() => {});
   }, [authDone, onboarded]);
 
@@ -171,7 +161,7 @@ function AppContent() {
     <View style={[s.root, { backgroundColor: colors.background }]}>
       <Screen />
       <BottomNav screen={screen} dispatch={dispatch} />
-      {logOpen && <LogSheet />}
+      {periodPickerOpen && <PeriodPickerSheet />}
       {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
     </View>
   );

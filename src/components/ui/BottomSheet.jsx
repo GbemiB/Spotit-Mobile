@@ -41,8 +41,8 @@ function createStyles(c) {
       paddingBottom: 40,
     },
     handle: { width: 40, height: 5, borderRadius: 99, backgroundColor: c.border, alignSelf: 'center', marginTop: 10, marginBottom: 16 },
-    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-    title: { fontSize: 21, fontWeight: '700', color: c.textPrimary },
-    cancel: { fontSize: 13.5, fontWeight: '600', color: c.textMuted },
+    titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 },
+    title: { flex: 1, fontSize: 21, lineHeight: 26, fontWeight: '700', color: c.textPrimary },
+    cancel: { fontSize: 13.5, fontWeight: '600', color: c.textMuted, marginTop: 4 },
   });
 }

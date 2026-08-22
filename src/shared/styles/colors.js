@@ -1,11 +1,9 @@
 // Cycle-phase colors are intentionally theme-invariant — they're semantic/data-viz
 // colors (same meaning in light & dark), not UI chrome.
 export const phases = {
-  period: '#DC5A74',
+  period: '#E5383B',
   fertile: '#5FA98C',
   ovulation: '#D6A24E',
-  luteal: '#9B86C9',
-  follicular: '#A8C5DA',
 };
 
 // Third-party brand colors that must not shift with the theme (e.g. Apple's

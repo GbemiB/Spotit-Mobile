@@ -66,15 +66,16 @@ export default function InsightsScreen() {
       .catch(() => {});
   }, []);
 
-  const totalLogs = Object.keys(logs).length;
   const trends = insights.trends;
-  // A single cycle-length value (real or the backend's own default-cycle-length fallback) can't
-  // show a trend or variation — need at least two logged cycles before that means anything.
   const trendData = trends?.cycleLengths ?? [];
-  const hasTrendData = trendData.length >= 2;
+  // One real cycle-length value (2 logged periods) is already a meaningful "avg cycle" stat —
+  // the backend only returns a non-empty cycleLengths array once it has a real gap to measure,
+  // as opposed to falling back to the account's default cycle length. A trend *chart* and
+  // variation figure need at least two values (3 logged periods) before they mean anything.
+  const hasCycleData = trendData.length >= 1;
+  const hasChartData = trendData.length >= 2;
 
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
-  const confidenceLabel = totalLogs >= 3 ? 'High' : 'Estimated';
   const digest = insights.digest ?? localDigest(logs);
   const regularity = regularityCopy(insights.regularity);
 
@@ -97,10 +98,6 @@ export default function InsightsScreen() {
               <>
                 <Text style={s.heroLabel}>Next period predicted</Text>
                 <Text style={s.heroDate}>{formatDisplayDate(nextP)}</Text>
-                <View style={s.confPill}>
-                  <View style={s.confDot} />
-                  <Text style={s.confTx}>{confidenceLabel} confidence</Text>
-                </View>
               </>
             ) : (
               <Text style={s.heroLabel}>Log your last period to see a prediction here</Text>
@@ -113,12 +110,12 @@ export default function InsightsScreen() {
           <View style={s.trendCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={s.trendTitle}>Cycle length</Text>
-              {hasTrendData && <Text style={s.trendSub}>Last {trendData.length} cycles</Text>}
+              {hasChartData && <Text style={s.trendSub}>Last {trendData.length} cycles</Text>}
             </View>
-            {hasTrendData ? (
+            {hasCycleData ? (
               <>
-                <TrendChart data={trendData} />
-                <View style={s.statsRow}>
+                {hasChartData && <TrendChart data={trendData} />}
+                <View style={[s.statsRow, !hasChartData && s.statsRowNoChart]}>
                   <View>
                     <Text style={s.statNum}>
                       {trends.avgCycleLength}
@@ -133,17 +130,20 @@ export default function InsightsScreen() {
                     </Text>
                     <Text style={s.statLbl}>Avg period</Text>
                   </View>
-                  <View>
-                    <Text style={s.statNum}>
-                      ±{trends.variationDays}
-                      <Text style={s.statUnit}>d</Text>
-                    </Text>
-                    <Text style={s.statLbl}>Variation</Text>
-                  </View>
+                  {hasChartData && (
+                    <View>
+                      <Text style={s.statNum}>
+                        ±{trends.variationDays}
+                        <Text style={s.statUnit}>d</Text>
+                      </Text>
+                      <Text style={s.statLbl}>Variation</Text>
+                    </View>
+                  )}
                 </View>
+                {!hasChartData && <Text style={s.trendEmptyTx}>Log one more period to see the trend chart and variation here.</Text>}
               </>
             ) : (
-              <Text style={s.trendEmptyTx}>Log at least two periods to see your cycle length trend here.</Text>
+              <Text style={s.trendEmptyTx}>Log at least two periods to see your cycle length here.</Text>
             )}
           </View>
         </View>
@@ -211,25 +211,13 @@ function createStyles(c) {
     hero: { borderRadius: 28, padding: 22, borderWidth: 1, borderColor: c.border },
     heroLabel: { fontSize: 10.5, color: c.textMuted, fontWeight: '600' },
     heroDate: { fontFamily: FONT.serif, fontSize: 36, color: c.primaryDark, marginTop: 4, letterSpacing: -0.5 },
-    confPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      marginTop: 10,
-      backgroundColor: c.successSoft,
-      borderRadius: 99,
-      paddingHorizontal: 11,
-      paddingVertical: 5,
-    },
-    confDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.success },
-    confTx: { fontSize: 10, fontWeight: '600', color: c.success },
 
     trendCard: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 24, padding: 20 },
     trendTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
     trendSub: { fontSize: 10.5, color: c.textMuted },
     trendEmptyTx: { fontSize: 11.5, color: c.textMuted, lineHeight: 17, marginTop: 14 },
     statsRow: { flexDirection: 'row', gap: 24, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border },
+    statsRowNoChart: { marginTop: 10, paddingTop: 0, borderTopWidth: 0 },
     statNum: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
     statUnit: { fontSize: 12, color: c.textMuted },
     statLbl: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },

@@ -14,29 +14,33 @@ import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
+import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 
-// Shown until the real feed (GET /content/feed) resolves, or if that request fails.
-const FOR_YOU_FALLBACK = [
+// Static "For you today" content — no longer backed by GET /content/feed.
+const FOR_YOU_CONTENT = [
   {
     tag: 'Education',
     tagColor: '#C04E68',
     title: 'Understanding your fertile window',
+    body: 'Your fertile window is the handful of days each cycle when conception is possible — typically the 5 days before ovulation through the day of ovulation itself, since sperm can survive a few days while an egg survives about 24 hours. Spot it estimates this window from your cycle length; tracking symptoms like changes in discharge can help you notice it more precisely. This is a general estimate, not medical advice.',
     imageSource: require('../../../assets/lifestyle.png'),
   },
-  { tag: 'Nutrition', tagColor: '#3F8866', title: '5 foods that support ovulation', imageSource: require('../../../assets/food.png') },
-  { tag: 'Sponsored', tagColor: '#B0A09A', title: 'Nourish prenatal multivitamins', imageSource: require('../../../assets/product.png') },
+  {
+    tag: 'Nutrition',
+    tagColor: '#3F8866',
+    title: '5 foods that support ovulation',
+    body: 'Leafy greens, berries, fatty fish, whole grains, and nuts are commonly associated with hormonal health due to their fiber, antioxidant, and omega-3 content. No single food guarantees ovulation or fertility outcomes — a balanced diet is just one factor among many. Talk to a doctor or dietitian for guidance specific to you.',
+    imageSource: require('../../../assets/food.png'),
+  },
+  {
+    tag: 'Sponsored',
+    tagColor: '#B0A09A',
+    title: 'Nourish prenatal multivitamins',
+    body: 'A prenatal multivitamin formulated to help meet essential nutrient needs before and during pregnancy. As with any supplement, check with your doctor before starting — especially if you take other medications or have a medical condition.',
+    imageSource: require('../../../assets/product.png'),
+  },
 ];
-
-// Content items don't carry a display color (that's presentation, not data) — derive a
-// stable one per tag instead of requiring admins to know a fixed tag->color mapping.
-const TAG_PALETTE = ['#C04E68', '#3F8866', '#8865B3', '#B58A3D'];
-function tagColorFor(item) {
-  if (item.sponsored) return '#B0A09A';
-  let hash = 0;
-  for (const ch of item.tag || '') hash = (hash * 31 + ch.charCodeAt(0)) % TAG_PALETTE.length;
-  return TAG_PALETTE[Math.abs(hash)];
-}
 
 function insightFor(phase, cycleLength) {
   const ovDay = cycleLength - 14;
@@ -88,10 +92,10 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, logs, cycleStatus,
-contentFeed, accessToken } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken } = state;
   const insets = useSafeAreaInsets();
   const [dailyLogPoints, setDailyLogPoints] = useState(null);
+  const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
     logsApi
@@ -117,19 +121,8 @@ contentFeed, accessToken } = state;
     : null;
   const isDueToday = daysLeft === 0;
   const level = levelInfo(femPoints);
-  const loggedToday = !!logs[today];
-  const totalLogs = Object.keys(logs).length;
-  const confidenceLabel = cycleStatus ? (cycleStatus.confidence === 'high' ? 'High' : 'Estimated') : totalLogs >= 3 ? 'High' : 'Estimated';
   const insight = insightFor(phase, cycleLength);
-  const feedItems = contentFeed
-    ? contentFeed.map(item => ({
-        id: item.id,
-        tag: item.tag,
-        title: item.title,
-        tagColor: tagColorFor(item),
-        imageSource: { uri: item.imageUrl },
-      }))
-    : FOR_YOU_FALLBACK.map((c, i) => ({ id: i, ...c }));
+  const feedItems = FOR_YOU_CONTENT.map((c, i) => ({ id: i, ...c }));
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
@@ -187,7 +180,7 @@ contentFeed, accessToken } = state;
           {hasCycleData ? (
             <>
               <Text style={s.phaseLabel}>
-                {phase.label} · Day {cycleDay} of {cycleLength}
+                {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
               </Text>
               {isDueToday ? (
                 <Text style={s.heroSerif}>
@@ -200,10 +193,7 @@ contentFeed, accessToken } = state;
                   <Text style={s.heroSerifSm}>days</Text>
                 </View>
               )}
-              <Text style={s.predictedTx}>
-                Predicted {formatDisplayDate(nextP)} ·{' '}
-                <Text style={{ color: colors.success, fontWeight: '600' }}>{confidenceLabel} confidence</Text>
-              </Text>
+              <Text style={s.predictedTx}>Predicted {formatDisplayDate(nextP)}</Text>
               <View style={{ marginTop: 16 }}>
                 <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
               </View>
@@ -222,25 +212,23 @@ contentFeed, accessToken } = state;
         </Card>
       </View>
 
-      {/* Log button */}
+      {/* Period log button */}
       <View style={s.section}>
-        {loggedToday ? (
-          <View style={s.loggedBadge}>
-            <Text style={s.loggedTx}>✓ Logged today</Text>
-          </View>
-        ) : (
-          <Pressable onPress={() => dispatch({ type: A.OPEN_LOG })}>
-            <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={s.logCtaTitle}>Log today</Text>
-                <Text style={s.logCtaSub}>Flow, symptoms & mood{dailyLogPoints != null ? ` · earn ${dailyLogPoints} SP` : ''}</Text>
-              </View>
-              <View style={s.logCtaPlusWrap}>
-                <Text style={s.logCtaPlus}>+</Text>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        )}
+        <Pressable onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}>
+          <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={s.logCtaTitle}>{phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}</Text>
+              <Text style={s.logCtaSub}>
+                {phaseKey === 'period'
+                  ? 'Tap to confirm or adjust the end date'
+                  : `Mark when your next period starts${dailyLogPoints != null ? ` · earn ${dailyLogPoints} SP/day` : ''}`}
+              </Text>
+            </View>
+            <View style={s.logCtaPlusWrap}>
+              <Text style={s.logCtaPlus}>+</Text>
+            </View>
+          </LinearGradient>
+        </Pressable>
       </View>
 
       {/* Level strip */}
@@ -307,16 +295,30 @@ contentFeed, accessToken } = state;
         <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
         <Carousel style={{ marginTop: 11 }}>
           {feedItems.map((card, i) => (
-            <View key={card.id} style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}>
+            <Pressable
+              key={card.id}
+              onPress={() => setActiveCard(card)}
+              style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}
+            >
               <Image source={card.imageSource} style={s.fyImage} resizeMode="cover" />
               <View style={{ padding: 13 }}>
                 <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
                 <Text style={s.fyTitle}>{card.title}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </Carousel>
       </View>
+
+      <BottomSheet open={!!activeCard} onClose={() => setActiveCard(null)} title={activeCard?.title}>
+        {activeCard && (
+          <View>
+            <Image source={activeCard.imageSource} style={s.fyDetailImage} resizeMode="cover" />
+            <Text style={[s.fyTag, { color: activeCard.tagColor, marginTop: 14 }]}>{activeCard.tag.toUpperCase()}</Text>
+            <Text style={s.fyDetailBody}>{activeCard.body}</Text>
+          </View>
+        )}
+      </BottomSheet>
     </ScrollView>
   );
 }
@@ -361,16 +363,6 @@ function createStyles(c) {
     dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
     dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
 
-    loggedBadge: {
-      backgroundColor: c.successSoft,
-      borderWidth: 1.5,
-      borderColor: c.successBorder,
-      borderRadius: 22,
-      paddingVertical: 14,
-      alignItems: 'center',
-    },
-    loggedTx: { fontSize: 11, fontWeight: '700', color: c.success },
-
     logCta: {
       borderRadius: 22,
       paddingVertical: 15,
@@ -413,5 +405,7 @@ function createStyles(c) {
     fyImage: { width: 208, height: 118, backgroundColor: c.surfaceAlt },
     fyTag: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
     fyTitle: { fontSize: 11.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
+    fyDetailImage: { width: '100%', height: 180, borderRadius: 20, backgroundColor: c.surfaceAlt },
+    fyDetailBody: { fontSize: 13, color: c.textSecondary, lineHeight: 21, marginTop: 10 },
   });
 }

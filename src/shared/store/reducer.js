@@ -49,35 +49,16 @@ export const INIT = {
   shopProducts: [],
   // session
   screen: 'home',
-  logOpen: false,
-  logEditDate: null,
+  periodPickerOpen: false,
   toast: null,
   selDate: todayISO(),
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
-  draftLog: { flow: null, mood: null, symptoms: [], notes: '', intimate: false },
   // Backend-fetched reference data — not persisted, refetched each session.
   cycleStatus: null,
   calendarPhases: {},
-  contentFeed: null,
   insights: { trends: null, digest: null, regularity: null },
 };
-
-function openLog(state, dateISO) {
-  const existing = state.logs[dateISO] || {};
-  return {
-    ...state,
-    logOpen: true,
-    logEditDate: dateISO,
-    draftLog: {
-      flow: existing.flow || null,
-      mood: existing.mood || null,
-      symptoms: existing.symptoms ? [...existing.symptoms] : [],
-      notes: existing.notes || '',
-      intimate: existing.intimate || false,
-    },
-  };
-}
 
 function withHistory(state, entry) {
   return { ...state, history: [entry, ...state.history].slice(0, MAX_HISTORY) };
@@ -89,9 +70,6 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
   const today = todayISO();
   let next = {
     ...state,
-    logOpen: false,
-    logEditDate: null,
-    draftLog: { ...INIT.draftLog },
     logs: { ...state.logs, [date]: entry },
     lastLogDate: date === today ? today : state.lastLogDate,
     femPoints: newBalance,
@@ -111,17 +89,25 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
 // Called after PUT /logs/period confirms a period-start save — flow is set across every
 // date in the range, but the richer entry (mood/symptoms/notes/intimate) only applies to
 // `date` (the period's first day), matching what the backend actually persisted per-day.
-function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, pointsAwarded, newBalance, streak }) {
+function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, pointsAwarded, newBalance, streak, clearedEntries }) {
   const today = todayISO();
   const logs = { ...state.logs };
   dates.forEach(d => {
     logs[d] = d === date ? entry : { ...(logs[d] || {}), flow };
   });
+  // If this edit moved or shrank a previously logged period, the backend already cleared the
+  // now-stale boundary days server-side — apply the same correction to the local cache, or a
+  // calendar dot for one of those days keeps showing from stale client state alone.
+  (clearedEntries || []).forEach(e => {
+    const isEmpty = !e.flow && !e.mood && (!e.symptoms || e.symptoms.length === 0) && !e.notes && !e.intimate;
+    if (isEmpty) {
+      delete logs[e.date];
+    } else {
+      logs[e.date] = { flow: e.flow, mood: e.mood, symptoms: e.symptoms, notes: e.notes, intimate: e.intimate };
+    }
+  });
   let next = {
     ...state,
-    logOpen: false,
-    logEditDate: null,
-    draftLog: { ...INIT.draftLog },
     logs,
     lastPeriodDate: lastPeriodDate ?? state.lastPeriodDate,
     lastLogDate: dates.includes(today) ? today : state.lastLogDate,
@@ -154,10 +140,10 @@ export function reducer(state, action) {
     }
     case A.GO:
       return { ...state, screen: action.screen };
-    case A.OPEN_LOG:
-      return openLog(state, action.date || todayISO());
-    case A.CLOSE_LOG:
-      return { ...state, logOpen: false, logEditDate: null, draftLog: { ...INIT.draftLog } };
+    case A.OPEN_PERIOD_PICKER:
+      return { ...state, periodPickerOpen: true };
+    case A.CLOSE_PERIOD_PICKER:
+      return { ...state, periodPickerOpen: false };
     case A.ONBOARD_FIELD:
       return { ...state, onboardDraft: { ...state.onboardDraft, [action.field]: action.value } };
     case A.NEXT_ONBOARD:
@@ -179,21 +165,6 @@ export function reducer(state, action) {
         onboardStep: 0,
         screen: 'home',
       };
-    case A.SET_DRAFT_FLOW:
-      return { ...state, draftLog: { ...state.draftLog, flow: action.id } };
-    case A.SET_DRAFT_MOOD:
-      return { ...state, draftLog: { ...state.draftLog, mood: action.id } };
-    case A.TOGGLE_DRAFT_SYM: {
-      const syms = state.draftLog.symptoms;
-      return {
-        ...state,
-        draftLog: { ...state.draftLog, symptoms: syms.includes(action.id) ? syms.filter(x => x !== action.id) : [...syms, action.id] },
-      };
-    }
-    case A.SET_DRAFT_NOTES:
-      return { ...state, draftLog: { ...state.draftLog, notes: action.value } };
-    case A.SET_DRAFT_INTIMATE:
-      return { ...state, draftLog: { ...state.draftLog, intimate: action.value } };
     case A.SAVE_LOG:
       return applySavedLog(state, action);
     case A.SAVE_LOG_PERIOD:
@@ -209,8 +180,6 @@ export function reducer(state, action) {
       return { ...state, cycleStatus: action.status };
     case A.CALENDAR_PHASES_HYDRATED:
       return { ...state, calendarPhases: { ...state.calendarPhases, ...action.phases } };
-    case A.CONTENT_FEED_HYDRATED:
-      return { ...state, contentFeed: action.items };
     case A.INSIGHTS_HYDRATED:
       return { ...state, insights: { ...state.insights, ...action.insights } };
     // Rewards/shop/settings mutations below all echo a server response (PointsWriteService /

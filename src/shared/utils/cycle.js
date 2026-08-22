@@ -42,16 +42,15 @@ export function cycleDayOf(dateISO, lastPeriodDate, cycleLength) {
   return (((diff % cycleLength) + cycleLength) % cycleLength) + 1;
 }
 
+// key is null outside period/fertile/ovulation — the luteal and follicular stretches aren't tracked.
 export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
   if (cycleDay == null) return { key: null, label: null, color: null };
   const ovDay = cycleLength - 14;
-  let key;
+  let key = null;
   if (cycleDay <= periodLength) key = 'period';
   else if (cycleDay === ovDay) key = 'ovulation';
   else if (cycleDay >= ovDay - 4 && cycleDay < ovDay) key = 'fertile';
-  else if (cycleDay > ovDay) key = 'luteal';
-  else key = 'follicular';
-  return { key, label: PHASE_LABELS[key], color: phases[key] };
+  return { key, label: key ? PHASE_LABELS[key] : null, color: key ? phases[key] : null };
 }
 
 export function nextPeriodDate(lastPeriodDate, cycleLength) {

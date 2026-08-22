@@ -68,13 +68,13 @@ describe('phaseFor', () => {
   test.each([
     [1, 'period'],
     [5, 'period'],
-    [6, 'follicular'],
-    [9, 'follicular'],
+    [6, null],
+    [9, null],
     [10, 'fertile'],
     [13, 'fertile'],
     [14, 'ovulation'],
-    [15, 'luteal'],
-    [28, 'luteal'],
+    [15, null],
+    [28, null],
   ])('cycle day %i is %s', (cycleDay, expectedKey) => {
     expect(phaseFor(cycleDay, periodLength, cycleLength).key).toBe(expectedKey);
   });
