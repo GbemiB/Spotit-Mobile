@@ -34,6 +34,10 @@ export default function PeriodPickerSheet() {
 
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
+  // Guides the flow: which boundary the next tap sets. Always starts on 'start' so the
+  // sheet always walks Start → End in the same order, rather than guessing from tap
+  // position. Tapping the Start/End box explicitly switches back to editing that field.
+  const [activeField, setActiveField] = useState('start');
 
   // The viewed month is its own independent state — changed only by the nav arrows or by
   // tapping the Start/End box to jump there, never recomputed from start/end on every render.
@@ -58,21 +62,30 @@ export default function PeriodPickerSheet() {
     setViewMonth(d.getMonth());
   }
 
-  // Every tap moves whichever boundary it's closer to — no separate "which one am I setting"
-  // mode to discover first, so every tap visibly does something immediately. Tapping before the
-  // current start extends it backward; tapping after the current end extends it forward; a tap
-  // inside the range nudges whichever edge is nearer.
-  function handleTap(iso) {
-    const tapped = new Date(iso).getTime();
-    const distToStart = Math.abs(tapped - new Date(start).getTime());
-    const distToEnd = Math.abs(tapped - new Date(end).getTime());
-    if (distToStart <= distToEnd) {
+  // Explicit two-step flow: the first tap always sets Start and auto-fills End from the
+  // user's usual period length, then hands focus to End so the very next tap refines it —
+  // no guessing which boundary a tap was "closer to." Tapping the Start box at any point
+  // switches focus back to redefining the start (and re-derives End from it again).
+  function handleDayTap(iso) {
+    if (activeField === 'start') {
       setStart(iso);
-      if (iso > end) setEnd(iso);
+      setEnd(addDays(iso, periodLength - 1));
+      setActiveField('end');
+      return;
+    }
+    // Editing End: a tap before the current start redefines the range from there instead
+    // of producing an inverted end-before-start selection.
+    if (iso < start) {
+      setStart(iso);
+      setEnd(addDays(iso, periodLength - 1));
     } else {
       setEnd(iso);
-      if (iso < start) setStart(iso);
     }
+  }
+
+  function focusField(field) {
+    setActiveField(field);
+    jumpViewToDate(field === 'start' ? start : end);
   }
 
   function close() {
@@ -117,16 +130,20 @@ export default function PeriodPickerSheet() {
   return (
     <BottomSheet open onClose={close} title="Log a period">
       <View>
-        <Text style={s.subtitle}>Tap any day to set the nearer boundary — before Start moves it back, after End moves it forward.</Text>
+        <Text style={s.subtitle}>
+          {activeField === 'start'
+            ? 'Tap the day your period starts.'
+            : `Tap the day it ends — we've estimated ${formatDisplayDate(end)} from your usual length, but you can pick a different day, or tap Start to change it.`}
+        </Text>
 
         <View style={s.datesRow}>
-          <Pressable style={s.dateBox} onPress={() => jumpViewToDate(start)}>
-            <Text style={s.dateLabel}>Start</Text>
+          <Pressable style={[s.dateBox, activeField === 'start' && s.dateBoxActive]} onPress={() => focusField('start')}>
+            <Text style={[s.dateLabel, activeField === 'start' && s.dateLabelActive]}>Start</Text>
             <Text style={s.dateValue}>{formatDisplayDate(start)}</Text>
           </Pressable>
           <Text style={s.dateArrow}>→</Text>
-          <Pressable style={s.dateBox} onPress={() => jumpViewToDate(end)}>
-            <Text style={s.dateLabel}>End</Text>
+          <Pressable style={[s.dateBox, activeField === 'end' && s.dateBoxActive]} onPress={() => focusField('end')}>
+            <Text style={[s.dateLabel, activeField === 'end' && s.dateLabelActive]}>End</Text>
             <Text style={s.dateValue}>{formatDisplayDate(end)}</Text>
           </Pressable>
         </View>
@@ -150,7 +167,7 @@ export default function PeriodPickerSheet() {
           cycleState={{ lastPeriodDate, cycleLength, periodLength }}
           rangeStart={start}
           rangeEnd={end}
-          onSelect={handleTap}
+          onSelect={handleDayTap}
         />
 
         {error ? <Text style={s.errorTx}>{error}</Text> : null}
@@ -185,7 +202,9 @@ function createStyles(c) {
       borderWidth: 1.5,
       borderColor: c.border,
     },
+    dateBoxActive: { borderColor: c.primary, backgroundColor: c.primarySoft },
     dateLabel: { fontSize: 9.5, fontWeight: '700', color: c.textFaint, textTransform: 'uppercase', letterSpacing: 0.5 },
+    dateLabelActive: { color: c.primaryDark },
     dateValue: { fontSize: 12.5, fontWeight: '700', color: c.textPrimary, marginTop: 3 },
     dateArrow: { fontSize: 14, color: c.textFaint, fontWeight: '700' },
     calNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 10 },

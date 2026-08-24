@@ -110,6 +110,10 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
     ...state,
     logs,
     lastPeriodDate: lastPeriodDate ?? state.lastPeriodDate,
+    // Drop the cached server prediction — it was computed off the old lastPeriodDate, so it
+    // would otherwise keep overriding HomeScreen's (now-correct) local fallback calculation
+    // until App.js's cycle/current effect re-fetches a fresh one.
+    cycleStatus: null,
     lastLogDate: dates.includes(today) ? today : state.lastLogDate,
     femPoints: newBalance,
     streak,

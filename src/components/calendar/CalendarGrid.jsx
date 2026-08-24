@@ -11,6 +11,11 @@ export default function CalendarGrid({ year, month, selDate, logs = {}, cycleSta
   const first = new Date(year, month, 1).getDay();
   const count = daysInMonth(year, month);
   const todayISO = toISO(new Date());
+  // Range-picking (the "Log a period" sheet) always passes both boundaries; the plain
+  // Calendar tab never does. In range mode "today" must not compete visually with the
+  // real Start/End markers, so its special fill/text treatment is fully suppressed —
+  // it renders like any other unselected day.
+  const isRangeMode = rangeStart != null && rangeEnd != null;
   const cells = [];
   for (let i = 0; i < first; i++) cells.push(null);
   for (let d = 1; d <= count; d++) cells.push(d);
@@ -33,7 +38,7 @@ export default function CalendarGrid({ year, month, selDate, logs = {}, cycleSta
           // fall back to the local calculation for months that haven't been fetched yet.
           const phaseKey = phaseByDate[iso] ?? phaseFor(cycleDayOf(iso, lastPeriodDate, cycleLength), periodLength, cycleLength).key;
           const ph = { color: phaseKey ? phases[phaseKey] : null };
-          const isToday = iso === todayISO;
+          const isToday = !isRangeMode && iso === todayISO;
           const isSel = iso === selDate;
           const hasLog = !!logs[iso];
           const inRange = rangeStart && rangeEnd && iso >= rangeStart && iso <= rangeEnd;

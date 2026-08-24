@@ -94,14 +94,14 @@ export default function HomeScreen() {
   const s = useMemo(() => createStyles(colors), [colors]);
   const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken } = state;
   const insets = useSafeAreaInsets();
-  const [dailyLogPoints, setDailyLogPoints] = useState(null);
+  const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
     logsApi
       .getTemplate(accessToken)
       .then(data => {
-        if (data?.basePoints != null) setDailyLogPoints(data.basePoints);
+        if (data?.basePoints != null) setBaseLogPoints(data.basePoints);
       })
       .catch(() => {});
   }, []);
@@ -221,7 +221,7 @@ export default function HomeScreen() {
               <Text style={s.logCtaSub}>
                 {phaseKey === 'period'
                   ? 'Tap to confirm or adjust the end date'
-                  : `Mark when your next period starts${dailyLogPoints != null ? ` · earn ${dailyLogPoints} SP/day` : ''}`}
+                  : `Mark when your next period starts and earn points as you do!`}
               </Text>
             </View>
             <View style={s.logCtaPlusWrap}>
@@ -377,7 +377,7 @@ function createStyles(c) {
       elevation: 6,
     },
     logCtaTitle: { color: c.white, fontWeight: '700', fontSize: 14 },
-    logCtaSub: { color: 'rgba(255,255,255,0.82)', fontSize: 10.5, marginTop: 1 },
+    logCtaSub: { color: 'rgba(255,255,255,0.82)', fontSize: 10.5, marginTop: 5 },
     logCtaPlusWrap: {
       width: 34,
       height: 34,
@@ -400,12 +400,12 @@ function createStyles(c) {
     ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep },
     ovBody: { fontSize: 11, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
 
-    sectionTitle: { fontSize: 13.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
+    sectionTitle: { fontSize: 12.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
     fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
     fyImage: { width: 208, height: 118, backgroundColor: c.surfaceAlt },
     fyTag: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
     fyTitle: { fontSize: 11.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
     fyDetailImage: { width: '100%', height: 180, borderRadius: 20, backgroundColor: c.surfaceAlt },
-    fyDetailBody: { fontSize: 13, color: c.textSecondary, lineHeight: 21, marginTop: 10 },
+    fyDetailBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 21, marginTop: 10 },
   });
 }

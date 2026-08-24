@@ -38,7 +38,7 @@ import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/sha
 function AppContent() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
-  const { onboarded, authDone, authScreen, screen, periodPickerOpen, toast, accessToken } = state;
+  const { onboarded, authDone, authScreen, screen, periodPickerOpen, toast, accessToken, lastPeriodDate, cycleLength, periodLength } = state;
 
   // Home/Insights read state.logs directly without owning a fetch of their own — seed a
   // wide-enough window (covers the weekly digest and "logged today" check) once per session.
@@ -70,14 +70,18 @@ function AppContent() {
   }, [authDone, accessToken]);
 
   // Server-computed cycle day/phase/prediction — HomeScreen falls back to its local
-  // calculation until this resolves, and whenever it fails (offline, etc).
+  // calculation until this resolves, and whenever it fails (offline, etc). Also re-fetches
+  // whenever lastPeriodDate/cycleLength/periodLength change (a period save, an onboarding
+  // edit, ...) so this doesn't keep serving a prediction computed before that change —
+  // applySavedPeriod already clears cycleStatus on save so the local fallback covers the
+  // gap until this refetch lands.
   useEffect(() => {
     if (!authDone || !onboarded) return;
     cycleApi
       .getCurrent(accessToken)
       .then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status }))
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, lastPeriodDate, cycleLength, periodLength]);
 
   // Real subscription status from the backend replaces the old client-only isPremium flag.
   useEffect(() => {

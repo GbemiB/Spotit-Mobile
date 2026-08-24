@@ -1,15 +1,17 @@
 {
   "expo": {
-    "name": "",
+    "name": "Spot It",
     "slug": "spotit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spotit.app"
     },
     "android": {
+      "package": "com.spotit.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/splash.png"
@@ -17,6 +19,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "842cf2cc-fee0-4b3b-a5a9-864075d3992b"
+      }
+    },
+    "owner": "gbemidev"
   }
 }

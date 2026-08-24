@@ -109,6 +109,12 @@ function blankDraft(date) {
   return { date, mood: null, symptoms: [], notes: '', intimate: false };
 }
 
+function draftFrom(date, log) {
+  return log
+    ? { date, mood: log.mood || null, symptoms: log.symptoms ? [...log.symptoms] : [], notes: log.notes || '', intimate: log.intimate || false }
+    : blankDraft(date);
+}
+
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -138,16 +144,11 @@ export default function CalendarScreen() {
   // start/end itself is only ever declared via the + button's calendar picker, not here.
   const isPeriodDay = selPhaseKey === 'period';
 
-  // Keyed by `selDate` and derived during render (rather than reset via an effect) — the
-  // Calendar screen never unmounts between date taps, so a stale draft from a previously
-  // selected day is discarded the moment `selDate` changes, seeded from any existing entry.
-  const [formDraft, setFormDraft] = useState(() => blankDraft(selDate));
-  const activeDraft =
-    formDraft.date === selDate
-      ? formDraft
-      : selLog
-        ? { date: selDate, mood: selLog.mood || null, symptoms: selLog.symptoms ? [...selLog.symptoms] : [], notes: selLog.notes || '', intimate: selLog.intimate || false }
-        : blankDraft(selDate);
+  // Keyed by `selDate`. Navigating to a different day (see onSelect below) immediately
+  // overwrites this with the new day's draft, so an unsaved edit is wiped the moment you
+  // leave that day — it can't resurface if you tap back to it later.
+  const [formDraft, setFormDraft] = useState(() => draftFrom(selDate, logs[selDate]));
+  const activeDraft = formDraft.date === selDate ? formDraft : draftFrom(selDate, selLog);
 
   function updateDraft(patch) {
     setFormDraft({ ...activeDraft, ...patch });
@@ -261,7 +262,10 @@ export default function CalendarScreen() {
               logs={logs}
               cycleState={cycleState}
               phaseByDate={calendarPhases}
-              onSelect={d => dispatch({ type: A.SEL_DATE, date: d })}
+              onSelect={d => {
+                setFormDraft(draftFrom(d, logs[d]));
+                dispatch({ type: A.SEL_DATE, date: d });
+              }}
             />
           </Card>
         </View>
