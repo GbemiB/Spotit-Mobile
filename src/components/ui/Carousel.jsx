@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView } from 'react-native';
 
 export default function Carousel({ children, style }) {
   return (

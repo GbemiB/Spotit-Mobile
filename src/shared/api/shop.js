@@ -8,6 +8,3 @@ export function redeem(productId, token) {
   return apiRequest('/shop/redeem', { method: 'POST', body: { productId }, token });
 }
 
-export function getOrders(token) {
-  return apiRequest('/shop/orders', { token });
-}

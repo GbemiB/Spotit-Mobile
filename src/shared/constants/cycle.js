@@ -15,7 +15,6 @@ export const MONTHS = [
   'November',
   'December',
 ];
-export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // Mirrors the backend's CyclePhase enum (com.spotit.api.cycle.CyclePhase) — single source

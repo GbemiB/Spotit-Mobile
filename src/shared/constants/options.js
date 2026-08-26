@@ -1,10 +1,3 @@
-export const FLOW = [
-  { id: 'spotting', label: 'Spotting', icon: '·' },
-  { id: 'light', label: 'Light', icon: '🩸' },
-  { id: 'medium', label: 'Medium', icon: '🩸🩸' },
-  { id: 'heavy', label: 'Heavy', icon: '🩸🩸🩸' },
-];
-
 export const MOODS = [
   { id: 'happy', emoji: '😊', label: 'Happy' },
   { id: 'calm', emoji: '😌', label: 'Calm' },

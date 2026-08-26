@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, StyleSheet, Platform, Share } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Share } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';

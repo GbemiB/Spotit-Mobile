@@ -25,6 +25,9 @@
         "projectId": "842cf2cc-fee0-4b3b-a5a9-864075d3992b"
       }
     },
-    "owner": "gbemidev"
+    "owner": "gbemidev",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
