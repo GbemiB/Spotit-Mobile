@@ -10,6 +10,10 @@ export class ApiError extends Error {
 
 const SENSITIVE_KEYS = ['password', 'newPassword', 'receipt', 'pushToken', 'accessToken', 'refreshToken'];
 
+// Requests that can't be processed (server hung, network gone dark mid-response, etc.) must
+// not hang the UI indefinitely — fetch() has no timeout of its own, so one is enforced here.
+const REQUEST_TIMEOUT_MS = 15000;
+
 // Every api/*.js module funnels through this one function, so logging here covers every
 // call in the app without touching each module individually.
 function redact(value) {
@@ -44,16 +48,25 @@ async function rawRequest(path, { method = 'GET', body, token } = {}) {
 
   let response;
   let envelope;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
     envelope = await response.json();
-  } catch {
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      if (__DEV__) console.log(`[api] xx ${method} ${path} timeout`);
+      throw new ApiError('That took too long. Please check your connection and try again.', 0, 'timeout');
+    }
     if (__DEV__) console.log(`[api] xx ${method} ${path} network_error`);
     throw new ApiError('Could not reach the server. Check your connection and try again.', 0, 'network_error');
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (__DEV__) console.log(`[api] <- ${method} ${path} ${response.status}`, redact(envelope));

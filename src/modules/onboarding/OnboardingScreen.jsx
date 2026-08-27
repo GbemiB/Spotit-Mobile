@@ -43,10 +43,34 @@ function isSameDay(a, b) {
 // Custom month-grid picker (same approach as the app's own CalendarGrid.jsx) instead of
 // the native OS picker — neither iOS nor Android exposes a font API for their native date
 // pickers, so getting the calendar text to a specific size/weight requires drawing it ourselves.
+// Year-grid shown when the header is tapped — jumps straight to a year (e.g. picking a
+// birth year decades back) instead of stepping the month chevrons one click at a time.
+function YearGrid({ viewYear, minYear, maxYear, onSelect, colors, s }) {
+  const years = [];
+  for (let y = maxYear; y >= minYear; y--) years.push(y);
+  return (
+    <ScrollView style={s.yearGridScroll} showsVerticalScrollIndicator={false}>
+      <View style={s.yearGrid}>
+        {years.map(y => {
+          const isSel = y === viewYear;
+          return (
+            <Pressable key={y} onPress={() => onSelect(y)} style={s.yearCell}>
+              <View style={[s.yearPill, isSel && { backgroundColor: colors.primary }]}>
+                <Text style={[s.yearTx, isSel && { color: colors.white }]}>{y}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+}
+
 function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors, s }) {
   const initial = value ? new Date(value) : maximumDate;
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const [showYearGrid, setShowYearGrid] = useState(false);
 
   const min = startOfDay(minimumDate);
   const max = startOfDay(maximumDate);
@@ -84,42 +108,68 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
     setViewMonth(m);
     setViewYear(y);
   }
+  function selectYear(y) {
+    // Clamp the month so the resulting date can't land outside min/max after a year jump
+    // (e.g. jumping to the min year while viewing December, past the min month).
+    let m = viewMonth;
+    if (y === min.getFullYear()) m = Math.max(m, min.getMonth());
+    if (y === max.getFullYear()) m = Math.min(m, max.getMonth());
+    setViewYear(y);
+    setViewMonth(m);
+    setShowYearGrid(false);
+  }
 
   return (
     <View style={s.pickerCard}>
       <View style={s.pickerHeader}>
-        <Pressable onPress={prevMonth} disabled={atMinMonth} hitSlop={8} style={{ opacity: atMinMonth ? 0.3 : 1 }}>
+        <Pressable onPress={prevMonth} disabled={atMinMonth || showYearGrid} hitSlop={8} style={{ opacity: atMinMonth || showYearGrid ? 0.3 : 1 }}>
           <Text style={s.pickerNav}>‹</Text>
         </Pressable>
-        <Text style={s.pickerTitle}>
-          {MONTHS[viewMonth]} {viewYear}
-        </Text>
-        <Pressable onPress={nextMonth} disabled={atMaxMonth} hitSlop={8} style={{ opacity: atMaxMonth ? 0.3 : 1 }}>
+        <Pressable onPress={() => setShowYearGrid(v => !v)} hitSlop={8} style={s.pickerTitleBtn}>
+          <Text style={s.pickerTitle}>
+            {MONTHS[viewMonth]} {viewYear}
+          </Text>
+          <Text style={s.pickerTitleCaret}>{showYearGrid ? '▲' : '▼'}</Text>
+        </Pressable>
+        <Pressable onPress={nextMonth} disabled={atMaxMonth || showYearGrid} hitSlop={8} style={{ opacity: atMaxMonth || showYearGrid ? 0.3 : 1 }}>
           <Text style={s.pickerNav}>›</Text>
         </Pressable>
       </View>
-      <View style={s.pickerDow}>
-        {DAYS_SHORT.map((x, i) => (
-          <Text key={i} style={s.pickerDowTx}>
-            {x}
-          </Text>
-        ))}
-      </View>
-      <View style={s.pickerGrid}>
-        {cells.map((d, i) => {
-          if (!d) return <View key={i} style={s.pickerCell} />;
-          const date = startOfDay(new Date(viewYear, viewMonth, d));
-          const disabled = date < min || date > max;
-          const isSel = !!selected && isSameDay(date, selected);
-          return (
-            <Pressable key={i} disabled={disabled} onPress={() => onSelect(date)} style={s.pickerCell}>
-              <View style={[s.pickerDayCircle, isSel && { backgroundColor: colors.primary }]}>
-                <Text style={[s.pickerDayTx, isSel && { color: colors.white }, disabled && { color: colors.authLabel }]}>{d}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      {showYearGrid ? (
+        <YearGrid
+          viewYear={viewYear}
+          minYear={min.getFullYear()}
+          maxYear={max.getFullYear()}
+          onSelect={selectYear}
+          colors={colors}
+          s={s}
+        />
+      ) : (
+        <>
+          <View style={s.pickerDow}>
+            {DAYS_SHORT.map((x, i) => (
+              <Text key={i} style={s.pickerDowTx}>
+                {x}
+              </Text>
+            ))}
+          </View>
+          <View style={s.pickerGrid}>
+            {cells.map((d, i) => {
+              if (!d) return <View key={i} style={s.pickerCell} />;
+              const date = startOfDay(new Date(viewYear, viewMonth, d));
+              const disabled = date < min || date > max;
+              const isSel = !!selected && isSameDay(date, selected);
+              return (
+                <Pressable key={i} disabled={disabled} onPress={() => onSelect(date)} style={s.pickerCell}>
+                  <View style={[s.pickerDayCircle, isSel && { backgroundColor: colors.primary }]}>
+                    <Text style={[s.pickerDayTx, isSel && { color: colors.white }, disabled && { color: colors.authLabel }]}>{d}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -438,7 +488,14 @@ function createStyles(c) {
     },
     pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
     pickerNav: { fontSize: 14, fontWeight: '400', color: c.authHeading, paddingHorizontal: 8 },
-    pickerTitle: { fontSize: 12, fontWeight: '400', color: c.authHeading },
+    pickerTitleBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4 },
+    pickerTitle: { fontSize: 12, fontWeight: '600', color: c.authHeading },
+    pickerTitleCaret: { fontSize: 8, color: c.authLabel },
+    yearGridScroll: { maxHeight: 220 },
+    yearGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 4 },
+    yearCell: { width: '25%', paddingVertical: 4, alignItems: 'center' },
+    yearPill: { paddingVertical: 7, paddingHorizontal: 4, borderRadius: 10, width: '86%', alignItems: 'center' },
+    yearTx: { fontSize: 12, fontWeight: '400', color: c.authHeading },
     pickerDow: { flexDirection: 'row', marginBottom: 4 },
     pickerDowTx: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '400', color: c.authLabel },
     pickerGrid: { flexDirection: 'row', flexWrap: 'wrap' },

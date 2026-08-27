@@ -18,17 +18,12 @@ export default function SignupScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
-  const canSubmit = firstName.trim() && lastName.trim() && email.trim() && password.length >= 8 && agreed && !passwordsMismatch;
+  const canSubmit = firstName.trim() && lastName.trim() && email.trim() && agreed;
 
   async function handleCreate() {
     if (!canSubmit || loading) return;
@@ -39,7 +34,6 @@ export default function SignupScreen() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
-        password,
       });
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
@@ -98,39 +92,8 @@ export default function SignupScreen() {
                   style={s.input}
                 />
               </View>
-              <View style={s.field}>
-                <Text style={s.label}>Password</Text>
-                <View style={s.passRow}>
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPass}
-                    placeholder=""
-                    style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
-                  />
-                  <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
-                    <Text style={s.showTx}>{showPass ? 'Hide' : 'Show'}</Text>
-                  </Pressable>
-                </View>
-                <Text style={s.hint}>Min. 8 characters</Text>
-              </View>
-              <View style={s.field}>
-                <Text style={s.label}>Confirm password</Text>
-                <View style={[s.passRow, passwordsMismatch && { borderBottomColor: colors.error }]}>
-                  <TextInput
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPass}
-                    placeholder=""
-                    style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
-                  />
-                  <Pressable onPress={() => setShowConfirmPass(v => !v)} hitSlop={8}>
-                    <Text style={s.showTx}>{showConfirmPass ? 'Hide' : 'Show'}</Text>
-                  </Pressable>
-                </View>
-                {passwordsMismatch && <Text style={s.errorTx}>Passwords don&apos;t match</Text>}
-              </View>
             </View>
+            <Text style={s.hint}>We&apos;ll email you a code to verify this address — you&apos;ll set a password after that.</Text>
 
             <Pressable style={s.agreeRow} onPress={() => setAgreed(v => !v)}>
               <View style={[s.checkbox, agreed && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
@@ -165,7 +128,7 @@ export default function SignupScreen() {
               style={{ marginTop: 16, opacity: canSubmit && !loading ? 1 : 0.5 }}
             >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Create Account</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTx}>Continue</Text>}
               </LinearGradient>
             </Pressable>
 
@@ -207,8 +170,6 @@ function createStyles(c) {
       borderBottomWidth: 1,
       borderBottomColor: c.authBorderStrong,
     },
-    passRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: c.authBorderStrong },
-    showTx: { fontSize: 11.5, color: c.authAccent, fontWeight: '700' },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 6 },
     agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 10, fontSize: 10 },

@@ -41,16 +41,18 @@ export default function OtpVerifyScreen() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [resetDone, setResetDone] = useState(false);
-  // Reset-password is two steps: the code must check out before we ever ask for a new
-  // password. otpConfirmed flips true once /reset-password/verify-otp succeeds.
+  // Both flows are two steps before a password is ever asked for: the code must check out
+  // first. otpConfirmed covers password-reset (/reset-password/verify-otp), signupVerified
+  // covers signup (/otp/verify) — only then does completeSignup() create the account.
   const [otpConfirmed, setOtpConfirmed] = useState(false);
+  const [signupVerified, setSignupVerified] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
 
   const code = digits.join('');
   const codeComplete = code.length === CODE_LENGTH;
-  const passwordsMismatch = isReset && confirmPassword.length > 0 && newPassword !== confirmPassword;
-  const awaitingPassword = isReset && otpConfirmed;
+  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const awaitingPassword = (isReset && otpConfirmed) || (!isReset && signupVerified);
   const canVerify = awaitingPassword ? newPassword.length >= 8 && !passwordsMismatch : codeComplete;
   const expired = secondsLeft <= 0;
 
@@ -110,20 +112,25 @@ export default function OtpVerifyScreen() {
     setLoading(true);
     try {
       if (awaitingPassword) {
-        await authApi.resetPassword({ email, code, newPassword });
-        setResetDone(true);
+        if (isReset) {
+          await authApi.resetPassword({ email, code, newPassword });
+          setResetDone(true);
+        } else {
+          const data = await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword });
+          dispatch({
+            type: A.AUTH_SUCCESS,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            userId: data.user.userId,
+            onboarded: data.user.onboarded,
+          });
+        }
       } else if (isReset) {
         await authApi.verifyResetOtp({ email, code });
         setOtpConfirmed(true);
       } else {
-        const data = await authApi.verifyOtp({ otpId: state.pendingOtpId, code });
-        dispatch({
-          type: A.AUTH_SUCCESS,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          userId: data.user.userId,
-          onboarded: data.user.onboarded,
-        });
+        await authApi.verifyOtp({ otpId: state.pendingOtpId, code });
+        setSignupVerified(true);
       }
     } catch (e) {
       if (e.errorCode === 'otp_expired') {
@@ -150,6 +157,7 @@ export default function OtpVerifyScreen() {
       });
       setDigits(Array(CODE_LENGTH).fill(''));
       setOtpConfirmed(false);
+      setSignupVerified(false);
       inputRefs.current[0]?.focus();
       setResent(true);
       setTimeout(() => setResent(false), 3000);
@@ -185,10 +193,13 @@ export default function OtpVerifyScreen() {
             <View style={s.iconBadge}>
               <EnvelopeIcon size={20} />
             </View>
-            <Text style={s.title}>{awaitingPassword ? 'Create new password' : isReset ? 'Reset your password' : 'Enter the code'}</Text>
+            <Text style={s.title}>
+              {awaitingPassword ? (isReset ? 'Create new password' : 'Create your password') : isReset ? 'Reset your password' : 'Enter the code'}
+            </Text>
             {awaitingPassword ? (
               <Text style={s.sub}>
-                Code verified ✓ Choose a new password for{'\n'}
+                Code verified ✓ {isReset ? 'Choose a new password for' : 'Choose a password to finish creating your account for'}
+                {'\n'}
                 <Text style={s.subEmail}>{email || 'your email'}</Text>
               </Text>
             ) : (
@@ -264,7 +275,9 @@ export default function OtpVerifyScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={s.ctaTx}>{awaitingPassword ? 'Reset Password' : isReset ? 'Verify Code' : 'Verify'}</Text>
+                  <Text style={s.ctaTx}>
+                    {awaitingPassword ? (isReset ? 'Reset Password' : 'Create Account') : isReset ? 'Verify Code' : 'Verify'}
+                  </Text>
                 )}
               </LinearGradient>
             </Pressable>

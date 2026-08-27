@@ -1,11 +1,19 @@
 import { apiRequest } from './client.js';
 
-export function signup({ firstName, lastName, email, password }) {
-  return apiRequest('/auth/signup', { method: 'POST', body: { firstName, lastName, email, password } });
+// Signup is 3 steps: signup() issues an OTP for a not-yet-a-real-account "lead" (name+email
+// only), verifyOtp() confirms that code, and only completeSignup() — which requires the
+// verified leadId — actually creates the account and sets its password. This ordering closes
+// the old bypass where an account (and its password) existed before the email was verified.
+export function signup({ firstName, lastName, email }) {
+  return apiRequest('/auth/signup', { method: 'POST', body: { firstName, lastName, email } });
 }
 
 export function verifyOtp({ otpId, code }) {
   return apiRequest('/auth/otp/verify', { method: 'POST', body: { otpId, code } });
+}
+
+export function completeSignup({ leadId, password }) {
+  return apiRequest('/auth/signup/complete', { method: 'POST', body: { leadId, password } });
 }
 
 export function resendOtp({ otpId }) {

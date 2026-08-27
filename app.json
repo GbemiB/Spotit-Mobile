@@ -27,7 +27,20 @@
     },
     "owner": "gbemidev",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 140,
+          "resizeMode": "contain",
+          "backgroundColor": "#FCEEEA",
+          "dark": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#160A0C"
+          }
+        }
+      ]
     ]
   }
 }
