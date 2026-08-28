@@ -182,7 +182,15 @@ export default function HomeScreen() {
               <Text style={s.phaseLabel}>
                 {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
               </Text>
-              {isDueToday ? (
+              {phaseKey === 'period' ? (
+                // A period the user has actually logged as started is ground truth — show
+                // that instead of the system-computed "next period" countdown below, which
+                // would otherwise keep pointing at a future prediction while today's period
+                // is already underway (e.g. "starts in 24 hours" right after logging day 1).
+                <Text style={s.heroSerif}>
+                  You&apos;re on <Text style={[s.heroSerif, { color: colors.primary }]}>day {cycleDay}</Text> of your period
+                </Text>
+              ) : isDueToday ? (
                 <Text style={s.heroSerif}>
                   Your period starts <Text style={[s.heroSerif, { color: colors.primary }]}>today</Text>
                 </Text>
@@ -193,7 +201,9 @@ export default function HomeScreen() {
                   <Text style={s.heroSerifSm}>days</Text>
                 </View>
               )}
-              <Text style={s.predictedTx}>Predicted {formatDisplayDate(nextP)}</Text>
+              <Text style={s.predictedTx}>
+                {phaseKey === 'period' ? `Next period predicted ${formatDisplayDate(nextP)}` : `Predicted ${formatDisplayDate(nextP)}`}
+              </Text>
               <View style={{ marginTop: 16 }}>
                 <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
               </View>
