@@ -56,6 +56,17 @@ function AppContent() {
     return () => sub.remove();
   }, []);
 
+  // The AppState listener above only fires on a background<->foreground transition — it
+  // misses a session that never backgrounds at all (e.g. left open and in view across
+  // midnight, or a simulator/device clock just moved forward). This is the fallback for that:
+  // a coarse poll while the app is active. 60s is frequent enough that "day rolled over" is
+  // never stale for more than a minute, and cheap enough (a string compare, no-op if
+  // unchanged) to not matter running continuously.
+  useEffect(() => {
+    const id = setInterval(() => dispatch({ type: A.TODAY_CHANGED, today: todayISO() }), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   // Home/Insights read state.logs directly without owning a fetch of their own — seed a
   // wide-enough window (covers the weekly digest and "logged today" check) once per session,
   // and again whenever `today` moves so the window's start/end don't stay anchored to a
