@@ -4,14 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
-import { SHOW_REWARDS_TAB } from '../../shared/constants/features.js';
 import { HomeIcon, CalendarIcon, InsightsIcon, RewardsIcon } from '../ui/icons.jsx';
 
 const TABS = [
   { key: 'home', label: 'Home', Icon: HomeIcon },
   { key: 'cal', label: 'Calendar', Icon: CalendarIcon },
   { key: 'insights', label: 'Insights', Icon: InsightsIcon },
-  ...(SHOW_REWARDS_TAB ? [{ key: 'rewards', label: 'Rewards', Icon: RewardsIcon }] : []),
+  { key: 'rewards', label: 'Rewards', Icon: RewardsIcon },
 ];
 
 export default function BottomNav({ screen, dispatch }) {
@@ -51,6 +50,6 @@ function createStyles(c) {
       borderTopColor: c.border,
     },
     tab: { alignItems: 'center', gap: 4, width: 56, paddingBottom: 2 },
-    tabLabel: { fontSize: 10, fontWeight: '700' },
+    tabLabel: { fontSize: 8, fontWeight: '700' },
   });
 }
