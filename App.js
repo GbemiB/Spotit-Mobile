@@ -173,6 +173,9 @@ function AppContent() {
 
 SplashScreenNative.preventAutoHideAsync();
 
+// Must stay shorter than SplashScreen.jsx's SPLASH_MS — this native splash covers everything
+// until MIN_SPLASH_MS elapses, so SplashScreen.jsx (the branded logo/wordmark/tagline screen)
+// needs to still be on screen underneath when this lifts, not already transitioned away.
 const MIN_SPLASH_MS = 3200;
 
 // Dev-only override to preview a theme regardless of the user's Appearance
