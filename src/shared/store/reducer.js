@@ -54,6 +54,12 @@ export const INIT = {
   selDate: todayISO(),
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
+  // Tracks the actual calendar date — not persisted (todayISO() re-seeds it fresh each
+  // session). Bumped by App.js's AppState listener so screens whose effects depend on it
+  // (e.g. HomeScreen's cycle/current and logs-window fetches) refetch when the app resumes
+  // from the background on a new day, instead of a stale cycle day sitting there until some
+  // unrelated dependency happens to change.
+  today: todayISO(),
   // Backend-fetched reference data — not persisted, refetched each session.
   cycleStatus: null,
   calendarPhases: {},
@@ -141,6 +147,12 @@ export function reducer(state, action) {
         return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
       }
       return merged;
+    }
+    case A.TODAY_CHANGED: {
+      // No-op (same object identity) when the date hasn't actually moved, so this doesn't
+      // trigger a re-render/refetch churn on every app foreground — only on an actual day change.
+      if (action.today === state.today) return state;
+      return { ...state, today: action.today };
     }
     case A.GO:
       return { ...state, screen: action.screen };

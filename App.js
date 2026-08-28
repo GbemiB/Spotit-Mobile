@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -32,26 +32,44 @@ import * as billingApi from './src/shared/api/billing.js';
 import * as usersApi from './src/shared/api/users.js';
 import * as rewardsApi from './src/shared/api/rewards.js';
 import * as shopApi from './src/shared/api/shop.js';
-import { toISO } from './src/shared/utils/cycle.js';
+import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
 
 function AppContent() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
-  const { onboarded, authDone, authScreen, screen, periodPickerOpen, toast, accessToken, lastPeriodDate, cycleLength, periodLength } = state;
+  const { onboarded, authDone, authScreen, screen, periodPickerOpen, toast, accessToken, lastPeriodDate, cycleLength, periodLength, today } =
+    state;
+
+  // Re-checks the calendar date whenever the app comes back to the foreground. Without this,
+  // a session left open across midnight (phone locked overnight, reopened straight to the
+  // still-mounted dashboard) keeps every date-dependent effect below sitting on its stale
+  // dependency values — nothing re-renders just because a clock ticked over in the background,
+  // so cycle day/prediction/logs window keep reflecting yesterday until something else happens
+  // to change lastPeriodDate/cycleLength/etc. Dispatching a same-day TODAY_CHANGED is a no-op
+  // (see reducer.js), so this doesn't cause extra work on every foreground, only on a real
+  // day change.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
+    });
+    return () => sub.remove();
+  }, []);
 
   // Home/Insights read state.logs directly without owning a fetch of their own — seed a
-  // wide-enough window (covers the weekly digest and "logged today" check) once per session.
+  // wide-enough window (covers the weekly digest and "logged today" check) once per session,
+  // and again whenever `today` moves so the window's start/end don't stay anchored to a
+  // previous day (see the AppState effect above).
   useEffect(() => {
     if (!authDone || !onboarded) return;
-    const today = new Date();
-    const from = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 60));
-    const to = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14));
+    const now = new Date();
+    const from = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
+    const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
     logsApi
       .getLogsInRange({ from, to }, accessToken)
       .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, today]);
 
   // Registers this install with the backend once, the first time we have an authenticated
   // session — not on every launch. pushToken is a local stand-in id (see utils/device.js)
@@ -74,14 +92,15 @@ function AppContent() {
   // whenever lastPeriodDate/cycleLength/periodLength change (a period save, an onboarding
   // edit, ...) so this doesn't keep serving a prediction computed before that change —
   // applySavedPeriod already clears cycleStatus on save so the local fallback covers the
-  // gap until this refetch lands.
+  // gap until this refetch lands. `today` covers the case nothing else changed except the
+  // calendar date itself (see the AppState effect above).
   useEffect(() => {
     if (!authDone || !onboarded) return;
     cycleApi
       .getCurrent(accessToken)
       .then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status }))
       .catch(() => {});
-  }, [authDone, onboarded, lastPeriodDate, cycleLength, periodLength]);
+  }, [authDone, onboarded, lastPeriodDate, cycleLength, periodLength, today]);
 
   // Real subscription status from the backend replaces the old client-only isPremium flag.
   useEffect(() => {

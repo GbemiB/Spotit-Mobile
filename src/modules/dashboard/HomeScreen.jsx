@@ -1,10 +1,10 @@
-import { View, ScrollView, Pressable, Image, Animated, StyleSheet } from 'react-native';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { View, ScrollView, Pressable, Image, Animated, RefreshControl, StyleSheet } from 'react-native';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
+import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO, toISO } from '../../shared/utils/cycle.js';
 import { PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
@@ -16,6 +16,9 @@ import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import Carousel from '../../components/ui/Carousel.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import * as logsApi from '../../shared/api/logs.js';
+import * as cycleApi from '../../shared/api/cycle.js';
+import * as billingApi from '../../shared/api/billing.js';
+import * as rewardsApi from '../../shared/api/rewards.js';
 
 // Static "For you today" content — no longer backed by GET /content/feed.
 const FOR_YOU_CONTENT = [
@@ -96,6 +99,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     logsApi
@@ -105,6 +109,34 @@ export default function HomeScreen() {
       })
       .catch(() => {});
   }, []);
+
+  // Pull-to-refresh: re-runs the same fetches App.js's mount effects do, rather than waiting
+  // on the app to background/foreground (which is what re-triggers them automatically — see
+  // App.js's AppState listener) or on one of their other dependencies to happen to change.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const now = new Date();
+    const from = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
+    const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
+    await Promise.allSettled([
+      cycleApi.getCurrent(accessToken).then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status })),
+      logsApi.getLogsInRange({ from, to }, accessToken).then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} })),
+      billingApi
+        .getStatus(accessToken)
+        .then(data =>
+          dispatch({
+            type: A.SUBSCRIPTION_UPDATED,
+            isPremium: data.isPremium,
+            plan: data.plan,
+            renewsAt: data.renewsAt,
+            autoRenew: data.autoRenew,
+          }),
+        ),
+      rewardsApi.getSummary(accessToken).then(data => dispatch({ type: A.REWARDS_HYDRATED, ...data })),
+    ]);
+    dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
+    setRefreshing(false);
+  }, [accessToken, dispatch]);
 
   const today = todayISO();
   // Prefer the server-computed status (GET /cycle/current); fall back to the local
@@ -149,6 +181,7 @@ export default function HomeScreen() {
       style={s.screen}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 110 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       {/* Header */}
       <View style={s.header}>
