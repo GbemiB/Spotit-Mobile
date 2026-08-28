@@ -4,7 +4,7 @@
     "slug": "spotit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/splash.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -13,8 +13,8 @@
     "android": {
       "package": "com.spotit.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/splash.png"
+        "backgroundColor": "#FBF3EF",
+        "foregroundImage": "./assets/icon-adaptive.png"
       }
     },
     "web": {
@@ -31,12 +31,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash.png",
-          "imageWidth": 140,
+          "image": "./assets/icon.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#FCEEEA",
           "dark": {
-            "image": "./assets/splash.png",
+            "image": "./assets/icon.png",
             "backgroundColor": "#160A0C"
           }
         }
