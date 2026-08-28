@@ -6,11 +6,12 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 
-// Must stay longer than App.js's MIN_SPLASH_MS (the native splash-screen's minimum hold time,
-// currently 3200ms). App.js keeps the native splash covering everything until MIN_SPLASH_MS —
-// if this component switched away sooner, that switch would happen invisibly underneath the
-// native overlay, and the moment it lifts the user would land directly on WelcomeScreen having
-// never actually seen this screen (logo/wordmark/tagline) at all.
+// Must stay longer than App.js's MIN_SPLASH_MS (the native splash screen's minimum hold time —
+// kept short there since that splash is a static image, unlike this one). App.js keeps the
+// native splash covering everything until MIN_SPLASH_MS elapses — if this component switched
+// away sooner, that switch would happen invisibly underneath the native overlay, and the moment
+// it lifts the user would land directly on WelcomeScreen having never actually seen this screen
+// (the animated logo/wordmark/tagline) at all.
 const SPLASH_MS = 3800;
 
 function Dot({ color, delay }) {

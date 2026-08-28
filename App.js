@@ -203,10 +203,15 @@ function AppContent() {
 
 SplashScreenNative.preventAutoHideAsync();
 
-// Must stay shorter than SplashScreen.jsx's SPLASH_MS — this native splash covers everything
-// until MIN_SPLASH_MS elapses, so SplashScreen.jsx (the branded logo/wordmark/tagline screen)
-// needs to still be on screen underneath when this lifts, not already transitioned away.
-const MIN_SPLASH_MS = 3200;
+// The native splash (a static image — there's no way to show the animated LogoMark before the
+// JS engine has even started) covers everything until this elapses. Kept small on purpose: this
+// used to be 3200ms as a deliberate "brand pause," but that's 3.2s of the static image being
+// what's actually on screen before the real animated splash (SplashScreen.jsx, which mounts as
+// soon as JS is ready but stays hidden underneath this) ever gets to take over. A few hundred ms
+// is enough to avoid a jarring flash if fonts happen to load instantly; must still stay shorter
+// than SplashScreen.jsx's SPLASH_MS, or that screen's own transition would happen invisibly
+// underneath this one.
+const MIN_SPLASH_MS = 300;
 
 // Dev-only override to preview a theme regardless of the user's Appearance
 // setting. Set to 'light' or 'dark' to force it; null defers to state.themePref.
