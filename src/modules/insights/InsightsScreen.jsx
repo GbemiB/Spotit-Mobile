@@ -8,8 +8,6 @@ import { nextPeriodDate, formatDisplayDate, toISO } from '../../shared/utils/cyc
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import TrendChart from '../../components/charts/TrendChart.jsx';
 import * as insightsApi from '../../shared/api/insights.js';
-
-// Used until GET /insights/* resolves (or if it fails) — same shape the backend returns.
 function localDigest(logs) {
   const now = new Date();
   const days = [];
@@ -26,9 +24,6 @@ function localDigest(logs) {
   const topMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   return { loggedCount: entries.length, topMood };
 }
-
-// `ok` drives the card's visual treatment: true = success (green check), false = warning
-// (amber !), null = neutral (nothing to judge yet — not the same as "looks fine").
 function regularityCopy(regularity) {
   if (!regularity || regularity.status === 'insufficient_data') {
     return { title: 'Not enough data yet', sub: 'Log at least one period to see your regularity check here.', ok: null };
@@ -40,7 +35,6 @@ function regularityCopy(regularity) {
   const sub = (regularity.flags?.join(' ') || '') + (regularity.disclaimer ? ` ${regularity.disclaimer}` : '');
   return { title, sub, ok: false };
 }
-
 export default function InsightsScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
@@ -50,7 +44,6 @@ export default function InsightsScreen() {
   const s = useMemo(() => createStyles(colors), [colors]);
   const { logs, cycleLength, lastPeriodDate, accessToken, insights } = state;
   const insets = useSafeAreaInsets();
-
   useEffect(() => {
     insightsApi
       .getTrends(6, accessToken)
@@ -65,20 +58,13 @@ export default function InsightsScreen() {
       .then(regularity => dispatch({ type: A.INSIGHTS_HYDRATED, insights: { regularity } }))
       .catch(() => {});
   }, []);
-
   const trends = insights.trends;
   const trendData = trends?.cycleLengths ?? [];
-  // One real cycle-length value (2 logged periods) is already a meaningful "avg cycle" stat —
-  // the backend only returns a non-empty cycleLengths array once it has a real gap to measure,
-  // as opposed to falling back to the account's default cycle length. A trend *chart* and
-  // variation figure need at least two values (3 logged periods) before they mean anything.
   const hasCycleData = trendData.length >= 1;
   const hasChartData = trendData.length >= 2;
-
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
   const digest = insights.digest ?? localDigest(logs);
   const regularity = regularityCopy(insights.regularity);
-
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
@@ -86,7 +72,6 @@ export default function InsightsScreen() {
           <Text style={s.headerTitle}>Insights</Text>
         </View>
 
-        {/* Next period hero */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <LinearGradient
             colors={isDark ? ['#241319', '#2A1610'] : ['#fff', '#FDF4F0']}
@@ -105,7 +90,6 @@ export default function InsightsScreen() {
           </LinearGradient>
         </View>
 
-        {/* Cycle length trend */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <View style={s.trendCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -148,7 +132,6 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        {/* Weekly digest */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <View style={[s.digestCard, { backgroundColor: digestBg }]}>
             <Text style={s.digestTitle}>This week&apos;s digest</Text>
@@ -165,7 +148,6 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        {/* Regularity check */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <View
             style={[
@@ -201,17 +183,14 @@ export default function InsightsScreen() {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
     headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
-
     hero: { borderRadius: 28, padding: 22, borderWidth: 1, borderColor: c.border },
     heroLabel: { fontSize: 10.5, color: c.textMuted, fontWeight: '600' },
     heroDate: { fontFamily: FONT.serif, fontSize: 36, color: c.primaryDark, marginTop: 4, letterSpacing: -0.5 },
-
     trendCard: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 24, padding: 20 },
     trendTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
     trendSub: { fontSize: 10.5, color: c.textMuted },
@@ -221,11 +200,9 @@ function createStyles(c) {
     statNum: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
     statUnit: { fontSize: 12, color: c.textMuted },
     statLbl: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
-
     digestCard: { backgroundColor: c.tertiarySoft, borderRadius: 22, padding: 18 },
     digestTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep, marginBottom: 6 },
     digestBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 18 },
-
     regularRow: {
       flexDirection: 'row',
       alignItems: 'center',

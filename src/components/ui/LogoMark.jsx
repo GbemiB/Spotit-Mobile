@@ -1,14 +1,12 @@
 import { View, Image, Animated, StyleSheet } from 'react-native';
 import { useRef, useEffect, useMemo } from 'react';
 import { useTheme } from '../../shared/styles/index.js';
-
 export default function LogoMark({ size = 76 }) {
   const { isDark } = useTheme();
   const s = useMemo(() => createStyles(size), [size]);
   const ring1 = useRef(new Animated.Value(0)).current;
   const ring2 = useRef(new Animated.Value(0)).current;
   const float = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     const loop = val =>
       Animated.loop(
@@ -29,13 +27,11 @@ export default function LogoMark({ size = 76 }) {
       a3.stop();
     };
   }, []);
-
   const ring2Scale = ring2.interpolate({ inputRange: [0, 1], outputRange: [1, 1.22] });
   const ring2Opacity = ring2.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.7] });
   const ring1Scale = ring1.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });
   const ring1Opacity = ring1.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0.9] });
   const floatY = float.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
-
   return (
     <View style={s.wrap}>
       <Animated.View
@@ -57,7 +53,6 @@ export default function LogoMark({ size = 76 }) {
     </View>
   );
 }
-
 function createStyles(size) {
   const ringSize = size;
   const glowSize = size * 0.833;
@@ -75,13 +70,7 @@ function createStyles(size) {
       justifyContent: 'center',
     },
     ringGlowFill: { width: glowSize, height: glowSize, borderRadius: glowSize / 2 },
-    inner: {
-      width: innerSize,
-      height: innerSize,
-      borderRadius: innerSize / 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    inner: { width: innerSize, height: innerSize, borderRadius: innerSize / 2, alignItems: 'center', justifyContent: 'center' },
     innerLight: {
       backgroundColor: '#fff',
       shadowColor: '#C8466A',

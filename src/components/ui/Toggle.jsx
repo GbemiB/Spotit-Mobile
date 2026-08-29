@@ -1,7 +1,6 @@
 import { View, Pressable, Animated, StyleSheet } from 'react-native';
 import { useRef, useEffect, useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 export default function Toggle({ value, onChange, label, description }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -9,10 +8,8 @@ export default function Toggle({ value, onChange, label, description }) {
   useEffect(() => {
     Animated.timing(anim, { toValue: value ? 1 : 0, duration: 180, useNativeDriver: false }).start();
   }, [value]);
-
   const bgColor = anim.interpolate({ inputRange: [0, 1], outputRange: ['rgba(140,120,125,0.32)', colors.primary] });
   const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [3, 23] });
-
   return (
     <Pressable onPress={() => onChange(!value)} style={s.row}>
       {(label || description) && (
@@ -27,7 +24,6 @@ export default function Toggle({ value, onChange, label, description }) {
     </Pressable>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

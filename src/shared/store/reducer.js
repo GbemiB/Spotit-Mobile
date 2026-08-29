@@ -2,9 +2,7 @@ import { A } from './actions.js';
 import { todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
 import { toLevelList } from '../utils/levels.js';
-
 const MAX_HISTORY = 20;
-
 export const INIT = {
   onboarded: false,
   authDone: false,
@@ -46,36 +44,24 @@ export const INIT = {
   autoRenew: false,
   history: [],
   badges: [],
-  // Exclusively DB-backed (GET /rewards/levels) — no local fallback data. Empty until that
-  // fetch resolves; levelInfo() returns a null-name "not loaded yet" shape for that window.
   levels: [],
+  content: [],
   challenges: [],
   shopProducts: [],
-  // session
   screen: 'home',
   periodPickerOpen: false,
   toast: null,
   selDate: todayISO(),
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
-  // Tracks the actual calendar date — not persisted (todayISO() re-seeds it fresh each
-  // session). Bumped by App.js's AppState listener so screens whose effects depend on it
-  // (e.g. HomeScreen's cycle/current and logs-window fetches) refetch when the app resumes
-  // from the background on a new day, instead of a stale cycle day sitting there until some
-  // unrelated dependency happens to change.
   today: todayISO(),
-  // Backend-fetched reference data — not persisted, refetched each session.
   cycleStatus: null,
   calendarPhases: {},
   insights: { trends: null, digest: null, regularity: null },
 };
-
 function withHistory(state, entry) {
   return { ...state, history: [entry, ...state.history].slice(0, MAX_HISTORY) };
 }
-
-// Called after the server confirms a save (POST /logs/{date}) — points, balance, and streak
-// come back from PointsWriteService, so the client trusts them rather than recomputing locally.
 function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }) {
   const today = todayISO();
   let next = {
@@ -95,19 +81,12 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
   }
   return next;
 }
-
-// Called after PUT /logs/period confirms a period-start save — flow is set across every
-// date in the range, but the richer entry (mood/symptoms/notes/intimate) only applies to
-// `date` (the period's first day), matching what the backend actually persisted per-day.
 function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, pointsAwarded, newBalance, streak, clearedEntries }) {
   const today = todayISO();
   const logs = { ...state.logs };
   dates.forEach(d => {
     logs[d] = d === date ? entry : { ...(logs[d] || {}), flow };
   });
-  // If this edit moved or shrank a previously logged period, the backend already cleared the
-  // now-stale boundary days server-side — apply the same correction to the local cache, or a
-  // calendar dot for one of those days keeps showing from stale client state alone.
   (clearedEntries || []).forEach(e => {
     const isEmpty = !e.flow && !e.mood && (!e.symptoms || e.symptoms.length === 0) && !e.notes && !e.intimate;
     if (isEmpty) {
@@ -120,9 +99,6 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
     ...state,
     logs,
     lastPeriodDate: lastPeriodDate ?? state.lastPeriodDate,
-    // Drop the cached server prediction — it was computed off the old lastPeriodDate, so it
-    // would otherwise keep overriding HomeScreen's (now-correct) local fallback calculation
-    // until App.js's cycle/current effect re-fetches a fresh one.
     cycleStatus: null,
     lastLogDate: dates.includes(today) ? today : state.lastLogDate,
     femPoints: newBalance,
@@ -138,23 +114,16 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
   }
   return next;
 }
-
 export function reducer(state, action) {
   switch (action.type) {
     case A.HYDRATE: {
       const merged = { ...state, ...action.payload };
-      // Guards against corrupted/partial persisted state (e.g. a write interrupted between
-      // COMPLETE_ONBOARD and AUTH_SUCCESS) — authDone with no token would otherwise render
-      // the main app with every authenticated call permanently and silently 401ing, and no
-      // token means apiRequest's 401-retry never fires (it's gated on options.token) either.
       if (merged.authDone && !merged.accessToken) {
         return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
       }
       return merged;
     }
     case A.TODAY_CHANGED: {
-      // No-op (same object identity) when the date hasn't actually moved, so this doesn't
-      // trigger a re-render/refetch churn on every app foreground — only on an actual day change.
       if (action.today === state.today) return state;
       return { ...state, today: action.today };
     }
@@ -202,9 +171,6 @@ export function reducer(state, action) {
       return { ...state, calendarPhases: { ...state.calendarPhases, ...action.phases } };
     case A.INSIGHTS_HYDRATED:
       return { ...state, insights: { ...state.insights, ...action.insights } };
-    // Rewards/shop/settings mutations below all echo a server response (PointsWriteService /
-    // ShopWriteService / ChallengeWriteService are the source of truth for balances) — the
-    // client applies what came back rather than computing deltas itself.
     case A.DAILY_CLAIM_RESULT: {
       const { pointsAwarded, newBalance, alreadyClaimedToday } = action;
       if (alreadyClaimedToday) return { ...state, toast: { icon: '🎁', text: 'Already claimed today — come back tomorrow' } };
@@ -254,22 +220,9 @@ export function reducer(state, action) {
     }
     case A.PROFILE_HYDRATED:
     case A.PROFILE_UPDATED: {
-      // GET/PATCH /users/me both return the complete current profile (not a partial patch
-      // echo) — assign every field as-is, including nulls, rather than falling back to the
-      // old state on a nullish value (e.g. a genuinely-cleared lastPeriodDate).
       const { firstName, lastName, goal, dob, cycleLength, periodLength, lastPeriodDate, themePref, isPremium } = action;
       const userName = [firstName, lastName].filter(Boolean).join(' ').trim();
-      return {
-        ...state,
-        userName: userName || state.userName,
-        goal,
-        dob,
-        cycleLength,
-        periodLength,
-        lastPeriodDate,
-        themePref,
-        isPremium,
-      };
+      return { ...state, userName: userName || state.userName, goal, dob, cycleLength, periodLength, lastPeriodDate, themePref, isPremium };
     }
     case A.REWARDS_HYDRATED: {
       const { points, streak, longestStreak } = action;
@@ -279,6 +232,8 @@ export function reducer(state, action) {
       return { ...state, badges: action.badges };
     case A.LEVELS_HYDRATED:
       return { ...state, levels: action.levels.length ? toLevelList(action.levels) : state.levels };
+    case A.CONTENT_HYDRATED:
+      return { ...state, content: action.items };
     case A.CHALLENGES_HYDRATED:
       return { ...state, challenges: action.challenges };
     case A.SHOP_PRODUCTS_HYDRATED:
@@ -329,13 +284,8 @@ export function reducer(state, action) {
         otpExpiresAt: null,
       };
     case A.TOKENS_REFRESHED:
-      // POST /auth/refresh only rotates the access token — refreshToken is omitted from the
-      // action and stays whatever's already in state.
       return { ...state, accessToken: action.accessToken };
     case A.LOGOUT:
-      // Clears the onboarding draft (dob, last period, cycle/period length, goal) too — otherwise
-      // the next login on this device (same account or a different one) lands back on the
-      // onboarding calendar still showing whatever was previously picked.
       return {
         ...state,
         authDone: false,

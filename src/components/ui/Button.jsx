@@ -2,7 +2,6 @@ import { Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 function getVariants(c) {
   return {
     primary: { colors: c.gradient.primaryAccent, text: c.white },
@@ -11,7 +10,6 @@ function getVariants(c) {
     danger: { colors: [c.errorSoft, c.errorSoft], text: c.error, border: c.errorBorder },
   };
 }
-
 export default function Button({ children, variant = 'primary', onPress, disabled, style, size = 'md' }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -19,7 +17,6 @@ export default function Button({ children, variant = 'primary', onPress, disable
   const v = VARIANTS[variant] || VARIANTS.primary;
   const pad = size === 'sm' ? { paddingVertical: 10, paddingHorizontal: 16 } : { paddingVertical: 15, paddingHorizontal: 22 };
   const fs = size === 'sm' ? 10 : 11;
-
   return (
     <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [{ opacity: pressed || disabled ? 0.7 : 1 }, style]}>
       <LinearGradient
@@ -33,7 +30,6 @@ export default function Button({ children, variant = 'primary', onPress, disable
     </Pressable>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     base: { borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

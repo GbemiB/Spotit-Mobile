@@ -8,9 +8,7 @@ import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export default function ForgotPasswordScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -19,9 +17,7 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const canSubmit = EMAIL_RE.test(email.trim());
-
   async function handleSend() {
     if (!canSubmit || loading) return;
     setError('');
@@ -44,7 +40,6 @@ export default function ForgotPasswordScreen() {
       setLoading(false);
     }
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -56,7 +51,8 @@ export default function ForgotPasswordScreen() {
           <View style={s.header}>
             <LogoMark size={76} />
             <Text style={s.wordmark}>
-              Spot<Text style={{ color: colors.primary }}> it</Text>
+              Spot
+              <Text style={{ color: colors.primary }}> it</Text>
             </Text>
           </View>
 
@@ -96,7 +92,6 @@ export default function ForgotPasswordScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },

@@ -1,5 +1,4 @@
 import Svg, { Path, Rect } from 'react-native-svg';
-
 export function CalendarIcon({ size = 16, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -8,7 +7,6 @@ export function CalendarIcon({ size = 16, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function HomeIcon({ size = 24, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -16,7 +14,6 @@ export function HomeIcon({ size = 24, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function InsightsIcon({ size = 24, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -24,7 +21,6 @@ export function InsightsIcon({ size = 24, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function RewardsIcon({ size = 24, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -39,7 +35,6 @@ export function RewardsIcon({ size = 24, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function BellIcon({ size = 18, color = '#2E2429' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -48,7 +43,6 @@ export function BellIcon({ size = 18, color = '#2E2429' }) {
     </Svg>
   );
 }
-
 export function CheckIcon({ size = 11, color = '#fff' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -56,7 +50,6 @@ export function CheckIcon({ size = 11, color = '#fff' }) {
     </Svg>
   );
 }
-
 export function ChevronRightIcon({ size = 15, color = '#fff' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -64,7 +57,6 @@ export function ChevronRightIcon({ size = 15, color = '#fff' }) {
     </Svg>
   );
 }
-
 export function ChevronLeftIcon({ size = 15, color = '#fff' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -72,7 +64,6 @@ export function ChevronLeftIcon({ size = 15, color = '#fff' }) {
     </Svg>
   );
 }
-
 export function LockIcon({ size = 20, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -81,7 +72,6 @@ export function LockIcon({ size = 20, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function EnvelopeIcon({ size = 20, color = '#C04E68' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -90,7 +80,6 @@ export function EnvelopeIcon({ size = 20, color = '#C04E68' }) {
     </Svg>
   );
 }
-
 export function DocumentIcon({ size = 18, color = '#2E2429' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -99,7 +88,6 @@ export function DocumentIcon({ size = 18, color = '#2E2429' }) {
     </Svg>
   );
 }
-
 export function WarningIcon({ size = 26 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

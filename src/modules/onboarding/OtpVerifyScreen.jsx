@@ -9,20 +9,16 @@ import LogoMark from '../../components/ui/LogoMark.jsx';
 import { EnvelopeIcon, ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
-
 const CODE_LENGTH = 6;
-
 function remainingSeconds(expiresAt) {
   if (!expiresAt) return 0;
   return Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
 }
-
 function formatCountdown(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
-
 export default function OtpVerifyScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -30,7 +26,6 @@ export default function OtpVerifyScreen() {
   const insets = useSafeAreaInsets();
   const isReset = state.otpPurpose === 'password_reset';
   const email = isReset ? state.resetEmail : state.pendingEmail;
-
   const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(''));
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,33 +36,24 @@ export default function OtpVerifyScreen() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [resetDone, setResetDone] = useState(false);
-  // Both flows are two steps before a password is ever asked for: the code must check out
-  // first. otpConfirmed covers password-reset (/reset-password/verify-otp), signupVerified
-  // covers signup (/otp/verify) — only then does completeSignup() create the account.
   const [otpConfirmed, setOtpConfirmed] = useState(false);
   const [signupVerified, setSignupVerified] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
-
   const code = digits.join('');
   const codeComplete = code.length === CODE_LENGTH;
   const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
   const awaitingPassword = (isReset && otpConfirmed) || (!isReset && signupVerified);
   const canVerify = awaitingPassword ? newPassword.length >= 8 && !passwordsMismatch : codeComplete;
   const expired = secondsLeft <= 0;
-
   useEffect(() => {
     setSecondsLeft(remainingSeconds(state.otpExpiresAt));
     const id = setInterval(() => setSecondsLeft(remainingSeconds(state.otpExpiresAt)), 1000);
     return () => clearInterval(id);
   }, [state.otpExpiresAt]);
-
   function setDigitAt(i, value) {
     const clean = value.replace(/[^0-9]/g, '');
     if (clean.length > 1) {
-      // A full code landed in one box — either OS one-time-code autofill (iOS QuickType
-      // suggests codes it finds in Mail) or the user pasting a code copied from the email.
-      // Spread it across the remaining boxes from the one that received it.
       const next = [...digits];
       let idx = i;
       for (const ch of clean) {
@@ -86,26 +72,20 @@ export default function OtpVerifyScreen() {
       inputRefs.current[i + 1]?.focus();
     }
   }
-
   function onKeyPress(i, e) {
     if (e.nativeEvent.key === 'Backspace' && !digits[i] && i > 0) {
       inputRefs.current[i - 1]?.focus();
     }
   }
-
   function handleBack() {
     if (isReset) {
       dispatch({ type: A.UPDATE_SETTINGS, patch: { resetEmail: null, otpPurpose: null, otpExpiresAt: null } });
       dispatch({ type: A.SET_AUTH_SCREEN, screen: 'forgot-password' });
     } else {
-      dispatch({
-        type: A.UPDATE_SETTINGS,
-        patch: { pendingOtpId: null, pendingEmail: null, otpPurpose: null, otpExpiresAt: null },
-      });
+      dispatch({ type: A.UPDATE_SETTINGS, patch: { pendingOtpId: null, pendingEmail: null, otpPurpose: null, otpExpiresAt: null } });
       dispatch({ type: A.SET_AUTH_SCREEN, screen: state.otpPurpose === 'login_verify' ? 'login' : 'signup' });
     }
   }
-
   async function handleVerify() {
     if (!canVerify || loading) return;
     setError('');
@@ -129,8 +109,6 @@ export default function OtpVerifyScreen() {
         await authApi.verifyResetOtp({ email, code });
         setOtpConfirmed(true);
       } else if (state.otpPurpose === 'login_verify') {
-        // This account already has a password (it just never finished verification) — verifying
-        // the code is the whole flow, straight to a session, no completeSignup password step.
         const data = await authApi.verifyLoginOtp({ otpId: state.pendingOtpId, code });
         dispatch({
           type: A.AUTH_SUCCESS,
@@ -152,7 +130,6 @@ export default function OtpVerifyScreen() {
       setLoading(false);
     }
   }
-
   async function handleResend() {
     if (!expired || loading || resending) return;
     setError('');
@@ -161,10 +138,7 @@ export default function OtpVerifyScreen() {
       const data = isReset ? await authApi.forgotPassword({ email }) : await authApi.resendOtp({ otpId: state.pendingOtpId });
       dispatch({
         type: A.UPDATE_SETTINGS,
-        patch: {
-          otpExpiresAt: Date.now() + data.expiresInSeconds * 1000,
-          ...(isReset ? {} : { pendingOtpId: data.otpId }),
-        },
+        patch: { otpExpiresAt: Date.now() + data.expiresInSeconds * 1000, ...(isReset ? {} : { pendingOtpId: data.otpId }) },
       });
       setDigits(Array(CODE_LENGTH).fill(''));
       setOtpConfirmed(false);
@@ -178,7 +152,6 @@ export default function OtpVerifyScreen() {
       setResending(false);
     }
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -196,7 +169,8 @@ export default function OtpVerifyScreen() {
           <View style={s.header}>
             <LogoMark size={76} />
             <Text style={s.wordmark}>
-              Spot<Text style={{ color: colors.primary }}> it</Text>
+              Spot
+              <Text style={{ color: colors.primary }}> it</Text>
             </Text>
           </View>
 
@@ -205,7 +179,13 @@ export default function OtpVerifyScreen() {
               <EnvelopeIcon size={20} />
             </View>
             <Text style={s.title}>
-              {awaitingPassword ? (isReset ? 'Create new password' : 'Create your password') : isReset ? 'Reset your password' : 'Enter the code'}
+              {awaitingPassword
+                ? isReset
+                  ? 'Create new password'
+                  : 'Create your password'
+                : isReset
+                  ? 'Reset your password'
+                  : 'Enter the code'}
             </Text>
             {awaitingPassword ? (
               <Text style={s.sub}>
@@ -321,7 +301,6 @@ export default function OtpVerifyScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     topBar: { paddingHorizontal: 18 },

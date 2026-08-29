@@ -13,7 +13,6 @@ import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import * as billingApi from '../../shared/api/billing.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
 import * as shopApi from '../../shared/api/shop.js';
-
 function shopView(products) {
   return products.map(p => ({
     ...p,
@@ -27,7 +26,6 @@ function shopView(products) {
       : `Redeem · ${p.cost} SP`,
   }));
 }
-
 function ShopRow({ product, onRedeem, busy, colors, s }) {
   const active = !product.locked;
   return (
@@ -47,7 +45,6 @@ function ShopRow({ product, onRedeem, busy, colors, s }) {
     </View>
   );
 }
-
 function ChallengeRow({ challenge, onClaim, busy, s }) {
   const { title, reward, done, total, completed, claimed } = challenge;
   const pct = Math.min(100, Math.round((done / total) * 100));
@@ -74,7 +71,6 @@ function ChallengeRow({ challenge, onClaim, busy, s }) {
     </Card>
   );
 }
-
 function HistoryRow({ entry, last, colors, s }) {
   return (
     <View style={[s.historyRow, last && { borderBottomWidth: 0 }]}>
@@ -92,9 +88,6 @@ function HistoryRow({ entry, last, colors, s }) {
     </View>
   );
 }
-
-// Badge icons are presentation-only (GET /rewards/badges returns id+name+earned) — mapped
-// locally by id, same pattern as SHOP_PRODUCT_ICONS.
 const BADGE_ICONS = {
   first_flow: '🌸',
   cycle_veteran: '🗓️',
@@ -103,7 +96,6 @@ const BADGE_ICONS = {
   ovulation_oracle: '🔮',
   health_nerd: '📚',
 };
-
 function BadgeCard({ badge, colors, s }) {
   const earned = badge.earned;
   return (
@@ -115,21 +107,19 @@ function BadgeCard({ badge, colors, s }) {
     </View>
   );
 }
-
 export default function RewardsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { femPoints, streak, isPremium, autoRenew, history, badges, challenges, shopProducts, lastClaimedDate, accessToken, levels } = state;
+  const { femPoints, streak, isPremium, autoRenew, history, badges, challenges, shopProducts, lastClaimedDate, accessToken, levels } =
+    state;
   const insets = useSafeAreaInsets();
   const [billingLoading, setBillingLoading] = useState(false);
   const [adLoading, setAdLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState(null);
   const [claimingChallengeId, setClaimingChallengeId] = useState(null);
-
   const alreadyClaimedToday = lastClaimedDate === todayISO();
-
   async function handleDailyClaim() {
     if (claimLoading || alreadyClaimedToday) return;
     setClaimLoading(true);
@@ -142,9 +132,6 @@ export default function RewardsScreen() {
       setClaimLoading(false);
     }
   }
-
-  // No rewarded-ad SDK (AdMob/AppLovin/etc.) is wired up yet, so there's no real ad-network
-  // callback to verify — same dev stand-in pattern as the mock IAP receipt below.
   async function handleWatchAd() {
     if (adLoading) return;
     setAdLoading(true);
@@ -160,7 +147,6 @@ export default function RewardsScreen() {
       setAdLoading(false);
     }
   }
-
   async function handleRedeem(product) {
     if (redeemingId) return;
     setRedeemingId(product.id);
@@ -179,7 +165,6 @@ export default function RewardsScreen() {
       setRedeemingId(null);
     }
   }
-
   async function handleClaimChallenge(challenge) {
     if (claimingChallengeId) return;
     setClaimingChallengeId(challenge.id);
@@ -197,12 +182,6 @@ export default function RewardsScreen() {
       setClaimingChallengeId(null);
     }
   }
-
-  // No in-app-purchase module (react-native-iap / expo-in-app-purchases) is wired up yet,
-  // so there's no real store receipt to send — this is a stand-in, same pattern as the
-  // device registration id, so the write path (and the backend's active-subscription
-  // record) is real even though the "purchase" isn't. Swap for a real receipt once IAP
-  // is integrated; the request shape won't change.
   async function handleSubscribe() {
     if (billingLoading) return;
     setBillingLoading(true);
@@ -232,7 +211,6 @@ export default function RewardsScreen() {
       setBillingLoading(false);
     }
   }
-
   async function handleCancelRenewal() {
     if (billingLoading) return;
     setBillingLoading(true);
@@ -259,20 +237,16 @@ export default function RewardsScreen() {
       setBillingLoading(false);
     }
   }
-
   const level = levelInfo(femPoints, levels);
   const shopRows = shopView(shopProducts);
   const earnedBadgeCount = badges.filter(b => b.earned).length;
-
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={s.header}>
           <Text style={s.headerTitle}>Rewards</Text>
         </View>
 
-        {/* Hero */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <LinearGradient colors={['#E2647C', '#C8466A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
             <Text style={s.heroFlower}>🌸</Text>
@@ -298,7 +272,6 @@ export default function RewardsScreen() {
           </LinearGradient>
         </View>
 
-        {/* Daily check-in */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <Pressable
             onPress={handleDailyClaim}
@@ -316,7 +289,6 @@ export default function RewardsScreen() {
           </Pressable>
         </View>
 
-        {/* Watch ad */}
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
           <Pressable onPress={handleWatchAd} disabled={adLoading} style={s.adRow}>
             <View style={s.adIconWrap}>
@@ -330,7 +302,6 @@ export default function RewardsScreen() {
           </Pressable>
         </View>
 
-        {/* Redeem for skincare */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Text style={s.sectionTitle}>Redeem for skincare</Text>
           <Text style={s.shopIntro}>
@@ -366,7 +337,6 @@ export default function RewardsScreen() {
           </View>
         </View>
 
-        {/* Badges */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Text style={s.sectionTitle}>Badges</Text>
           <View style={s.badgeGrid}>
@@ -376,7 +346,6 @@ export default function RewardsScreen() {
           </View>
         </View>
 
-        {/* Weekly challenges */}
         {challenges.length > 0 && (
           <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
             <Text style={s.sectionTitle}>Weekly challenges</Text>
@@ -388,7 +357,6 @@ export default function RewardsScreen() {
           </View>
         )}
 
-        {/* Points history */}
         {history.length > 0 && (
           <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
             <Text style={s.sectionTitle}>Points history</Text>
@@ -409,14 +377,12 @@ export default function RewardsScreen() {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
     headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     sectionTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
-
     hero: { position: 'relative', borderRadius: 28, padding: 22, overflow: 'hidden' },
     heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 118, opacity: 0.14 },
     heroLabel: { fontSize: 10.5, opacity: 0.85, fontWeight: '600', color: c.white },
@@ -433,10 +399,8 @@ function createStyles(c) {
     },
     heroStatNum: { fontSize: 17, fontWeight: '700', color: c.white },
     heroStatLbl: { fontSize: 9, opacity: 0.85, color: c.white, marginTop: 2 },
-
     rewardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
     rewardDesc: { fontSize: 10, color: c.textMuted, lineHeight: 18 },
-
     adRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -457,7 +421,6 @@ function createStyles(c) {
       justifyContent: 'center',
     },
     adCta: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
-
     premiumBanner: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -470,7 +433,6 @@ function createStyles(c) {
     },
     premiumTx: { fontSize: 10.5, fontWeight: '700', color: c.white, flexShrink: 1 },
     premiumCta: { fontSize: 9.5, fontWeight: '700', color: c.primaryLight },
-
     shopIntro: { fontSize: 10, color: c.textMuted, lineHeight: 18, marginTop: 4, marginBottom: 4 },
     shopRow: {
       flexDirection: 'row',
@@ -496,7 +458,6 @@ function createStyles(c) {
     shopCtaActive: { backgroundColor: c.primary },
     shopCtaInactive: { backgroundColor: c.border },
     shopCtaTx: { fontSize: 9.5, fontWeight: '700', textAlign: 'center' },
-
     challengeCard: { padding: 16 },
     challengeTitle: { fontSize: 12, fontWeight: '600', color: c.textPrimary },
     challengeReward: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
@@ -504,7 +465,6 @@ function createStyles(c) {
     challengeClaimBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: c.primary },
     challengeClaimTx: { fontSize: 9.5, fontWeight: '700', color: c.white },
     challengeClaimedTx: { fontSize: 9.5, fontWeight: '700', color: c.success },
-
     historyRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -525,7 +485,6 @@ function createStyles(c) {
     historyLabel: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
     historyDate: { fontSize: 9, color: c.textMuted, marginTop: 1 },
     historyDelta: { fontSize: 11, fontWeight: '700' },
-
     badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12 },
     badge: { width: '30%', alignItems: 'center' },
     badgeIconWrap: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },

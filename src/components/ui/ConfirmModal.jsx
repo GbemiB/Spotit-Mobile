@@ -2,9 +2,6 @@ import { Modal, View, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import Button from './Button.jsx';
-
-// Native Alert.alert can't be restyled (no font API on either platform's OS dialog) — this
-// is the app-drawn equivalent, used wherever a destructive action needs a yes/no confirm.
 export default function ConfirmModal({
   visible,
   title,
@@ -17,7 +14,6 @@ export default function ConfirmModal({
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={s.overlay}>
@@ -41,7 +37,6 @@ export default function ConfirmModal({
     </Modal>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     overlay: { flex: 1, backgroundColor: c.overlay, alignItems: 'center', justifyContent: 'center', padding: 24 },

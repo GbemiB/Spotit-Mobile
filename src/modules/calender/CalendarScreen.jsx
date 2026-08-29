@@ -13,22 +13,14 @@ import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
-
-// Icons/emoji aren't part of the backend's log template (that's presentation, not data) —
-// map the returned ids back to the icon/emoji MOODS already defines locally.
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
-// `category` is presentation-only (the backend's symptom list is just id+label) — tag the
-// server-returned options using the same grouping SYMPTOMS defines locally.
 const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
-
 function toOptions(list, iconMap, key = 'icon') {
   return list.map(o => ({ id: o.id, label: o.label, [key]: iconMap[o.id] }));
 }
-
 function withCategory(list) {
   return list.map(o => ({ ...o, category: SYMPTOM_CATEGORY_BY_ID[o.id] || 'Other' }));
 }
-
 function groupByCategory(options) {
   const byCategory = {};
   options.forEach(o => {
@@ -38,18 +30,14 @@ function groupByCategory(options) {
   const known = SYMPTOM_CATEGORIES.filter(cat => byCategory[cat]?.length).map(cat => ({ category: cat, items: byCategory[cat] }));
   return byCategory.Other ? [...known, { category: 'Other', items: byCategory.Other }] : known;
 }
-
-// Only period/fertile/ovulation are tracked (phaseFor never returns luteal/follicular anymore).
 const PHASE_KEYS = [
   { color: phases.period, label: PHASE_LABELS.period },
   { color: phases.fertile, label: PHASE_LABELS.fertile },
   { color: phases.ovulation, label: PHASE_LABELS.ovulation },
 ];
-
 function SectionLabel({ children, s }) {
   return <Text style={s.secLabel}>{children}</Text>;
 }
-
 function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shape = 'pill', s }) {
   return (
     <View style={s.section}>
@@ -75,12 +63,8 @@ function ChipGroup({ label, items, selected, onSelect, multiSelect = false, shap
     </View>
   );
 }
-
-// Grouped by body area (Head, Body, Pelvis, Fluid, Skin, Mood) so a long symptom list stays
-// scannable — plain multi-select chips, same interaction as Mood, just sectioned.
 function SymptomPicker({ options, selected, onToggle, s }) {
   const groups = useMemo(() => groupByCategory(options), [options]);
-
   return (
     <View style={s.section}>
       <SectionLabel s={s}>Symptoms</SectionLabel>
@@ -104,17 +88,20 @@ function SymptomPicker({ options, selected, onToggle, s }) {
     </View>
   );
 }
-
 function blankDraft(date) {
   return { date, mood: null, symptoms: [], notes: '', intimate: false };
 }
-
 function draftFrom(date, log) {
   return log
-    ? { date, mood: log.mood || null, symptoms: log.symptoms ? [...log.symptoms] : [], notes: log.notes || '', intimate: log.intimate || false }
+    ? {
+        date,
+        mood: log.mood || null,
+        symptoms: log.symptoms ? [...log.symptoms] : [],
+        notes: log.notes || '',
+        intimate: log.intimate || false,
+      }
     : blankDraft(date);
 }
-
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -126,36 +113,21 @@ export default function CalendarScreen() {
   const [error, setError] = useState('');
   const [moodOptions, setMoodOptions] = useState(() => toOptions(MOODS, MOOD_EMOJI, 'emoji'));
   const [symptomOptions, setSymptomOptions] = useState(SYMPTOMS);
-
   const cycleState = { lastPeriodDate, cycleLength, periodLength };
   const selLog = logs[selDate];
   const selCycleDay = cycleDayOf(selDate, lastPeriodDate, cycleLength);
-  // Prefer the server-computed phase for the selected day when we've already fetched its
-  // month; falls back to the local calculation otherwise (same formula either way).
   const selPhaseKey = calendarPhases[selDate] ?? phaseFor(selCycleDay, periodLength, cycleLength).key;
-  // selPhaseKey is null both when there's no period logged at all and when the day simply
-  // falls in the (untracked) luteal/follicular stretch — distinguish those for the copy below.
   const selPhase = {
     key: selPhaseKey,
     label: selPhaseKey ? PHASE_LABELS[selPhaseKey] : lastPeriodDate ? 'Not tracked' : 'No data yet',
     color: selPhaseKey ? phases[selPhaseKey] : null,
   };
-  // Symptom logging is restricted to days that actually fall inside a marked period — period
-  // start/end itself is only ever declared via the + button's calendar picker, not here.
   const isPeriodDay = selPhaseKey === 'period';
-
-  // Keyed by `selDate`. Navigating to a different day (see onSelect below) immediately
-  // overwrites this with the new day's draft, so an unsaved edit is wiped the moment you
-  // leave that day — it can't resurface if you tap back to it later.
   const [formDraft, setFormDraft] = useState(() => draftFrom(selDate, logs[selDate]));
   const activeDraft = formDraft.date === selDate ? formDraft : draftFrom(selDate, selLog);
-
   function updateDraft(patch) {
     setFormDraft({ ...activeDraft, ...patch });
   }
-
-  // The log template renders mood/symptom options — falls back to the local constants on
-  // failure so logging never blocks.
   useEffect(() => {
     logsApi
       .getTemplate(accessToken)
@@ -165,9 +137,6 @@ export default function CalendarScreen() {
       })
       .catch(() => {});
   }, []);
-
-  // Pull this month's saved entries and phases from the server whenever the visible month
-  // changes, so the grid and day card reflect real data instead of only local computation.
   useEffect(() => {
     const from = toISO(new Date(viewYear, viewMonth, 1));
     const to = toISO(new Date(viewYear, viewMonth + 1, 0));
@@ -186,7 +155,6 @@ export default function CalendarScreen() {
       })
       .catch(() => {});
   }, [viewYear, viewMonth, lastPeriodDate]);
-
   async function handleSaveLog() {
     if (saving) return;
     setError('');
@@ -208,7 +176,6 @@ export default function CalendarScreen() {
       setSaving(false);
     }
   }
-
   async function handleDelete() {
     if (deleting) return;
     setDeleting(true);
@@ -221,11 +188,9 @@ export default function CalendarScreen() {
       setDeleting(false);
     }
   }
-
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={s.headerRow}>
           <Text style={s.screenTitle}>Calendar</Text>
           <View style={s.monthNav}>
@@ -242,7 +207,6 @@ export default function CalendarScreen() {
         </View>
         <Text style={s.screenSub}>Tap any day to see it, or log symptoms for a period day.</Text>
 
-        {/* Phase key */}
         <View style={s.phaseKeyWrap}>
           {PHASE_KEYS.map(p => (
             <View key={p.label} style={s.phaseKeyItem}>
@@ -252,7 +216,6 @@ export default function CalendarScreen() {
           ))}
         </View>
 
-        {/* Calendar grid */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={s.gridCard}>
             <CalendarGrid
@@ -270,7 +233,6 @@ export default function CalendarScreen() {
           </Card>
         </View>
 
-        {/* Selected day */}
         <View style={{ paddingHorizontal: 24 }}>
           <Card style={{ padding: 18, marginBottom: 14, borderRadius: 22 }}>
             <Text style={s.selDateLabel}>{formatDisplayDate(selDate).toUpperCase()}</Text>
@@ -361,7 +323,6 @@ export default function CalendarScreen() {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },

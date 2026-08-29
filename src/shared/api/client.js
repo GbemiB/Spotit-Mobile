@@ -1,5 +1,4 @@
 import { API_BASE_URL } from './config.js';
-
 export class ApiError extends Error {
   constructor(message, status, errorCode, otpId) {
     super(message);
@@ -8,15 +7,8 @@ export class ApiError extends Error {
     this.otpId = otpId;
   }
 }
-
 const SENSITIVE_KEYS = ['password', 'newPassword', 'receipt', 'pushToken', 'accessToken', 'refreshToken'];
-
-// Requests that can't be processed (server hung, network gone dark mid-response, etc.) must
-// not hang the UI indefinitely — fetch() has no timeout of its own, so one is enforced here.
 const REQUEST_TIMEOUT_MS = 15000;
-
-// Every api/*.js module funnels through this one function, so logging here covers every
-// call in the app without touching each module individually.
 function redact(value) {
   if (!value || typeof value !== 'object') return value;
   const copy = Array.isArray(value) ? [...value] : { ...value };
@@ -25,28 +17,14 @@ function redact(value) {
   }
   return copy;
 }
-
-// This module has no React/store import of its own — AppProvider calls configureAuthClient()
-// once on mount so a plain 401 handler here can read the live refresh token and update global
-// auth state without a circular dependency on the store.
-let authBridge = {
-  getRefreshToken: () => null,
-  onTokensRefreshed: () => {},
-  onSessionExpired: () => {},
-};
-
+let authBridge = { getRefreshToken: () => null, onTokensRefreshed: () => {}, onSessionExpired: () => {} };
 export function configureAuthClient(bridge) {
   authBridge = bridge;
 }
-
-// Every backend response — success or error — arrives as {code, message, data}.
-// This unwraps that envelope: resolves to `data` on success, throws ApiError otherwise.
 async function rawRequest(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-
   if (__DEV__) console.log(`[api] -> ${method} ${path}`, body !== undefined ? redact(body) : '');
-
   let response;
   let envelope;
   const controller = new AbortController();
@@ -69,19 +47,18 @@ async function rawRequest(path, { method = 'GET', body, token } = {}) {
   } finally {
     clearTimeout(timeout);
   }
-
   if (__DEV__) console.log(`[api] <- ${method} ${path} ${response.status}`, redact(envelope));
-
   if (!response.ok || envelope.code >= 400) {
-    throw new ApiError(envelope.message || 'Something went wrong. Please try again.', envelope.code, envelope.data?.errorCode, envelope.data?.otpId);
+    throw new ApiError(
+      envelope.message || 'Something went wrong. Please try again.',
+      envelope.code,
+      envelope.data?.errorCode,
+      envelope.data?.otpId,
+    );
   }
   return envelope.data;
 }
-
-// Concurrent 401s share one in-flight refresh instead of each firing their own
-// POST /auth/refresh — they all await the same promise for the new access token.
 let refreshPromise = null;
-
 function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
@@ -98,19 +75,15 @@ function refreshAccessToken() {
   }
   return refreshPromise;
 }
-
 export async function apiRequest(path, options = {}, _isRetry = false) {
   try {
     return await rawRequest(path, options);
   } catch (e) {
-    // Only retry authenticated calls that 401 — auth endpoints (login, signup, refresh itself)
-    // never pass a token, so this can't recurse into refreshing off of a refresh failure.
     if (e instanceof ApiError && e.status === 401 && options.token && !_isRetry) {
       try {
         const newToken = await refreshAccessToken();
         return await apiRequest(path, { ...options, token: newToken }, true);
       } catch {
-        // Refresh token is gone/expired too — nothing left to try but a fresh login.
         authBridge.onSessionExpired();
         throw e;
       }

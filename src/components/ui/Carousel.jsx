@@ -1,5 +1,4 @@
 import { View, ScrollView } from 'react-native';
-
 export default function Carousel({ children, style }) {
   return (
     <View style={style}>

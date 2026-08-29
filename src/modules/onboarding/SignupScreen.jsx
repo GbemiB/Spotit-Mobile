@@ -9,7 +9,6 @@ import { CheckIcon } from '../../components/ui/icons.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import TermsScreen from './TermsScreen.jsx';
-
 export default function SignupScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -22,19 +21,13 @@ export default function SignupScreen() {
   const [showTerms, setShowTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const canSubmit = firstName.trim() && lastName.trim() && email.trim() && agreed;
-
   async function handleCreate() {
     if (!canSubmit || loading) return;
     setError('');
     setLoading(true);
     try {
-      const data = await authApi.signup({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-      });
+      const data = await authApi.signup({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() });
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       if (fullName) dispatch({ type: A.ONBOARD_FIELD, field: 'name', value: fullName });
       dispatch({
@@ -53,7 +46,6 @@ export default function SignupScreen() {
       setLoading(false);
     }
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -65,7 +57,8 @@ export default function SignupScreen() {
           <View style={s.header}>
             <LogoMark size={76} />
             <Text style={s.wordmark}>
-              Spot<Text style={{ color: colors.primary }}> it</Text>
+              Spot
+              <Text style={{ color: colors.primary }}> it</Text>
             </Text>
           </View>
 
@@ -144,7 +137,6 @@ export default function SignupScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },

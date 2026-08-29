@@ -1,7 +1,6 @@
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 export default function SectionHeader({ title, action, onAction, style }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -16,7 +15,6 @@ export default function SectionHeader({ title, action, onAction, style }) {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

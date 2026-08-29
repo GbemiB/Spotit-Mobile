@@ -10,8 +10,6 @@ import CalendarScreen from '../../modules/calender/CalendarScreen.jsx';
 import InsightsScreen from '../../modules/insights/InsightsScreen.jsx';
 import RewardsScreen from '../../modules/rewards/RewardsScreen.jsx';
 import SettingsScreen from '../../modules/dashboard/SettingsScreen.jsx';
-
-// Pre-auth flow, keyed by state.authScreen
 export const AUTH_SCREENS = {
   splash: SplashScreen,
   welcome: WelcomeScreen,
@@ -20,11 +18,7 @@ export const AUTH_SCREENS = {
   'forgot-password': ForgotPasswordScreen,
   'otp-verify': OtpVerifyScreen,
 };
-
-// First-run setup, shown once authenticated but before state.onboarded
 export { OnboardingScreen };
-
-// Main app tabs, keyed by state.screen
 export const TAB_SCREENS = {
   home: HomeScreen,
   cal: CalendarScreen,
@@ -32,5 +26,4 @@ export const TAB_SCREENS = {
   rewards: RewardsScreen,
   settings: SettingsScreen,
 };
-
 export const DEFAULT_TAB_SCREEN = HomeScreen;

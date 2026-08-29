@@ -2,7 +2,6 @@ import { View, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 export default function Toast({ icon, text }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -14,7 +13,6 @@ export default function Toast({ icon, text }) {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     toast: {

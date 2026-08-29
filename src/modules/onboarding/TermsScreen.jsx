@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { DocumentIcon } from '../../components/ui/icons.jsx';
-
 const SECTIONS = [
   {
     title: '1. Acceptance of terms',
@@ -26,17 +25,12 @@ const SECTIONS = [
     title: '5. Changes to these terms',
     body: 'We may update these terms occasionally. Continuing to use Spot it after changes take effect means you accept the revised terms.',
   },
-  {
-    title: '6. Contact',
-    body: 'Questions about these terms? Reach out to us from the Settings screen and we’ll get back to you.',
-  },
+  { title: '6. Contact', body: 'Questions about these terms? Reach out to us from the Settings screen and we’ll get back to you.' },
 ];
-
 export default function TermsScreen({ visible, onAgree, onClose }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[s.screen, { paddingTop: insets.top }]}>
@@ -73,7 +67,6 @@ export default function TermsScreen({ visible, onAgree, onClose }) {
     </Modal>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },

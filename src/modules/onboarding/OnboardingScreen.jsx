@@ -4,47 +4,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { GOALS } from '../../shared/constants/options.js';
+import { GOAL_ICONS } from '../../shared/constants/options.js';
 import { MONTHS, DAYS_SHORT } from '../../shared/constants/cycle.js';
 import { daysInMonth } from '../../shared/utils/cycle.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { CalendarIcon } from '../../components/ui/icons.jsx';
 import * as onboardingApi from '../../shared/api/onboarding.js';
-
-// Icons aren't part of the backend's goal template (that's presentation, not data) —
-// map the returned goal ids back to the emoji GOALS already defines locally.
-const GOAL_ICONS = Object.fromEntries(GOALS.map(g => [g.id, g.icon]));
-
 const MIN_AGE_YEARS = 13;
 const MAX_AGE_YEARS = 100;
-
 function dateToISO(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
-
 function formatDateDisplay(iso) {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 }
-
 function startOfDay(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   return d;
 }
-
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
-
-// Custom month-grid picker (same approach as the app's own CalendarGrid.jsx) instead of
-// the native OS picker — neither iOS nor Android exposes a font API for their native date
-// pickers, so getting the calendar text to a specific size/weight requires drawing it ourselves.
-// Year-grid shown when the header is tapped — jumps straight to a year (e.g. picking a
-// birth year decades back) instead of stepping the month chevrons one click at a time.
 function YearGrid({ viewYear, minYear, maxYear, onSelect, colors, s }) {
   const years = [];
   for (let y = maxYear; y >= minYear; y--) years.push(y);
@@ -65,27 +50,22 @@ function YearGrid({ viewYear, minYear, maxYear, onSelect, colors, s }) {
     </ScrollView>
   );
 }
-
 function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors, s }) {
   const initial = value ? new Date(value) : maximumDate;
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
   const [showYearGrid, setShowYearGrid] = useState(false);
-
   const min = startOfDay(minimumDate);
   const max = startOfDay(maximumDate);
   const selected = value ? startOfDay(new Date(value)) : null;
-
   const first = new Date(viewYear, viewMonth, 1).getDay();
   const count = daysInMonth(viewYear, viewMonth);
   const cells = [];
   for (let i = 0; i < first; i++) cells.push(null);
   for (let d = 1; d <= count; d++) cells.push(d);
   while (cells.length % 7) cells.push(null);
-
   const atMinMonth = viewYear === min.getFullYear() && viewMonth === min.getMonth();
   const atMaxMonth = viewYear === max.getFullYear() && viewMonth === max.getMonth();
-
   function prevMonth() {
     if (atMinMonth) return;
     let m = viewMonth - 1,
@@ -109,8 +89,6 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
     setViewYear(y);
   }
   function selectYear(y) {
-    // Clamp the month so the resulting date can't land outside min/max after a year jump
-    // (e.g. jumping to the min year while viewing December, past the min month).
     let m = viewMonth;
     if (y === min.getFullYear()) m = Math.max(m, min.getMonth());
     if (y === max.getFullYear()) m = Math.min(m, max.getMonth());
@@ -118,11 +96,15 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
     setViewMonth(m);
     setShowYearGrid(false);
   }
-
   return (
     <View style={s.pickerCard}>
       <View style={s.pickerHeader}>
-        <Pressable onPress={prevMonth} disabled={atMinMonth || showYearGrid} hitSlop={8} style={{ opacity: atMinMonth || showYearGrid ? 0.3 : 1 }}>
+        <Pressable
+          onPress={prevMonth}
+          disabled={atMinMonth || showYearGrid}
+          hitSlop={8}
+          style={{ opacity: atMinMonth || showYearGrid ? 0.3 : 1 }}
+        >
           <Text style={s.pickerNav}>‹</Text>
         </Pressable>
         <Pressable onPress={() => setShowYearGrid(v => !v)} hitSlop={8} style={s.pickerTitleBtn}>
@@ -131,19 +113,17 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
           </Text>
           <Text style={s.pickerTitleCaret}>{showYearGrid ? '▲' : '▼'}</Text>
         </Pressable>
-        <Pressable onPress={nextMonth} disabled={atMaxMonth || showYearGrid} hitSlop={8} style={{ opacity: atMaxMonth || showYearGrid ? 0.3 : 1 }}>
+        <Pressable
+          onPress={nextMonth}
+          disabled={atMaxMonth || showYearGrid}
+          hitSlop={8}
+          style={{ opacity: atMaxMonth || showYearGrid ? 0.3 : 1 }}
+        >
           <Text style={s.pickerNav}>›</Text>
         </Pressable>
       </View>
       {showYearGrid ? (
-        <YearGrid
-          viewYear={viewYear}
-          minYear={min.getFullYear()}
-          maxYear={max.getFullYear()}
-          onSelect={selectYear}
-          colors={colors}
-          s={s}
-        />
+        <YearGrid viewYear={viewYear} minYear={min.getFullYear()} maxYear={max.getFullYear()} onSelect={selectYear} colors={colors} s={s} />
       ) : (
         <>
           <View style={s.pickerDow}>
@@ -173,7 +153,6 @@ function CalendarDatePicker({ value, maximumDate, minimumDate, onSelect, colors,
     </View>
   );
 }
-
 function StepDots({ total, current, colors, s }) {
   return (
     <View style={s.dots}>
@@ -186,17 +165,12 @@ function StepDots({ total, current, colors, s }) {
     </View>
   );
 }
-
-// Shared by both date fields in AboutYouStep (DOB and last period) — one calendar-picker
-// pattern instead of a free-text date input, so day/month/year can't go out of range.
 function DateField({ value, placeholder, onChange, maximumDate, minimumDate, colors, s }) {
   const [show, setShow] = useState(false);
-
   function handleSelect(date) {
     onChange(dateToISO(date));
     setShow(false);
   }
-
   return (
     <View>
       <Pressable onPress={() => setShow(v => !v)} style={s.dateField}>
@@ -216,14 +190,12 @@ function DateField({ value, placeholder, onChange, maximumDate, minimumDate, col
     </View>
   );
 }
-
 function AboutYouStep({ draft, dispatch, colors, s }) {
   const today = new Date();
   const maxDob = new Date(today.getFullYear() - MIN_AGE_YEARS, today.getMonth(), today.getDate());
   const minDob = new Date(today.getFullYear() - MAX_AGE_YEARS, today.getMonth(), today.getDate());
   const minLastPeriod = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
   const dobComplete = !!draft.dob;
-
   return (
     <View>
       <Text style={s.eyebrow}>STEP 1 OF 3</Text>
@@ -271,7 +243,6 @@ function AboutYouStep({ draft, dispatch, colors, s }) {
     </View>
   );
 }
-
 function LengthStepper({ label, hint, value, min, max, onChange, s }) {
   return (
     <View style={s.stepperRow}>
@@ -291,7 +262,6 @@ function LengthStepper({ label, hint, value, min, max, onChange, s }) {
     </View>
   );
 }
-
 function CycleStep({ draft, dispatch, colors, s }) {
   return (
     <View>
@@ -333,7 +303,6 @@ function CycleStep({ draft, dispatch, colors, s }) {
     </View>
   );
 }
-
 function GoalsStep({ draft, dispatch, colors, s, goals, loading, error, onComplete }) {
   return (
     <View>
@@ -376,9 +345,7 @@ function GoalsStep({ draft, dispatch, colors, s, goals, loading, error, onComple
     </View>
   );
 }
-
 const STEPS = [AboutYouStep, CycleStep, GoalsStep];
-
 export default function OnboardingScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -386,13 +353,9 @@ export default function OnboardingScreen() {
   const { onboardStep, onboardDraft } = state;
   const insets = useSafeAreaInsets();
   const StepComp = STEPS[onboardStep] || STEPS[0];
-
-  const [goals, setGoals] = useState(GOALS.map(g => ({ id: g.id, label: g.label, description: g.desc })));
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // The goals template is what the UI calls first to render the goals step —
-  // falls back to the local GOALS constant if the request fails so onboarding never blocks.
   useEffect(() => {
     onboardingApi
       .getTemplate(state.accessToken)
@@ -401,7 +364,6 @@ export default function OnboardingScreen() {
       })
       .catch(() => {});
   }, []);
-
   async function handleComplete() {
     if (loading) return;
     setError('');
@@ -424,7 +386,6 @@ export default function OnboardingScreen() {
       setLoading(false);
     }
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -433,8 +394,6 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 }}>
-            {/* LOGOUT clears onboardStep/onboardDraft too, so the next login (same account or a
-                different one) starts onboarding fresh instead of showing stale picks. */}
             <Pressable onPress={() => dispatch({ type: A.LOGOUT })} hitSlop={10} style={s.closeBtn}>
               <Text style={s.closeBtnTx}>✕</Text>
             </Pressable>
@@ -455,7 +414,6 @@ export default function OnboardingScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 28 },

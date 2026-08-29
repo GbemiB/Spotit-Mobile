@@ -3,13 +3,11 @@ import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { WarningIcon } from './icons.jsx';
 import Button from './Button.jsx';
-
 export default function StatusModal({ visible, variant = 'success', title, subtitle, ctaLabel, onCta, secondaryLabel, onSecondary }) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const isSuccess = variant === 'success';
   const iconBg = isSuccess ? (isDark ? 'rgba(95,169,140,0.18)' : '#E7F2EB') : isDark ? 'rgba(211,59,59,0.18)' : '#FBE7E7';
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCta}>
       <View style={s.overlay}>
@@ -32,7 +30,6 @@ export default function StatusModal({ visible, variant = 'success', title, subti
     </Modal>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     overlay: { flex: 1, backgroundColor: c.overlay, alignItems: 'center', justifyContent: 'center', padding: 24 },

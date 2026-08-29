@@ -1,7 +1,6 @@
 import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 export default function BottomSheet({ open, onClose, title, children }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -27,7 +26,6 @@ export default function BottomSheet({ open, onClose, title, children }) {
     </Modal>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     container: { flex: 1, justifyContent: 'flex-end' },

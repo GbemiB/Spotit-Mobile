@@ -15,18 +15,15 @@ import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import TermsScreen from '../onboarding/TermsScreen.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
-
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
 }
-
 const THEME_OPTIONS = [
   { key: 'light', label: 'Light' },
   { key: 'dark', label: 'Dark' },
   { key: 'system', label: 'System' },
 ];
-
 function Row({ icon, iconBg, label, sub, right, last, s, compact }) {
   return (
     <View style={[compact ? s.notifRow : s.row, last && { borderBottomWidth: 0 }]}>
@@ -43,7 +40,6 @@ function Row({ icon, iconBg, label, sub, right, last, s, compact }) {
     </View>
   );
 }
-
 function Stepper({ label, value, min, max, onChange, last, s }) {
   return (
     <View style={[s.row, last && { borderBottomWidth: 0 }]}>
@@ -60,7 +56,6 @@ function Stepper({ label, value, min, max, onChange, last, s }) {
     </View>
   );
 }
-
 export default function SettingsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -68,11 +63,8 @@ export default function SettingsScreen() {
   const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels } = state;
   const insets = useSafeAreaInsets();
   const level = levelInfo(femPoints, levels);
-
-  const [confirming, setConfirming] = useState(null); // 'logout' | 'reset' | 'delete' | null
+  const [confirming, setConfirming] = useState(null);
   const [nameDraft, setNameDraft] = useState(userName);
-  // Keeps the field in sync with the profile hydration effect in App.js (resolves shortly
-  // after mount) without clobbering input made after that first sync.
   useEffect(() => {
     setNameDraft(userName);
   }, [userName]);
@@ -80,15 +72,12 @@ export default function SettingsScreen() {
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-
   function patch(obj) {
     dispatch({ type: A.UPDATE_SETTINGS, patch: obj });
   }
-
   function toast(icon, text) {
     dispatch({ type: A.SHOW_TOAST, icon, text });
   }
-
   async function saveProfile(fields) {
     try {
       const data = await usersApi.updateProfile(fields, accessToken);
@@ -97,7 +86,6 @@ export default function SettingsScreen() {
       toast('🌸', e.message);
     }
   }
-
   function handleNameBlur() {
     const trimmed = nameDraft.trim();
     if (!trimmed || trimmed === userName) {
@@ -107,33 +95,28 @@ export default function SettingsScreen() {
     patch({ userName: trimmed });
     saveProfile(splitName(trimmed));
   }
-
   function handleCycleLengthChange(v) {
     patch({ cycleLength: v });
     saveProfile({ cycleLength: v });
   }
-
   function handlePeriodLengthChange(v) {
     patch({ periodLength: v });
     saveProfile({ periodLength: v });
   }
-
   function handleThemeChange(pref) {
     dispatch({ type: A.SET_THEME, pref });
     saveProfile({ themePref: pref });
   }
-
   async function handleToggleNotif(key) {
     dispatch({ type: A.TOGGLE_NOTIF, key });
     try {
       const data = await usersApi.updateNotifications({ ...notifs, [key]: !notifs[key] }, accessToken);
       dispatch({ type: A.NOTIFICATIONS_UPDATED, ...data });
     } catch (e) {
-      dispatch({ type: A.TOGGLE_NOTIF, key }); // revert the optimistic flip
+      dispatch({ type: A.TOGGLE_NOTIF, key });
       toast('🌸', e.message);
     }
   }
-
   async function handleExport() {
     if (exporting) return;
     setExporting(true);
@@ -147,13 +130,11 @@ export default function SettingsScreen() {
       setExporting(false);
     }
   }
-
   async function confirmLogout() {
     setConfirming(null);
     await authApi.logout(state.accessToken).catch(() => {});
     dispatch({ type: A.LOGOUT });
   }
-
   async function confirmReset() {
     if (resetting) return;
     setResetting(true);
@@ -167,7 +148,6 @@ export default function SettingsScreen() {
       setResetting(false);
     }
   }
-
   async function confirmDelete() {
     if (deleting) return;
     setDeleting(true);
@@ -181,16 +161,13 @@ export default function SettingsScreen() {
       setDeleting(false);
     }
   }
-
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={s.header}>
           <Text style={s.headerTitle}>Profile</Text>
         </View>
 
-        {/* Profile hero */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={s.profileHero}>
             <Avatar name={userName} size={64} />
@@ -203,7 +180,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Profile */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Profile" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
@@ -222,7 +198,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Cycle */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Cycle" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
@@ -231,7 +206,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Notifications */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Notifications" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
@@ -251,7 +225,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Appearance */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Appearance" />
           <View style={s.themeRow}>
@@ -270,7 +243,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* About */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="About" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
@@ -287,7 +259,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Account */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Account" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
@@ -300,7 +271,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Data / Reset */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Data" />
           <Card style={{ padding: 18, marginTop: 10 }}>
@@ -311,7 +281,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* Delete account */}
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={{ padding: 18 }}>
             <Text style={s.dangerNote}>
@@ -355,7 +324,6 @@ export default function SettingsScreen() {
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
@@ -400,8 +368,6 @@ function createStyles(c) {
       borderBottomColor: c.border,
     },
     notifIconWrap: { width: 20, height: 20, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-    // notifLabel: { fontSize: 12, color: c.textPrimary, fontWeight: '600' },
-    // notifSub: { fontSize: 12, color: c.textMuted, marginTop: 1 },
     notifLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
     notifSub: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },

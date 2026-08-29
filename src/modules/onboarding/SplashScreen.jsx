@@ -5,15 +5,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-
-// Must stay longer than App.js's MIN_SPLASH_MS (the native splash screen's minimum hold time —
-// kept short there since that splash is a static image, unlike this one). App.js keeps the
-// native splash covering everything until MIN_SPLASH_MS elapses — if this component switched
-// away sooner, that switch would happen invisibly underneath the native overlay, and the moment
-// it lifts the user would land directly on WelcomeScreen having never actually seen this screen
-// (the animated logo/wordmark/tagline) at all.
 const SPLASH_MS = 3800;
-
 function Dot({ color, delay }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -28,22 +20,20 @@ function Dot({ color, delay }) {
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] });
   return <Animated.View style={[styles.dot, { backgroundColor: color, transform: [{ translateY }] }]} />;
 }
-
 export default function SplashScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-
   useEffect(() => {
     const t = setTimeout(() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'welcome' }), SPLASH_MS);
     return () => clearTimeout(t);
   }, []);
-
   return (
     <LinearGradient colors={colors.splashGradient} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={s.screen}>
       <LogoMark size={96} />
       <Text style={s.wordmark}>
-        Spot<Text style={{ color: colors.primary }}> it</Text>
+        Spot
+        <Text style={{ color: colors.primary }}> it</Text>
       </Text>
       <Text style={s.tagline}>Track your body, gently</Text>
       <View style={s.dots}>
@@ -54,7 +44,6 @@ export default function SplashScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -63,7 +52,4 @@ function createStyles(c) {
     dots: { position: 'absolute', bottom: 60, flexDirection: 'row', gap: 6 },
   });
 }
-
-const styles = StyleSheet.create({
-  dot: { width: 6, height: 6, borderRadius: 3 },
-});
+const styles = StyleSheet.create({ dot: { width: 6, height: 6, borderRadius: 3 } });

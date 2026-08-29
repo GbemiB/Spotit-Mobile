@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { cycleDayOf, phaseFor, toISO } from '../../shared/utils/cycle.js';
 import { DAYS_SHORT } from '../../shared/constants/cycle.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
-
 function PulseRing({ color }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -30,11 +29,9 @@ function PulseRing({ color }) {
     />
   );
 }
-
 export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLength }) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-
   const cells = useMemo(() => {
     const today = new Date();
     const out = [];
@@ -54,7 +51,6 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
     }
     return out;
   }, [lastPeriodDate, cycleLength, periodLength]);
-
   return (
     <View style={s.row}>
       {cells.map(c => (
@@ -83,7 +79,6 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
     </View>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     row: { flexDirection: 'row', gap: 7 },

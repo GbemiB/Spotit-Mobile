@@ -6,9 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { ChevronRightIcon } from '../../components/ui/icons.jsx';
-
 const { width: W } = Dimensions.get('window');
-
 const SLIDES = [
   {
     image: require('../../../assets/illus-rhythm.png'),
@@ -26,7 +24,6 @@ const SLIDES = [
     body: 'Gentle nudges for logging, periods, and ovulation — right when you need them.',
   },
 ];
-
 export default function WelcomeScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -35,21 +32,17 @@ export default function WelcomeScreen() {
   const scrollRef = useRef(null);
   const [page, setPage] = useState(0);
   const isLast = page === SLIDES.length - 1;
-
   function onScroll(e) {
     setPage(Math.round(e.nativeEvent.contentOffset.x / W));
   }
-
   function goNext() {
     const next = Math.min(page + 1, SLIDES.length - 1);
     scrollRef.current?.scrollTo({ x: next * W, animated: true });
     setPage(next);
   }
-
   function goToSignup() {
     dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={s.screen}>
       <ScrollView
@@ -118,7 +111,6 @@ export default function WelcomeScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1 },

@@ -7,7 +7,6 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
-
 export default function LoginScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -18,9 +17,7 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const canSubmit = email.trim() && password.length > 0;
-
   async function handleLogin() {
     if (!canSubmit || loading) return;
     setError('');
@@ -36,10 +33,6 @@ export default function LoginScreen() {
       });
     } catch (e) {
       if (e.errorCode === 'email_not_verified' && e.otpId) {
-        // Correct password, but this account never finished verification — a fresh code was
-        // already issued server-side. Route to the same OTP screen signup uses, but tagged
-        // 'login_verify' so it knows to issue tokens directly on success instead of asking for
-        // a new password (this account already has one).
         dispatch({
           type: A.UPDATE_SETTINGS,
           patch: {
@@ -57,7 +50,6 @@ export default function LoginScreen() {
       setLoading(false);
     }
   }
-
   return (
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -69,7 +61,8 @@ export default function LoginScreen() {
           <View style={s.header}>
             <LogoMark size={76} />
             <Text style={s.wordmark}>
-              Spot<Text style={{ color: colors.primary }}> it</Text>
+              Spot
+              <Text style={{ color: colors.primary }}> it</Text>
             </Text>
           </View>
 
@@ -125,7 +118,6 @@ export default function LoginScreen() {
     </LinearGradient>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },

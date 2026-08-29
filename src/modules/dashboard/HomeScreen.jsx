@@ -4,7 +4,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { cycleDayOf, phaseFor, nextPeriodDate, nextMilestone, addDays, formatDisplayDate, todayISO, toISO } from '../../shared/utils/cycle.js';
+import {
+  cycleDayOf,
+  phaseFor,
+  nextPeriodDate,
+  nextMilestone,
+  addDays,
+  formatDisplayDate,
+  todayISO,
+  toISO,
+} from '../../shared/utils/cycle.js';
 import { PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
@@ -19,32 +28,12 @@ import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
 import * as billingApi from '../../shared/api/billing.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
-
-// Static "For you today" content — no longer backed by GET /content/feed.
-const FOR_YOU_CONTENT = [
-  {
-    tag: 'Education',
-    tagColor: '#C04E68',
-    title: 'Understanding your fertile window',
-    body: 'Your fertile window is the stretch of each cycle when pregnancy is possible — typically the 5 days before ovulation through the day of ovulation itself.\n\nWhy that range? Sperm can survive in the body for up to 5 days, while an egg lives for only about 24 hours after release. So the "window" is really sperm waiting for an egg, not the other way around.\n\nSpot it estimates your window from your average cycle length. You can narrow it down further by tracking signs your body already gives you:\n\n• Cervical mucus that turns clear and stretchy, like raw egg white\n• A slight rise in resting body temperature after ovulation\n• Mild one-sided pelvic twinges (\"mittelschmerz\")\n\nCycles vary month to month, so treat this as a well-informed estimate, not a guarantee — and check in with a doctor if you\'re planning or avoiding pregnancy and want more precision.',
-    imageSource: require('../../../assets/lifestyle.png'),
-  },
-  {
-    tag: 'Nutrition',
-    tagColor: '#3F8866',
-    title: '5 foods that support ovulation',
-    body: 'Diet alone won\'t control ovulation, but certain nutrients give your hormones the raw materials they need to function well:\n\n• Leafy greens (spinach, kale) — folate, which supports healthy ovulation and early fetal development\n• Berries — antioxidants that help protect egg cells from oxidative stress\n• Fatty fish (salmon, sardines) — omega-3s linked to more regular cycles\n• Whole grains (oats, quinoa) — steadier blood sugar, which helps keep reproductive hormones balanced\n• Nuts and seeds — vitamin E and zinc, both tied to hormone production\n\nNone of these guarantee ovulation or a pregnancy outcome on their own — think of them as one supporting factor alongside sleep, stress, and overall health. A doctor or registered dietitian can tailor this to your specific needs.',
-    imageSource: require('../../../assets/food.png'),
-  },
-  {
-    tag: 'Sponsored',
-    tagColor: '#B0A09A',
-    title: 'Nourish prenatal multivitamins',
-    body: 'A prenatal multivitamin formulated to help meet essential nutrient needs before and during pregnancy, including folate, iron, and vitamin D.\n\nAs with any supplement, check with your doctor before starting — especially if you take other medications, are breastfeeding, or manage an existing medical condition.',
-    imageSource: require('../../../assets/product.png'),
-  },
-];
-
+const CONTENT_IMAGES = {
+  lifestyle: require('../../../assets/lifestyle.png'),
+  food: require('../../../assets/food.png'),
+  product: require('../../../assets/product.png'),
+};
+const TAG_COLORS = { Education: '#C04E68', Nutrition: '#3F8866', Sponsored: '#B0A09A' };
 function insightFor(phase, cycleLength) {
   const ovDay = cycleLength - 14;
   if (phase.key === 'ovulation') {
@@ -58,7 +47,6 @@ function insightFor(phase, cycleLength) {
   }
   return { title: 'Track your ovulation', body: `Ovulation is predicted around day ${ovDay} of your cycle.` };
 }
-
 function GlowBlob({ size, color, duration, delay = 0, style }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -90,17 +78,15 @@ function GlowBlob({ size, color, duration, delay = 0, style }) {
     />
   );
 }
-
 export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content } = state;
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-
   useEffect(() => {
     logsApi
       .getTemplate(accessToken)
@@ -109,10 +95,6 @@ export default function HomeScreen() {
       })
       .catch(() => {});
   }, []);
-
-  // Pull-to-refresh: re-runs the same fetches App.js's mount effects do, rather than waiting
-  // on the app to background/foreground (which is what re-triggers them automatically — see
-  // App.js's AppState listener) or on one of their other dependencies to happen to change.
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     const now = new Date();
@@ -137,29 +119,27 @@ export default function HomeScreen() {
     dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
     setRefreshing(false);
   }, [accessToken, dispatch]);
-
   const today = todayISO();
-  // Prefer the server-computed status (GET /cycle/current); fall back to the local
-  // calculation (same formula, mirrored in utils/cycle.js) until that resolves.
   const cycleDay = cycleStatus?.cycleDay ?? cycleDayOf(today, lastPeriodDate, cycleLength);
   const hasCycleData = cycleDay != null;
   const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
   const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
-  // The calendar tracks three milestones (period/fertile/ovulation) — this resolves which one
-  // is either happening now or coming up soonest, so the hero isn't always period-only. When
-  // one is currently active, phaseKey already identifies it (server or local phaseFor, same as
-  // above); milestone only drives the headline for the "nothing active right now" case.
   const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints, levels);
   const insight = insightFor(phase, cycleLength);
-  const feedItems = FOR_YOU_CONTENT.map((c, i) => ({ id: i, ...c }));
-
+  const feedItems = content.map(c => ({
+    id: c.id,
+    tag: c.tag,
+    tagColor: TAG_COLORS[c.tag] || '#B0A09A',
+    title: c.title,
+    body: c.body,
+    imageSource: CONTENT_IMAGES[c.imageKey] || CONTENT_IMAGES.lifestyle,
+  }));
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
   const firstName = userName?.trim().split(/\s+/)[0] || userName;
-
   const eggFloat = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -171,11 +151,9 @@ export default function HomeScreen() {
     loop.start();
     return () => loop.stop();
   }, []);
-
   function goSettings() {
     dispatch({ type: A.GO, screen: 'settings' });
   }
-
   return (
     <ScrollView
       style={s.screen}
@@ -183,7 +161,6 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {/* Header */}
       <View style={s.header}>
         <View style={s.headerLeft}>
           <Avatar name={userName} onPress={goSettings} />
@@ -199,7 +176,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* Countdown hero */}
       <View style={s.section}>
         <Card style={s.hero}>
           <GlowBlob size={180} duration={3500} color={isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC'} style={{ top: -50, right: -40 }} />
@@ -216,10 +192,6 @@ export default function HomeScreen() {
                 {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
               </Text>
               {phaseKey === 'period' ? (
-                // A period the user has actually logged as started is ground truth — show
-                // that instead of the system-computed "next period" countdown below, which
-                // would otherwise keep pointing at a future prediction while today's period
-                // is already underway (e.g. "starts in 24 hours" right after logging day 1).
                 <Text style={s.heroSerif}>
                   You&apos;re on <Text style={[s.heroSerif, { color: colors.primary }]}>day {cycleDay}</Text> of your period
                 </Text>
@@ -232,9 +204,6 @@ export default function HomeScreen() {
                   Today is your predicted <Text style={[s.heroSerif, { color: colors.primary }]}>ovulation day</Text>
                 </Text>
               ) : (
-                // Nothing active right now — lead with whichever of the three is soonest,
-                // not always period (e.g. ovulation lands before the next period more often
-                // than not).
                 <View style={s.heroRow}>
                   <Text style={s.heroSerifSm}>
                     {milestone?.key === 'fertile'
@@ -270,7 +239,6 @@ export default function HomeScreen() {
         </Card>
       </View>
 
-      {/* Period log button */}
       <View style={s.section}>
         <Pressable onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}>
           <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
@@ -289,7 +257,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* Level strip */}
       <View style={s.section}>
         <Pressable onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}>
           <Card style={s.levelStrip}>
@@ -313,7 +280,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* Ovulation strip */}
       <View style={s.section}>
         <LinearGradient
           colors={isDark ? ['#2A1810', '#301B0F'] : ['#FBF2EC', '#FCEAE0']}
@@ -348,7 +314,6 @@ export default function HomeScreen() {
         </LinearGradient>
       </View>
 
-      {/* For you today */}
       <View style={{ marginBottom: 8 }}>
         <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
         <Carousel style={{ marginTop: 11 }}>
@@ -380,7 +345,6 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
-
 function createStyles(c) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.background },
@@ -410,7 +374,6 @@ function createStyles(c) {
       borderWidth: 1.5,
       borderColor: c.surface,
     },
-
     hero: { borderRadius: 32, padding: 20, overflow: 'hidden' },
     phaseLabel: { fontSize: 9, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
     heroSerif: { fontFamily: FONT.serif, fontSize: 28, color: c.textPrimary, marginTop: 12, lineHeight: 40 },
@@ -420,7 +383,6 @@ function createStyles(c) {
     predictedTx: { fontSize: 10, color: c.textMuted, marginTop: 8 },
     dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
     dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
-
     logCta: {
       borderRadius: 22,
       paddingVertical: 15,
@@ -446,18 +408,15 @@ function createStyles(c) {
       marginLeft: 12,
     },
     logCtaPlus: { color: c.white, fontSize: 20, fontWeight: '300' },
-
     levelStrip: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
     levelIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
     levelName: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary },
     levelSp: { fontSize: 9, color: c.textMuted },
     levelProgress: { fontSize: 8.5, color: c.textDisabled, marginTop: 5 },
     chevron: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
-
     ovCard: { borderRadius: 22, padding: 17, overflow: 'hidden' },
     ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep },
     ovBody: { fontSize: 11, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
-
     sectionTitle: { fontSize: 12.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
     fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
     fyImage: { width: 208, height: 118, backgroundColor: c.surfaceAlt },
