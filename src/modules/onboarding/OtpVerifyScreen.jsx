@@ -102,7 +102,7 @@ export default function OtpVerifyScreen() {
         type: A.UPDATE_SETTINGS,
         patch: { pendingOtpId: null, pendingEmail: null, otpPurpose: null, otpExpiresAt: null },
       });
-      dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
+      dispatch({ type: A.SET_AUTH_SCREEN, screen: state.otpPurpose === 'login_verify' ? 'login' : 'signup' });
     }
   }
 
@@ -128,6 +128,17 @@ export default function OtpVerifyScreen() {
       } else if (isReset) {
         await authApi.verifyResetOtp({ email, code });
         setOtpConfirmed(true);
+      } else if (state.otpPurpose === 'login_verify') {
+        // This account already has a password (it just never finished verification) — verifying
+        // the code is the whole flow, straight to a session, no completeSignup password step.
+        const data = await authApi.verifyLoginOtp({ otpId: state.pendingOtpId, code });
+        dispatch({
+          type: A.AUTH_SUCCESS,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          userId: data.user.userId,
+          onboarded: data.user.onboarded,
+        });
       } else {
         await authApi.verifyOtp({ otpId: state.pendingOtpId, code });
         setSignupVerified(true);

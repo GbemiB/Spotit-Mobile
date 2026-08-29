@@ -35,6 +35,23 @@ export default function LoginScreen() {
         onboarded: data.user.onboarded,
       });
     } catch (e) {
+      if (e.errorCode === 'email_not_verified' && e.otpId) {
+        // Correct password, but this account never finished verification — a fresh code was
+        // already issued server-side. Route to the same OTP screen signup uses, but tagged
+        // 'login_verify' so it knows to issue tokens directly on success instead of asking for
+        // a new password (this account already has one).
+        dispatch({
+          type: A.UPDATE_SETTINGS,
+          patch: {
+            pendingOtpId: e.otpId,
+            pendingEmail: email.trim(),
+            otpPurpose: 'login_verify',
+            otpExpiresAt: e.expiresInSeconds ? Date.now() + e.expiresInSeconds * 1000 : null,
+          },
+        });
+        dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
+        return;
+      }
       setError(e.message);
     } finally {
       setLoading(false);

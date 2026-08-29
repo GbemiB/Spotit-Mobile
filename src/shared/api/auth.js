@@ -24,6 +24,13 @@ export function login({ email, password }) {
   return apiRequest('/auth/login', { method: 'POST', body: { email, password } });
 }
 
+// Only reached when login() throws errorCode 'email_not_verified' — a correct-password
+// account that never finished verification (e.g. its signup OTP email never arrived). Unlike
+// completeSignup, this issues tokens directly since the account already has a password.
+export function verifyLoginOtp({ otpId, code }) {
+  return apiRequest('/auth/login/verify-otp', { method: 'POST', body: { otpId, code } });
+}
+
 export function forgotPassword({ email }) {
   return apiRequest('/auth/forgot-password', { method: 'POST', body: { email } });
 }

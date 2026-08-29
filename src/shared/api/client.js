@@ -1,10 +1,11 @@
 import { API_BASE_URL } from './config.js';
 
 export class ApiError extends Error {
-  constructor(message, status, errorCode) {
+  constructor(message, status, errorCode, otpId) {
     super(message);
     this.status = status;
     this.errorCode = errorCode;
+    this.otpId = otpId;
   }
 }
 
@@ -72,7 +73,7 @@ async function rawRequest(path, { method = 'GET', body, token } = {}) {
   if (__DEV__) console.log(`[api] <- ${method} ${path} ${response.status}`, redact(envelope));
 
   if (!response.ok || envelope.code >= 400) {
-    throw new ApiError(envelope.message || 'Something went wrong. Please try again.', envelope.code, envelope.data?.errorCode);
+    throw new ApiError(envelope.message || 'Something went wrong. Please try again.', envelope.code, envelope.data?.errorCode, envelope.data?.otpId);
   }
   return envelope.data;
 }
