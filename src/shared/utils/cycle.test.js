@@ -1,4 +1,4 @@
-import { toISO, todayISO, daysInMonth, cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, addDays, datesBetween } from './cycle.js';
+import { toISO, todayISO, daysInMonth, cycleDayOf, phaseFor, nextMilestone, nextPeriodDate, formatDisplayDate, addDays, datesBetween } from './cycle.js';
 
 function iso(year, month, day) {
   return toISO(new Date(year, month - 1, day));
@@ -81,6 +81,28 @@ describe('phaseFor', () => {
 
   test('a null cycle day returns a null phase', () => {
     expect(phaseFor(null, periodLength, cycleLength)).toEqual({ key: null, label: null, color: null });
+  });
+});
+
+describe('nextMilestone', () => {
+  const periodLength = 5;
+  const cycleLength = 28; // ovDay = 14, fertile starts day 10
+
+  test.each([
+    [1, 'period', 0], // inside period
+    [5, 'period', 0], // last day of period
+    [6, 'fertile', 4], // between period and fertile — fertile is soonest, not period
+    [10, 'fertile', 0], // inside fertile window
+    [13, 'fertile', 0], // last day of fertile window
+    [14, 'ovulation', 0], // ovulation day itself
+    [15, 'period', 14], // just past ovulation — next period is soonest of the three
+    [28, 'period', 1], // last day of cycle — next period starts tomorrow
+  ])('cycle day %i -> %s in %i day(s)', (cycleDay, expectedKey, expectedDaysUntil) => {
+    expect(nextMilestone(cycleDay, cycleLength, periodLength)).toEqual({ key: expectedKey, daysUntil: expectedDaysUntil });
+  });
+
+  test('a null cycle day returns null', () => {
+    expect(nextMilestone(null, cycleLength, periodLength)).toBeNull();
   });
 });
 

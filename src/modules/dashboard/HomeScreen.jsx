@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { cycleDayOf, phaseFor, nextPeriodDate, formatDisplayDate, todayISO, toISO } from '../../shared/utils/cycle.js';
+import { cycleDayOf, phaseFor, nextPeriodDate, nextMilestone, addDays, formatDisplayDate, todayISO, toISO } from '../../shared/utils/cycle.js';
 import { PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
@@ -146,12 +146,12 @@ export default function HomeScreen() {
   const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
   const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
-  const daysLeft = hasCycleData
-    ? cycleStatus
-      ? cycleStatus.daysUntilNextPeriod
-      : Math.max(0, Math.round((nextP - new Date()) / 86400000))
-    : null;
-  const isDueToday = daysLeft === 0;
+  // The calendar tracks three milestones (period/fertile/ovulation) — this resolves which one
+  // is either happening now or coming up soonest, so the hero isn't always period-only. When
+  // one is currently active, phaseKey already identifies it (server or local phaseFor, same as
+  // above); milestone only drives the headline for the "nothing active right now" case.
+  const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
+  const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints);
   const insight = insightFor(phase, cycleLength);
   const feedItems = FOR_YOU_CONTENT.map((c, i) => ({ id: i, ...c }));
@@ -223,19 +223,34 @@ export default function HomeScreen() {
                 <Text style={s.heroSerif}>
                   You&apos;re on <Text style={[s.heroSerif, { color: colors.primary }]}>day {cycleDay}</Text> of your period
                 </Text>
-              ) : isDueToday ? (
+              ) : phaseKey === 'fertile' ? (
                 <Text style={s.heroSerif}>
-                  Your period starts <Text style={[s.heroSerif, { color: colors.primary }]}>today</Text>
+                  You&apos;re in your <Text style={[s.heroSerif, { color: colors.primary }]}>fertile window</Text>
+                </Text>
+              ) : phaseKey === 'ovulation' ? (
+                <Text style={s.heroSerif}>
+                  Today is your predicted <Text style={[s.heroSerif, { color: colors.primary }]}>ovulation day</Text>
                 </Text>
               ) : (
+                // Nothing active right now — lead with whichever of the three is soonest,
+                // not always period (e.g. ovulation lands before the next period more often
+                // than not).
                 <View style={s.heroRow}>
-                  <Text style={s.heroSerifSm}>Your period starts in</Text>
-                  <Text style={[s.heroSerifBig, { color: colors.primary }]}>{daysLeft}</Text>
-                  <Text style={s.heroSerifSm}>days</Text>
+                  <Text style={s.heroSerifSm}>
+                    {milestone?.key === 'fertile'
+                      ? 'Your fertile window starts in'
+                      : milestone?.key === 'ovulation'
+                        ? 'Ovulation in'
+                        : 'Your period starts in'}
+                  </Text>
+                  <Text style={[s.heroSerifBig, { color: colors.primary }]}>{milestone?.daysUntil}</Text>
+                  <Text style={s.heroSerifSm}>{milestone?.daysUntil === 1 ? 'day' : 'days'}</Text>
                 </View>
               )}
               <Text style={s.predictedTx}>
-                {phaseKey === 'period' ? `Next period predicted ${formatDisplayDate(nextP)}` : `Predicted ${formatDisplayDate(nextP)}`}
+                {phaseKey === 'period' || phaseKey === 'fertile' || phaseKey === 'ovulation'
+                  ? `Next period predicted ${formatDisplayDate(nextP)}`
+                  : `Predicted ${formatDisplayDate(milestoneDate)}`}
               </Text>
               <View style={{ marginTop: 16 }}>
                 <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />

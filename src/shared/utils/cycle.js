@@ -53,6 +53,31 @@ export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
   return { key, label: key ? PHASE_LABELS[key] : null, color: key ? phases[key] : null };
 }
 
+// The calendar tracks three milestones (period/fertile/ovulation — see phaseFor's day ranges),
+// but the dashboard hero used to only ever talk about period. This resolves which of the three
+// is either happening right now or coming up soonest, so the hero can lead with whichever is
+// actually next instead of always defaulting to period.
+export function nextMilestone(cycleDay, cycleLength, periodLength) {
+  if (cycleDay == null) return null;
+  const ovDay = cycleLength - 14;
+  const fertileStart = ovDay - 4;
+
+  // Currently inside a window — that's the milestone, already underway.
+  if (cycleDay <= periodLength) return { key: 'period', daysUntil: 0 };
+  if (cycleDay === ovDay) return { key: 'ovulation', daysUntil: 0 };
+  if (cycleDay >= fertileStart && cycleDay < ovDay) return { key: 'fertile', daysUntil: 0 };
+
+  // Not in a window right now — find whichever window's start is soonest, wrapping to next
+  // cycle for any target already passed this cycle.
+  const distanceTo = target => ((target - cycleDay) % cycleLength + cycleLength) % cycleLength;
+  const candidates = [
+    { key: 'period', daysUntil: distanceTo(1) },
+    { key: 'fertile', daysUntil: distanceTo(fertileStart) },
+    { key: 'ovulation', daysUntil: distanceTo(ovDay) },
+  ];
+  return candidates.reduce((soonest, c) => (c.daysUntil < soonest.daysUntil ? c : soonest));
+}
+
 export function nextPeriodDate(lastPeriodDate, cycleLength) {
   if (!lastPeriodDate) return null;
   // Route through cycleDayOf (todayISO() vs. the stored lastPeriodDate string) instead of
