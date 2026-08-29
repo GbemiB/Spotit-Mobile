@@ -1,7 +1,7 @@
 import { A } from './actions.js';
 import { todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
-import { DEFAULT_LEVELS, toLevelList } from '../utils/levels.js';
+import { toLevelList } from '../utils/levels.js';
 
 const MAX_HISTORY = 20;
 
@@ -46,9 +46,9 @@ export const INIT = {
   autoRenew: false,
   history: [],
   badges: [],
-  // Admin-configurable (GET /rewards/levels) — this default is the fallback used until that
-  // fetch resolves, or if it fails, so nothing computing a level ever blocks on it.
-  levels: DEFAULT_LEVELS,
+  // Exclusively DB-backed (GET /rewards/levels) — no local fallback data. Empty until that
+  // fetch resolves; levelInfo() returns a null-name "not loaded yet" shape for that window.
+  levels: [],
   challenges: [],
   shopProducts: [],
   // session

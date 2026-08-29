@@ -1,20 +1,10 @@
-// Admin-configurable now (GET /rewards/levels) — this default is only the fallback used until
-// that fetch resolves, or if it fails, so the level strip/progress bar never blocks on it. Same
-// shape/values the whole app always had; App.js's rewards effect calls LEVELS_HYDRATED with the
-// real thing once it lands.
-export const DEFAULT_LEVELS = [
-  { name: 'Blush', lo: 0, hi: 500 },
-  { name: 'Petal', lo: 500, hi: 2000 },
-  { name: 'Rosé', lo: 2000, hi: 5000 },
-  { name: 'Bloom', lo: 5000, hi: 10000 },
-  { name: 'Wildflower', lo: 10000, hi: 25000 },
-  { name: 'Moonflower', lo: 25000, hi: 50000 },
-];
-
-export const LEVEL_ORDER = [...DEFAULT_LEVELS.map(l => l.name), 'Goddess'];
+// No local level data at all — tiers come exclusively from GET /rewards/levels (DB-backed, see
+// LevelDefinitionService on the backend). `levels` is required here on purpose: callers must
+// pass whatever's currently in state.levels (empty array until that fetch resolves), rather
+// than this module silently supplying its own copy of the thresholds.
 
 // Maps the API shape (GET /rewards/levels: {name, pointsLow, pointsHigh}) to the {name, lo, hi}
-// shape levelInfo/LEVEL_ORDER use locally.
+// shape levelInfo/levelOrderFor use locally.
 export function toLevelList(apiLevels) {
   return apiLevels.map(l => ({ name: l.name, lo: l.pointsLow, hi: l.pointsHigh }));
 }
@@ -23,7 +13,12 @@ export function levelOrderFor(levels) {
   return [...levels.map(l => l.name), 'Goddess'];
 }
 
-export function levelInfo(fp, levels = DEFAULT_LEVELS) {
+// Returns a null-ish "not loaded yet" shape (name: null) when `levels` is empty, instead of
+// crashing or making up a level — callers should treat level.name == null as still-loading.
+export function levelInfo(fp, levels) {
+  if (!levels || levels.length === 0) {
+    return { name: null, lo: 0, hi: 0, pct: 0, next: null, idx: -1 };
+  }
   for (let i = 0; i < levels.length; i++) {
     const { name, lo, hi } = levels[i];
     if (fp < hi) return { name, lo, hi, pct: (fp - lo) / (hi - lo), next: levels[i + 1] || null, idx: i };
