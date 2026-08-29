@@ -65,9 +65,9 @@ export default function SettingsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken } = state;
+  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels } = state;
   const insets = useSafeAreaInsets();
-  const level = levelInfo(femPoints);
+  const level = levelInfo(femPoints, levels);
 
   const [confirming, setConfirming] = useState(null); // 'logout' | 'reset' | 'delete' | null
   const [nameDraft, setNameDraft] = useState(userName);

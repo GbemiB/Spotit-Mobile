@@ -120,7 +120,7 @@ export default function RewardsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { femPoints, streak, isPremium, autoRenew, history, badges, challenges, shopProducts, lastClaimedDate, accessToken } = state;
+  const { femPoints, streak, isPremium, autoRenew, history, badges, challenges, shopProducts, lastClaimedDate, accessToken, levels } = state;
   const insets = useSafeAreaInsets();
   const [billingLoading, setBillingLoading] = useState(false);
   const [adLoading, setAdLoading] = useState(false);
@@ -260,7 +260,7 @@ export default function RewardsScreen() {
     }
   }
 
-  const level = levelInfo(femPoints);
+  const level = levelInfo(femPoints, levels);
   const shopRows = shopView(shopProducts);
   const earnedBadgeCount = badges.filter(b => b.earned).length;
 
@@ -420,7 +420,7 @@ function createStyles(c) {
     hero: { position: 'relative', borderRadius: 28, padding: 22, overflow: 'hidden' },
     heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 118, opacity: 0.14 },
     heroLabel: { fontSize: 10.5, opacity: 0.85, fontWeight: '600', color: c.white },
-    heroLevel: { fontFamily: FONT.serif, fontSize: 30, marginTop: 2, color: c.white },
+    heroLevel: { fontFamily: FONT.serif, fontSize: 30, marginTop: 15, color: c.white },
     heroPoints: { fontSize: 11, opacity: 0.9, marginTop: 2, color: c.white },
     heroProgress: { fontSize: 9.5, opacity: 0.85, marginTop: 7, color: c.white },
     heroStatsRow: {

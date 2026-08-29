@@ -8,6 +8,10 @@ export function getBadges(token) {
   return apiRequest('/rewards/badges', { token });
 }
 
+export function getLevels(token) {
+  return apiRequest('/rewards/levels', { token });
+}
+
 export function getChallenges(token) {
   return apiRequest('/rewards/challenges', { token });
 }

@@ -159,6 +159,10 @@ function AppContent() {
       .then(badges => dispatch({ type: A.BADGES_HYDRATED, badges }))
       .catch(() => {});
     rewardsApi
+      .getLevels(accessToken)
+      .then(levels => dispatch({ type: A.LEVELS_HYDRATED, levels }))
+      .catch(() => {});
+    rewardsApi
       .getChallenges(accessToken)
       .then(challenges => dispatch({ type: A.CHALLENGES_HYDRATED, challenges }))
       .catch(() => {});

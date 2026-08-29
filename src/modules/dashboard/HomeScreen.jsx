@@ -95,7 +95,7 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels } = state;
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -152,7 +152,7 @@ export default function HomeScreen() {
   // above); milestone only drives the headline for the "nothing active right now" case.
   const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
-  const level = levelInfo(femPoints);
+  const level = levelInfo(femPoints, levels);
   const insight = insightFor(phase, cycleLength);
   const feedItems = FOR_YOU_CONTENT.map((c, i) => ({ id: i, ...c }));
 

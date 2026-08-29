@@ -1,6 +1,7 @@
 import { A } from './actions.js';
 import { todayISO } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
+import { DEFAULT_LEVELS, toLevelList } from '../utils/levels.js';
 
 const MAX_HISTORY = 20;
 
@@ -45,6 +46,9 @@ export const INIT = {
   autoRenew: false,
   history: [],
   badges: [],
+  // Admin-configurable (GET /rewards/levels) — this default is the fallback used until that
+  // fetch resolves, or if it fails, so nothing computing a level ever blocks on it.
+  levels: DEFAULT_LEVELS,
   challenges: [],
   shopProducts: [],
   // session
@@ -273,6 +277,8 @@ export function reducer(state, action) {
     }
     case A.BADGES_HYDRATED:
       return { ...state, badges: action.badges };
+    case A.LEVELS_HYDRATED:
+      return { ...state, levels: action.levels.length ? toLevelList(action.levels) : state.levels };
     case A.CHALLENGES_HYDRATED:
       return { ...state, challenges: action.challenges };
     case A.SHOP_PRODUCTS_HYDRATED:
