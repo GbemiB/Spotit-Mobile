@@ -63,14 +63,14 @@ describe('cycleDayOf', () => {
 
 describe('phaseFor', () => {
   const periodLength = 5;
-  const cycleLength = 28; // ovDay = 14
+  const cycleLength = 28; // ovDay = 14, fertile window is the 5 days before it (9-13)
 
   test.each([
     [1, 'period'],
     [5, 'period'],
     [6, null],
-    [9, null],
-    [10, 'fertile'],
+    [8, null],
+    [9, 'fertile'],
     [13, 'fertile'],
     [14, 'ovulation'],
     [15, null],
@@ -86,13 +86,13 @@ describe('phaseFor', () => {
 
 describe('nextMilestone', () => {
   const periodLength = 5;
-  const cycleLength = 28; // ovDay = 14, fertile starts day 10
+  const cycleLength = 28; // ovDay = 14, fertile window is the 5 days before it (9-13)
 
   test.each([
     [1, 'period', 0], // inside period
     [5, 'period', 0], // last day of period
-    [6, 'fertile', 4], // between period and fertile — fertile is soonest, not period
-    [10, 'fertile', 0], // inside fertile window
+    [6, 'fertile', 3], // between period and fertile — fertile is soonest, not period
+    [9, 'fertile', 0], // first day of fertile window
     [13, 'fertile', 0], // last day of fertile window
     [14, 'ovulation', 0], // ovulation day itself
     [15, 'period', 14], // just past ovulation — next period is soonest of the three

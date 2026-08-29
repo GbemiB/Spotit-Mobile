@@ -43,13 +43,17 @@ export function cycleDayOf(dateISO, lastPeriodDate, cycleLength) {
 }
 
 // key is null outside period/fertile/ovulation — the luteal and follicular stretches aren't tracked.
+// Fertile window is the 5 days immediately before ovulation (sperm survive up to 5 days; the
+// egg itself is only viable ~24h on the ovulation day, which gets its own distinct label below)
+// — matches the "5 days before ovulation through the day of ovulation itself" description on
+// the home screen's own educational content.
 export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
   if (cycleDay == null) return { key: null, label: null, color: null };
   const ovDay = cycleLength - 14;
   let key = null;
   if (cycleDay <= periodLength) key = 'period';
   else if (cycleDay === ovDay) key = 'ovulation';
-  else if (cycleDay >= ovDay - 4 && cycleDay < ovDay) key = 'fertile';
+  else if (cycleDay >= ovDay - 5 && cycleDay < ovDay) key = 'fertile';
   return { key, label: key ? PHASE_LABELS[key] : null, color: key ? phases[key] : null };
 }
 
@@ -60,7 +64,7 @@ export function phaseFor(cycleDay, periodLength = 5, cycleLength = 28) {
 export function nextMilestone(cycleDay, cycleLength, periodLength) {
   if (cycleDay == null) return null;
   const ovDay = cycleLength - 14;
-  const fertileStart = ovDay - 4;
+  const fertileStart = ovDay - 5;
 
   // Currently inside a window — that's the milestone, already underway.
   if (cycleDay <= periodLength) return { key: 'period', daysUntil: 0 };
