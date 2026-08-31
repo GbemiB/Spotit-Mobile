@@ -55,7 +55,7 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={s.header}>
-            <LogoMark size={76} />
+            <LogoMark size={85} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>
@@ -140,19 +140,19 @@ export default function SignupScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
-    wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
+    wordmark: { marginTop: 8, fontSize: 20, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 8 },
     title: {
-      fontSize: 25,
+      fontSize: 26,
       fontWeight: '600',
       letterSpacing: -0.2,
       lineHeight: 29,
       color: c.authHeading,
       textAlign: 'center',
-      marginTop: 24,
+      marginTop: 20,
     },
-    form: { marginTop: 24 },
-    field: { marginBottom: 8 },
+    form: { marginTop: 30 },
+    field: { marginBottom: 15 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {
       fontSize: 12,
@@ -163,7 +163,7 @@ function createStyles(c) {
       borderBottomColor: c.authBorderStrong,
     },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },
-    errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 6 },
+    errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
     agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 10, fontSize: 10 },
     checkbox: {
       width: 15,

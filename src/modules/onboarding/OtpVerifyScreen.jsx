@@ -36,6 +36,7 @@ export default function OtpVerifyScreen() {
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [resetDone, setResetDone] = useState(false);
+  const [signupDone, setSignupDone] = useState(false);
   const [otpConfirmed, setOtpConfirmed] = useState(false);
   const [signupVerified, setSignupVerified] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
@@ -96,14 +97,8 @@ export default function OtpVerifyScreen() {
           await authApi.resetPassword({ email, code, newPassword });
           setResetDone(true);
         } else {
-          const data = await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword });
-          dispatch({
-            type: A.AUTH_SUCCESS,
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
-            userId: data.user.userId,
-            onboarded: data.user.onboarded,
-          });
+          await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword });
+          setSignupDone(true);
         }
       } else if (isReset) {
         await authApi.verifyResetOtp({ email, code });
@@ -167,7 +162,7 @@ export default function OtpVerifyScreen() {
           </View>
 
           <View style={s.header}>
-            <LogoMark size={76} />
+            <LogoMark size={85} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>
@@ -189,7 +184,7 @@ export default function OtpVerifyScreen() {
             </Text>
             {awaitingPassword ? (
               <Text style={s.sub}>
-                Code verified ✓ {isReset ? 'Choose a new password for' : 'Choose a password to finish creating your account for'}
+                {isReset ? 'Choose a new password for' : 'Choose a password to finish creating your account for'}
                 {'\n'}
                 <Text style={s.subEmail}>{email || 'your email'}</Text>
               </Text>
@@ -298,6 +293,18 @@ export default function OtpVerifyScreen() {
         ctaLabel="Back to Login"
         onCta={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' })}
       />
+
+      <StatusModal
+        visible={signupDone}
+        variant="success"
+        title="Account created"
+        subtitle="Please log in with your new credentials to continue."
+        ctaLabel="Go to Login"
+        onCta={() => {
+          dispatch({ type: A.UPDATE_SETTINGS, patch: { pendingOtpId: null, pendingEmail: null, otpPurpose: null, otpExpiresAt: null } });
+          dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' });
+        }}
+      />
     </LinearGradient>
   );
 }
@@ -314,8 +321,8 @@ function createStyles(c) {
       alignSelf: 'flex-start',
     },
     header: { alignItems: 'center' },
-    wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
-    body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
+    wordmark: { marginTop: 8, fontSize: 20, fontWeight: '600', color: c.authHeading },
+    body: { paddingHorizontal: 26, paddingTop: 25, alignItems: 'center' },
     iconBadge: {
       width: 44,
       height: 44,
@@ -323,10 +330,10 @@ function createStyles(c) {
       backgroundColor: 'rgba(220,90,116,0.14)',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 16,
+      marginBottom: 10,
     },
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
-    sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
+    sub: { fontSize: 12, color: c.authBody, marginTop: 10, marginBottom: 10, lineHeight: 18, textAlign: 'center' },
     subEmail: { color: c.authHeading, fontWeight: '700' },
     otpRow: { flexDirection: 'row', gap: 8, marginTop: 26 },
     otpBox: {

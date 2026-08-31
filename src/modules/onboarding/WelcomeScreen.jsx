@@ -128,7 +128,7 @@ function createStyles(c) {
     },
     skipTx: { fontSize: 11, fontWeight: '600', color: '#fff' },
     content: { flex: 1, paddingHorizontal: 26, paddingTop: 10, paddingBottom: 20 },
-    title: { fontSize: 22, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading },
+    title: { fontSize: 26, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading },
     body: { fontSize: 12, color: c.authBody, marginTop: 6, lineHeight: 18 },
     footer: { marginTop: 'auto' },
     footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

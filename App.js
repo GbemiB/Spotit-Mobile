@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform, AppState } from 'react-native';
+import { View, StyleSheet, Platform, AppState, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -17,7 +17,7 @@ import {
 } from '@expo-google-fonts/manrope';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
 import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
@@ -35,6 +35,12 @@ import * as shopApi from './src/shared/api/shop.js';
 import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
+import * as biometric from './src/shared/utils/biometric.js';
+
+function PrivacyScreen() {
+  const { colors } = useTheme();
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />;
+}
 function AppContent() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
@@ -46,17 +52,60 @@ function AppContent() {
     periodPickerOpen,
     toast,
     accessToken,
+    refreshToken,
+    userId,
     lastPeriodDate,
     cycleLength,
     periodLength,
     today,
   } = state;
+  const backgroundAtRef = useRef(null);
+  const authDoneRef = useRef(authDone);
+  authDoneRef.current = authDone;
+  // Idle timeout: force logout if app was backgrounded for > 1 hour.
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {
-      if (nextState === 'active') dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
+      if (nextState === 'active') {
+        if (backgroundAtRef.current !== null && authDoneRef.current) {
+          if (Date.now() - backgroundAtRef.current > 3_600_000) {
+            dispatch({ type: A.LOGOUT });
+            backgroundAtRef.current = null;
+            return;
+          }
+        }
+        backgroundAtRef.current = null;
+        dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
+      } else {
+        backgroundAtRef.current = Date.now();
+      }
     });
     return () => sub.remove();
   }, []);
+
+  // Keep the biometric-stored refresh token in sync after every login.
+  useEffect(() => {
+    if (!authDone || !refreshToken) return;
+    biometric.updateStoredRefreshToken(refreshToken);
+  }, [authDone, refreshToken]);
+
+  // After first login offer biometric enrollment (once, if hardware is available).
+  useEffect(() => {
+    if (!authDone) return;
+    (async () => {
+      const available = await biometric.isBiometricAvailable();
+      const asked = await biometric.hasBeenAskedAboutBiometric();
+      if (!available || asked) return;
+      const label = await biometric.getBiometricLabel();
+      Alert.alert(
+        `Enable ${label} Login`,
+        `Log in faster next time using ${label}?`,
+        [
+          { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric() },
+          { text: 'Enable', onPress: () => biometric.enableBiometric({ refreshToken, userId, onboarded }) },
+        ],
+      );
+    })();
+  }, [authDone]);
   useEffect(() => {
     const id = setInterval(() => dispatch({ type: A.TODAY_CHANGED, today: todayISO() }), 60000);
     return () => clearInterval(id);
@@ -177,13 +226,26 @@ function AppContent() {
 }
 SplashScreenNative.preventAutoHideAsync();
 const MIN_SPLASH_MS = 300;
+const appMountedAt = Date.now();
 const DEV_FORCE_SCHEME = null;
 function ThemedApp() {
-  const { state } = useApp();
+  const { state, ready } = useApp();
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', next => setAppIsActive(next === 'active'));
+    return () => sub.remove();
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
+    const remaining = MIN_SPLASH_MS - (Date.now() - appMountedAt);
+    setTimeout(() => SplashScreenNative.hideAsync(), Math.max(0, remaining));
+  }, [ready]);
+  if (!ready) return null;
   const scheme = DEV_FORCE_SCHEME || (state.themePref === 'system' ? null : state.themePref);
   return (
     <ThemeProvider scheme={scheme}>
       <AppContent />
+      {!appIsActive && <PrivacyScreen />}
     </ThemeProvider>
   );
 }
@@ -201,15 +263,9 @@ export default function App() {
     Manrope_800ExtraBold,
     Newsreader_400Regular,
   });
-  const mountedAt = useRef(Date.now());
-  const onLayoutRootView = useCallback(async () => {
-    if (!fontsLoaded) return;
-    const remaining = MIN_SPLASH_MS - (Date.now() - mountedAt.current);
-    setTimeout(() => SplashScreenNative.hideAsync(), Math.max(0, remaining));
-  }, [fontsLoaded]);
   if (!fontsLoaded) return null;
   return (
-    <SafeAreaProvider onLayout={onLayoutRootView}>
+    <SafeAreaProvider>
       <AppProvider>
         <ThemedApp />
       </AppProvider>

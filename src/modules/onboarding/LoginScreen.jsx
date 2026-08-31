@@ -1,5 +1,5 @@
 import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -7,6 +7,7 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
+import * as biometricUtils from '../../shared/utils/biometric.js';
 export default function LoginScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -17,13 +18,27 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const canSubmit = email.trim() && password.length > 0;
+  useEffect(() => {
+    (async () => {
+      const available = await biometricUtils.isBiometricAvailable();
+      const enabled = await biometricUtils.isBiometricEnabled();
+      if (available && enabled) {
+        setBiometricEnabled(true);
+        setBiometricLabel(await biometricUtils.getBiometricLabel());
+      }
+    })();
+  }, []);
   async function handleLogin() {
     if (!canSubmit || loading) return;
     setError('');
     setLoading(true);
-    try {
-      const data = await authApi.login({ email: email.trim(), password });
+    const trimmedEmail = email.trim();
+
+    async function doLogin() {
+      const data = await authApi.login({ email: trimmedEmail, password });
       dispatch({
         type: A.AUTH_SUCCESS,
         accessToken: data.accessToken,
@@ -31,21 +46,62 @@ export default function LoginScreen() {
         userId: data.user.userId,
         onboarded: data.user.onboarded,
       });
+    }
+
+    try {
+      await doLogin();
     } catch (e) {
-      if (e.errorCode === 'email_not_verified' && e.otpId) {
+      let err = e;
+      // The server may have been cold — the first request wakes it up.
+      // Retry once so the user gets the real error instead of a timeout.
+      if (e.errorCode === 'timeout') {
+        try {
+          await doLogin();
+          return;
+        } catch (retryErr) {
+          err = retryErr;
+        }
+      }
+      if (err.errorCode === 'email_not_verified' && err.otpId) {
         dispatch({
           type: A.UPDATE_SETTINGS,
           patch: {
-            pendingOtpId: e.otpId,
-            pendingEmail: email.trim(),
+            pendingOtpId: err.otpId,
+            pendingEmail: trimmedEmail,
             otpPurpose: 'login_verify',
-            otpExpiresAt: e.expiresInSeconds ? Date.now() + e.expiresInSeconds * 1000 : null,
+            otpExpiresAt: err.expiresInSeconds ? Date.now() + err.expiresInSeconds * 1000 : null,
           },
         });
         dispatch({ type: A.SET_AUTH_SCREEN, screen: 'otp-verify' });
         return;
       }
-      setError(e.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function handleBiometricLogin() {
+    setError('');
+    setLoading(true);
+    try {
+      const stored = await biometricUtils.authenticateWithBiometric();
+      if (!stored) return; // user cancelled — no error shown
+      const data = await authApi.refresh({ refreshToken: stored.refreshToken });
+      dispatch({
+        type: A.AUTH_SUCCESS,
+        accessToken: data.accessToken,
+        refreshToken: stored.refreshToken,
+        userId: stored.userId,
+        onboarded: stored.onboarded,
+      });
+    } catch (e) {
+      if (e.errorCode === 'invalid_refresh_token') {
+        await biometricUtils.disableBiometric();
+        setBiometricEnabled(false);
+        setError('Session expired. Please log in with your password.');
+      } else {
+        setError(e.message || 'Biometric login failed. Please try your password.');
+      }
     } finally {
       setLoading(false);
     }
@@ -106,6 +162,12 @@ export default function LoginScreen() {
               </LinearGradient>
             </Pressable>
 
+            {biometricEnabled && (
+              <Pressable onPress={handleBiometricLogin} disabled={loading} style={s.biometricBtn}>
+                <Text style={s.biometricTx}>{biometricLabel} Login</Text>
+              </Pressable>
+            )}
+
             <View style={s.footer}>
               <Text style={s.footerTx}>New here? </Text>
               <Pressable onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' })}>
@@ -121,13 +183,13 @@ export default function LoginScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
-    wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
+    wordmark: { marginTop: 8, fontSize: 20, fontWeight: '600', color: c.authHeading },
     body: { paddingHorizontal: 26, paddingTop: 20 },
     title: { fontSize: 25, fontWeight: '600', letterSpacing: -0.2, lineHeight: 29, color: c.authHeading, textAlign: 'center' },
     form: { marginTop: 24 },
     field: { marginBottom: 18 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
-    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
+    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {
       fontSize: 12,
       fontWeight: '400',
@@ -142,6 +204,8 @@ function createStyles(c) {
     forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.authAccent },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
+    biometricBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+    biometricTx: { fontSize: 13, fontWeight: '600', color: c.primary },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
     footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },

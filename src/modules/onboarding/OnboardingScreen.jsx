@@ -227,9 +227,6 @@ function AboutYouStep({ draft, dispatch, colors, s }) {
       <Text style={s.fieldHint}>
         If you remember the first day of your last period, add it — otherwise skip and we&apos;ll estimate as you log.
       </Text>
-      <Pressable onPress={() => dispatch({ type: A.ONBOARD_FIELD, field: 'lastPeriod', value: '' })}>
-        <Text style={s.skipTx}>I don&apos;t remember</Text>
-      </Pressable>
 
       <Pressable
         disabled={!dobComplete}

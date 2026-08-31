@@ -1,14 +1,17 @@
 {
   "expo": {
-    "name": "Spot It",
+    "name": "Spotit",
     "slug": "spotit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon-adaptive.png",
+    "icon": "",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spotit.app"
+      "bundleIdentifier": "com.spotit.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to log in to Spotit quickly and securely."
+      }
     },
     "android": {
       "package": "com.spotit.app",
@@ -36,7 +39,8 @@
             "backgroundColor": "#160A0C"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

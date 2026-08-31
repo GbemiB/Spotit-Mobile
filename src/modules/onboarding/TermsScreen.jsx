@@ -85,7 +85,7 @@ function createStyles(c) {
     headerTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
     updated: { fontSize: 10.5, color: c.textFaint },
     sectionTitle: { fontSize: 12.5, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
-    sectionBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 17 },
+    sectionBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 17, textAlign: 'justify' },
     footer: { paddingHorizontal: 22, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border },
     cta: { height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', color: '#fff' },

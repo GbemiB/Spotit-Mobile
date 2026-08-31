@@ -5,7 +5,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-const SPLASH_MS = 3800;
+const SPLASH_MS = 5000;
 function Dot({ color, delay }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {

@@ -49,7 +49,7 @@ export default function ForgotPasswordScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={s.header}>
-            <LogoMark size={76} />
+            <LogoMark size={85} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>
@@ -95,8 +95,8 @@ export default function ForgotPasswordScreen() {
 function createStyles(c) {
   return StyleSheet.create({
     header: { alignItems: 'center' },
-    wordmark: { marginTop: 8, fontSize: 15, fontWeight: '600', color: c.authHeading },
-    body: { paddingHorizontal: 26, paddingTop: 50, alignItems: 'center' },
+    wordmark: { marginTop: 8, fontSize: 20, fontWeight: '600', color: c.authHeading },
+    body: { paddingHorizontal: 26, paddingTop: 25, alignItems: 'center' },
     iconBadge: {
       width: 44,
       height: 44,
@@ -110,18 +110,18 @@ function createStyles(c) {
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     form: { alignSelf: 'stretch', marginTop: 26 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 16, textAlign: 'center' },
-    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '700' },
+    label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {
-      fontSize: 15,
+      fontSize: 12,
       fontWeight: '400',
       color: c.authHeading,
       paddingVertical: 8,
       borderBottomWidth: 1,
       borderBottomColor: c.authBorderStrong,
     },
-    cta: { alignSelf: 'stretch', paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+    footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
     footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },
   });
