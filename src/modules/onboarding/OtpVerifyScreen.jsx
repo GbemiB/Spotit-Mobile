@@ -224,6 +224,8 @@ export default function OtpVerifyScreen() {
                       value={newPassword}
                       onChangeText={setNewPassword}
                       secureTextEntry={!showPass}
+                      autoCorrect={false}
+                      autoCapitalize="none"
                       style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
                     />
                     <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
@@ -239,6 +241,8 @@ export default function OtpVerifyScreen() {
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
                       secureTextEntry={!showConfirmPass}
+                      autoCorrect={false}
+                      autoCapitalize="none"
                       style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
                     />
                     <Pressable onPress={() => setShowConfirmPass(v => !v)} hitSlop={8}>

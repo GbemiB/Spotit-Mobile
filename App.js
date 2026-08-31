@@ -68,6 +68,7 @@ function AppContent() {
       if (nextState === 'active') {
         if (backgroundAtRef.current !== null && authDoneRef.current) {
           if (Date.now() - backgroundAtRef.current > 3_600_000) {
+            biometric.disableBiometric();
             dispatch({ type: A.LOGOUT });
             backgroundAtRef.current = null;
             return;
@@ -101,7 +102,7 @@ function AppContent() {
         `Log in faster next time using ${label}?`,
         [
           { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric() },
-          { text: 'Enable', onPress: () => biometric.enableBiometric({ refreshToken, userId, onboarded }) },
+          { text: 'Enable', onPress: () => biometric.enrollBiometric({ refreshToken, userId, onboarded }) },
         ],
       );
     })();

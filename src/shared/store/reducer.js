@@ -278,6 +278,7 @@ export function reducer(state, action) {
         onboarded: action.onboarded ?? state.onboarded,
         authDone: true,
         authScreen: null,
+        screen: 'home',
         pendingOtpId: null,
         pendingEmail: null,
         otpPurpose: null,

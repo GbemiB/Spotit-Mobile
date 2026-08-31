@@ -32,11 +32,29 @@ export async function enableBiometric({ refreshToken, userId, onboarded }) {
   await AsyncStorage.setItem(ASKED_KEY, 'true');
 }
 
+// Prompts the user to scan their face/fingerprint. Only stores credentials on
+// a successful scan. Returns true if enrolled, false if cancelled or failed.
+export async function enrollBiometric({ refreshToken, userId, onboarded }) {
+  const label = await getBiometricLabel();
+  const result = await LocalAuthentication.authenticateAsync({
+    promptMessage: `Confirm your ${label} to enable biometric login`,
+    cancelLabel: 'Cancel',
+    disableDeviceFallback: true,
+  });
+  if (!result.success) {
+    await AsyncStorage.setItem(ASKED_KEY, 'true');
+    return false;
+  }
+  await enableBiometric({ refreshToken, userId, onboarded });
+  return true;
+}
+
 export async function disableBiometric() {
   try {
     await SecureStore.deleteItemAsync(DATA_KEY);
   } catch {}
   await AsyncStorage.removeItem(ENABLED_KEY);
+  await AsyncStorage.removeItem(ASKED_KEY);
 }
 
 export async function updateStoredRefreshToken(refreshToken) {
@@ -55,7 +73,7 @@ export async function authenticateWithBiometric() {
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: 'Log in to Spotit',
     cancelLabel: 'Use password',
-    fallbackLabel: 'Use password',
+    disableDeviceFallback: true,
   });
   if (!result.success) return null;
   try {

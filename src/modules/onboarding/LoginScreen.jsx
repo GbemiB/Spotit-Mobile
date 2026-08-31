@@ -137,6 +137,8 @@ export default function LoginScreen() {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPass}
+                    autoCorrect={false}
+                    autoCapitalize="none"
                     style={[s.input, { flex: 1, borderBottomWidth: 0 }]}
                   />
                   <Pressable onPress={() => setShowPass(v => !v)} hitSlop={8}>
