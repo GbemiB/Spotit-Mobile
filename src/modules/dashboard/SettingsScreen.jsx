@@ -16,6 +16,7 @@ import TermsScreen from '../onboarding/TermsScreen.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
 import * as biometricUtils from '../../shared/utils/biometric.js';
+import { clearDeviceRegistration } from '../../shared/utils/device.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
@@ -134,7 +135,8 @@ export default function SettingsScreen() {
   async function confirmLogout() {
     setConfirming(null);
     await authApi.logout(state.accessToken).catch(() => {});
-    await biometricUtils.disableBiometric();
+    await biometricUtils.clearBiometricSession();
+    clearDeviceRegistration();
     dispatch({ type: A.LOGOUT });
   }
   async function confirmReset() {
@@ -157,6 +159,7 @@ export default function SettingsScreen() {
       await authApi.deleteAccount(accessToken);
       setConfirming(null);
       await biometricUtils.disableBiometric();
+      clearDeviceRegistration();
       dispatch({ type: A.LOGOUT });
     } catch (e) {
       toast('🌸', e.message);

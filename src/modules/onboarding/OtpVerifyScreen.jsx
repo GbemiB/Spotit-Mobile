@@ -9,6 +9,8 @@ import LogoMark from '../../components/ui/LogoMark.jsx';
 import { EnvelopeIcon, ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
+import * as devicesApi from '../../shared/api/devices.js';
+import { getDeviceId, markDeviceRegistered } from '../../shared/utils/device.js';
 const CODE_LENGTH = 6;
 function remainingSeconds(expiresAt) {
   if (!expiresAt) return 0;
@@ -43,7 +45,7 @@ export default function OtpVerifyScreen() {
   const inputRefs = useRef([]);
   const code = digits.join('');
   const codeComplete = code.length === CODE_LENGTH;
-  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && newPassword.trim() !== confirmPassword.trim();
   const awaitingPassword = (isReset && otpConfirmed) || (!isReset && signupVerified);
   const canVerify = awaitingPassword ? newPassword.length >= 8 && !passwordsMismatch : codeComplete;
   const expired = secondsLeft <= 0;
@@ -94,10 +96,17 @@ export default function OtpVerifyScreen() {
     try {
       if (awaitingPassword) {
         if (isReset) {
-          await authApi.resetPassword({ email, code, newPassword });
+          await authApi.resetPassword({ email, code, newPassword: newPassword.trim() });
           setResetDone(true);
         } else {
-          await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword });
+          const signupData = await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword.trim() });
+          // Register device immediately so it is tied to this user from day one.
+          if (Platform.OS === 'ios' || Platform.OS === 'android') {
+            getDeviceId()
+              .then(pushToken => devicesApi.registerDevice({ pushToken, platform: Platform.OS }, signupData.accessToken))
+              .then(() => markDeviceRegistered())
+              .catch(() => {});
+          }
           setSignupDone(true);
         }
       } else if (isReset) {
@@ -119,6 +128,10 @@ export default function OtpVerifyScreen() {
     } catch (e) {
       if (e.errorCode === 'otp_expired') {
         setSecondsLeft(0);
+      }
+      if (e.errorCode === 'invalid_code') {
+        setDigits(Array(CODE_LENGTH).fill(''));
+        inputRefs.current[0]?.focus();
       }
       setError(e.message);
     } finally {

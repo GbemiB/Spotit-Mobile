@@ -37,7 +37,7 @@ export const INIT = {
   lastClaimedDate: null,
   logs: {},
   notifs: { period: true, ovulation: true, dailyLog: true, digest: false },
-  themePref: 'system',
+  themePref: 'dark',
   isPremium: false,
   plan: null,
   renewsAt: null,

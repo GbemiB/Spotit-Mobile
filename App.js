@@ -34,7 +34,7 @@ import * as rewardsApi from './src/shared/api/rewards.js';
 import * as shopApi from './src/shared/api/shop.js';
 import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
-import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
+import { getDeviceId, isDeviceRegistered, markDeviceRegistered, clearDeviceRegistration } from './src/shared/utils/device.js';
 import * as biometric from './src/shared/utils/biometric.js';
 
 function PrivacyScreen() {
@@ -68,7 +68,8 @@ function AppContent() {
       if (nextState === 'active') {
         if (backgroundAtRef.current !== null && authDoneRef.current) {
           if (Date.now() - backgroundAtRef.current > 3_600_000) {
-            biometric.disableBiometric();
+            biometric.clearBiometricSession();
+            clearDeviceRegistration();
             dispatch({ type: A.LOGOUT });
             backgroundAtRef.current = null;
             return;
@@ -86,7 +87,7 @@ function AppContent() {
   // Keep the biometric-stored refresh token in sync after every login.
   useEffect(() => {
     if (!authDone || !refreshToken) return;
-    biometric.updateStoredRefreshToken(refreshToken);
+    biometric.updateStoredRefreshToken(refreshToken, userId, onboarded);
   }, [authDone, refreshToken]);
 
   // After first login offer biometric enrollment (once, if hardware is available).

@@ -88,6 +88,20 @@ export function DocumentIcon({ size = 18, color = '#2E2429' }) {
     </Svg>
   );
 }
+export function FaceIDIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 9V5.5A2.5 2.5 0 0 1 5.5 3H9" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M15 3h3.5A2.5 2.5 0 0 1 21 5.5V9" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M21 15v3.5A2.5 2.5 0 0 1 18.5 21H15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M9 21H5.5A2.5 2.5 0 0 1 3 18.5V15" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M9 10v.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M15 10v.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M12 10v2.5" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <Path d="M9.5 15.5c.6.8 1.5 1.2 2.5 1.2s1.9-.4 2.5-1.2" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
 export function WarningIcon({ size = 26 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

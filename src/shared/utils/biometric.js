@@ -49,6 +49,7 @@ export async function enrollBiometric({ refreshToken, userId, onboarded }) {
   return true;
 }
 
+// Full disable — used when biometric is permanently turned off (invalid token, account delete).
 export async function disableBiometric() {
   try {
     await SecureStore.deleteItemAsync(DATA_KEY);
@@ -57,30 +58,54 @@ export async function disableBiometric() {
   await AsyncStorage.removeItem(ASKED_KEY);
 }
 
-export async function updateStoredRefreshToken(refreshToken) {
+// Lightweight session clear — used on explicit logout so the button stays visible on
+// the next login screen without re-prompting enrollment.
+export async function clearBiometricSession() {
+  try {
+    await SecureStore.deleteItemAsync(DATA_KEY);
+  } catch {}
+  // ENABLED_KEY kept: button stays visible on the login screen.
+  // ASKED_KEY kept: enrollment prompt does NOT fire again on next login.
+}
+
+// Updates the stored refresh token after each successful login. If biometric is enabled
+// but credentials were cleared by clearBiometricSession, stores fresh credentials.
+export async function updateStoredRefreshToken(refreshToken, userId, onboarded) {
   const enabled = await isBiometricEnabled();
   if (!enabled) return;
   try {
     const raw = await SecureStore.getItemAsync(DATA_KEY);
-    if (!raw) return;
+    if (!raw) {
+      // Credentials were cleared (e.g. after logout) — store fresh ones if we have them.
+      if (userId !== undefined) {
+        await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ refreshToken, userId, onboarded }));
+      }
+      return;
+    }
     const data = JSON.parse(raw);
     await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ ...data, refreshToken }));
   } catch {}
 }
 
-// Returns { refreshToken, userId, onboarded } on success, or null if cancelled/failed.
+// Returns { refreshToken, userId, onboarded } on success, null if user cancelled, or
+// throws with err.noCredentials = true if the scan succeeded but no credentials are stored.
 export async function authenticateWithBiometric() {
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: 'Log in to Spotit',
     cancelLabel: 'Use password',
     disableDeviceFallback: true,
   });
-  if (!result.success) return null;
+  if (!result.success) return null; // user cancelled
   try {
     const raw = await SecureStore.getItemAsync(DATA_KEY);
-    if (!raw) return null;
+    if (!raw) {
+      const err = new Error('Please log in with your password to re-activate Face ID.');
+      err.noCredentials = true;
+      throw err;
+    }
     return JSON.parse(raw);
-  } catch {
+  } catch (e) {
+    if (e.noCredentials) throw e;
     return null;
   }
 }

@@ -18,3 +18,7 @@ export async function isDeviceRegistered() {
 export async function markDeviceRegistered() {
   await AsyncStorage.setItem(REGISTERED_KEY, '1');
 }
+// Call on logout so the device is re-linked to whoever logs in next.
+export async function clearDeviceRegistration() {
+  await AsyncStorage.removeItem(REGISTERED_KEY);
+}

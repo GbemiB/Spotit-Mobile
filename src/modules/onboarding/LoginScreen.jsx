@@ -6,6 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
+import { FaceIDIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as biometricUtils from '../../shared/utils/biometric.js';
 export default function LoginScreen() {
@@ -31,6 +32,7 @@ export default function LoginScreen() {
       }
     })();
   }, []);
+  const isFaceID = biometricLabel === 'Face ID';
   async function handleLogin() {
     if (!canSubmit || loading) return;
     setError('');
@@ -38,7 +40,7 @@ export default function LoginScreen() {
     const trimmedEmail = email.trim();
 
     async function doLogin() {
-      const data = await authApi.login({ email: trimmedEmail, password });
+      const data = await authApi.login({ email: trimmedEmail, password: password.trim() });
       dispatch({
         type: A.AUTH_SUCCESS,
         accessToken: data.accessToken,
@@ -95,7 +97,9 @@ export default function LoginScreen() {
         onboarded: stored.onboarded,
       });
     } catch (e) {
-      if (e.errorCode === 'invalid_refresh_token') {
+      if (e.noCredentials) {
+        setError('Please log in with your password to re-activate Face ID.');
+      } else if (e.errorCode === 'invalid_refresh_token') {
         await biometricUtils.disableBiometric();
         setBiometricEnabled(false);
         setError('Session expired. Please log in with your password.');
@@ -166,7 +170,8 @@ export default function LoginScreen() {
 
             {biometricEnabled && (
               <Pressable onPress={handleBiometricLogin} disabled={loading} style={s.biometricBtn}>
-                <Text style={s.biometricTx}>{biometricLabel} Login</Text>
+                {isFaceID && <FaceIDIcon size={22} color={colors.primary} />}
+                <Text style={[s.biometricTx, isFaceID && { marginLeft: 6 }]}>{biometricLabel} Login</Text>
               </Pressable>
             )}
 
@@ -206,7 +211,7 @@ function createStyles(c) {
     forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.authAccent },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    biometricBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+    biometricBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 4 },
     biometricTx: { fontSize: 13, fontWeight: '600', color: c.primary },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },

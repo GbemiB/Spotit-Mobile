@@ -318,7 +318,7 @@ export default function RewardsScreen() {
                 <Text style={{ fontSize: 13 }}>👑</Text>
                 <Text style={s.premiumTx}>Premium active — all rewards unlocked</Text>
               </View>
-              {autoRenew && <Text style={s.premiumCta}>{billingLoading ? '…' : 'Turn off renewal'}</Text>}
+              {autoRenew && <Text style={s.premiumCta}>{billingLoading ? '…' : 'Turn off'}</Text>}
             </Pressable>
           ) : (
             <Pressable onPress={handleSubscribe} disabled={billingLoading} style={[s.premiumBanner, { justifyContent: 'space-between' }]}>
