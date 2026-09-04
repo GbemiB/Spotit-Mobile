@@ -102,6 +102,43 @@ export function FaceIDIcon({ size = 24, color = '#C04E68' }) {
     </Svg>
   );
 }
+export function FingerprintIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 4a8 8 0 0 1 8 8v2.5"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M4 14.5V12a8 8 0 0 1 4-6.93"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M12 7.5a4.5 4.5 0 0 1 4.5 4.5v3"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M7.5 12a4.5 4.5 0 0 1 2-3.74"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M12 11v4a2.5 2.5 0 0 0 2.5 2.5"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <Path d="M9.5 20a6.5 6.5 0 0 1-1.9-4.6V12" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </Svg>
+  );
+}
 export function WarningIcon({ size = 26 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

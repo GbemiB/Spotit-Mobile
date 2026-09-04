@@ -12,24 +12,38 @@ export async function isBiometricAvailable() {
   return LocalAuthentication.isEnrolledAsync();
 }
 
-export async function isBiometricEnabled() {
+// With no userId: "is biometric linked to some account on this device" (used pre-login,
+// before we know which account is signing in, to decide whether to show the button at all).
+// With userId: "is biometric linked to THIS account" — checked against the userId embedded
+// in the stored credential so a different/newer account never inherits a stale link.
+export async function isBiometricEnabled(userId) {
   const val = await AsyncStorage.getItem(ENABLED_KEY);
-  return val === 'true';
+  if (val !== 'true') return false;
+  if (userId === undefined) return true;
+  try {
+    const raw = await SecureStore.getItemAsync(DATA_KEY);
+    if (!raw) return false;
+    return JSON.parse(raw).userId === userId;
+  } catch {
+    return false;
+  }
 }
 
-export async function hasBeenAskedAboutBiometric() {
+// Scoped per account (stores the last-asked userId) so a different account — e.g. a fresh
+// signup after a previous account was asked/enrolled on this same device — gets prompted too.
+export async function hasBeenAskedAboutBiometric(userId) {
   const val = await AsyncStorage.getItem(ASKED_KEY);
-  return val === 'true';
+  return val === userId;
 }
 
-export async function markAskedAboutBiometric() {
-  await AsyncStorage.setItem(ASKED_KEY, 'true');
+export async function markAskedAboutBiometric(userId) {
+  await AsyncStorage.setItem(ASKED_KEY, userId);
 }
 
 export async function enableBiometric({ refreshToken, userId, onboarded }) {
   await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ refreshToken, userId, onboarded }));
   await AsyncStorage.setItem(ENABLED_KEY, 'true');
-  await AsyncStorage.setItem(ASKED_KEY, 'true');
+  await markAskedAboutBiometric(userId);
 }
 
 // Prompts the user to scan their face/fingerprint. Only stores credentials on
@@ -42,7 +56,7 @@ export async function enrollBiometric({ refreshToken, userId, onboarded }) {
     disableDeviceFallback: true,
   });
   if (!result.success) {
-    await AsyncStorage.setItem(ASKED_KEY, 'true');
+    await markAskedAboutBiometric(userId);
     return false;
   }
   await enableBiometric({ refreshToken, userId, onboarded });
@@ -71,18 +85,17 @@ export async function clearBiometricSession() {
 // Updates the stored refresh token after each successful login. If biometric is enabled
 // but credentials were cleared by clearBiometricSession, stores fresh credentials.
 export async function updateStoredRefreshToken(refreshToken, userId, onboarded) {
-  const enabled = await isBiometricEnabled();
-  if (!enabled) return;
+  const val = await AsyncStorage.getItem(ENABLED_KEY);
+  if (val !== 'true') return;
   try {
     const raw = await SecureStore.getItemAsync(DATA_KEY);
     if (!raw) {
-      // Credentials were cleared (e.g. after logout) — store fresh ones if we have them.
-      if (userId !== undefined) {
-        await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ refreshToken, userId, onboarded }));
-      }
+      // Credentials were cleared (e.g. after logout) — store fresh ones for this account.
+      await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ refreshToken, userId, onboarded }));
       return;
     }
     const data = JSON.parse(raw);
+    if (data.userId !== userId) return; // linked to a different account — don't overwrite it
     await SecureStore.setItemAsync(DATA_KEY, JSON.stringify({ ...data, refreshToken }));
   } catch {}
 }

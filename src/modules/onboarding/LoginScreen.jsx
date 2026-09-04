@@ -6,7 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { FaceIDIcon } from '../../components/ui/icons.jsx';
+import { FaceIDIcon, FingerprintIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as biometricUtils from '../../shared/utils/biometric.js';
 export default function LoginScreen() {
@@ -170,8 +170,7 @@ export default function LoginScreen() {
 
             {biometricEnabled && (
               <Pressable onPress={handleBiometricLogin} disabled={loading} style={s.biometricBtn}>
-                {isFaceID && <FaceIDIcon size={22} color={colors.primary} />}
-                <Text style={[s.biometricTx, isFaceID && { marginLeft: 6 }]}>{biometricLabel} Login</Text>
+                {isFaceID ? <FaceIDIcon size={22} color={colors.primary} /> : <FingerprintIcon size={40} color={colors.primary} />}
               </Pressable>
             )}
 

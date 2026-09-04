@@ -68,7 +68,6 @@ function AppContent() {
       if (nextState === 'active') {
         if (backgroundAtRef.current !== null && authDoneRef.current) {
           if (Date.now() - backgroundAtRef.current > 3_600_000) {
-            biometric.clearBiometricSession();
             clearDeviceRegistration();
             dispatch({ type: A.LOGOUT });
             backgroundAtRef.current = null;
@@ -90,24 +89,24 @@ function AppContent() {
     biometric.updateStoredRefreshToken(refreshToken, userId, onboarded);
   }, [authDone, refreshToken]);
 
-  // After first login offer biometric enrollment (once, if hardware is available).
+  // After signup or login, offer biometric enrollment once per account (if hardware is available).
   useEffect(() => {
-    if (!authDone) return;
+    if (!authDone || !userId) return;
     (async () => {
       const available = await biometric.isBiometricAvailable();
-      const asked = await biometric.hasBeenAskedAboutBiometric();
+      const asked = await biometric.hasBeenAskedAboutBiometric(userId);
       if (!available || asked) return;
       const label = await biometric.getBiometricLabel();
       Alert.alert(
         `Enable ${label} Login`,
         `Log in faster next time using ${label}?`,
         [
-          { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric() },
+          { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric(userId) },
           { text: 'Enable', onPress: () => biometric.enrollBiometric({ refreshToken, userId, onboarded }) },
         ],
       );
     })();
-  }, [authDone]);
+  }, [authDone, userId]);
   useEffect(() => {
     const id = setInterval(() => dispatch({ type: A.TODAY_CHANGED, today: todayISO() }), 60000);
     return () => clearInterval(id);

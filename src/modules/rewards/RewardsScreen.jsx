@@ -289,18 +289,7 @@ export default function RewardsScreen() {
           </Pressable>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
-          <Pressable onPress={handleWatchAd} disabled={adLoading} style={s.adRow}>
-            <View style={s.adIconWrap}>
-              <Text style={{ fontSize: 16 }}>🎬</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.rewardTitle}>Watch a short ad</Text>
-              <Text style={s.rewardDesc}>Optional · earn bonus SP</Text>
-            </View>
-            <Text style={s.adCta}>{adLoading ? '…' : '+SP'}</Text>
-          </Pressable>
-        </View>
+  
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Text style={s.sectionTitle}>Redeem for skincare</Text>

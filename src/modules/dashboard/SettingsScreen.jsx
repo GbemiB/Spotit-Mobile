@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, StyleSheet, Share } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -123,9 +123,8 @@ export default function SettingsScreen() {
     if (exporting) return;
     setExporting(true);
     try {
-      const job = await usersApi.requestExport(accessToken);
-      const data = await usersApi.downloadExport(job.jobId, accessToken);
-      await Share.share({ message: JSON.stringify(data, null, 2), title: 'Spot it data export' });
+      await usersApi.requestExport(accessToken);
+      toast('📬', 'Your data export is on its way to your email.');
     } catch (e) {
       toast('🌸', e.message);
     } finally {
