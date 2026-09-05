@@ -33,7 +33,18 @@ const CONTENT_IMAGES = {
   food: require('../../../assets/food.png'),
   product: require('../../../assets/product.png'),
 };
-const TAG_COLORS = { Education: '#C04E68', Nutrition: '#3F8866', Sponsored: '#B0A09A' };
+const TAG_COLORS = {
+  Education: '#C04E68',
+  Nutrition: '#3F8866',
+  Sponsored: '#B0A09A',
+  Health: '#C04E68',
+  Fitness: '#4A6FA5',
+  Wellness: '#3F8866',
+  Mindfulness: '#8A6BA8',
+  Tips: '#C58A3D',
+};
+const IMAGE_KEYS = ['lifestyle', 'food', 'product'];
+const MAX_FEED_ITEMS = 8;
 function insightFor(phase, cycleLength) {
   const ovDay = cycleLength - 14;
   if (phase.key === 'ovulation') {
@@ -129,14 +140,17 @@ export default function HomeScreen() {
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints, levels);
   const insight = insightFor(phase, cycleLength);
-  const feedItems = content.map(c => ({
-    id: c.id,
-    tag: c.tag,
-    tagColor: TAG_COLORS[c.tag] || '#B0A09A',
-    title: c.title,
-    body: c.body,
-    imageSource: CONTENT_IMAGES[c.imageKey] || CONTENT_IMAGES.lifestyle,
-  }));
+  const feedItems = (Array.isArray(content) ? content : [])
+    .filter(c => c && c.title && c.enabled !== false && c.active !== false && !c.hidden)
+    .slice(0, MAX_FEED_ITEMS)
+    .map((c, i) => ({
+      id: c.id ?? `feed-${i}`,
+      tag: c.tag || (c.sponsored ? 'Sponsored' : 'Education'),
+      tagColor: TAG_COLORS[c.tag] || (c.sponsored ? TAG_COLORS.Sponsored : '#B0A09A'),
+      title: c.title,
+      body: c.body,
+      imageSource: CONTENT_IMAGES[c.imageKey] || CONTENT_IMAGES[IMAGE_KEYS[i % IMAGE_KEYS.length]],
+    }));
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
   const firstName = userName?.trim().split(/\s+/)[0] || userName;
@@ -314,24 +328,26 @@ export default function HomeScreen() {
         </LinearGradient>
       </View>
 
-      <View style={{ marginBottom: 8 }}>
-        <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
-        <Carousel style={{ marginTop: 11 }}>
-          {feedItems.map((card, i) => (
-            <Pressable
-              key={card.id}
-              onPress={() => setActiveCard(card)}
-              style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}
-            >
-              <Image source={card.imageSource} style={s.fyImage} resizeMode="cover" />
-              <View style={{ padding: 13 }}>
-                <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
-                <Text style={s.fyTitle}>{card.title}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </Carousel>
-      </View>
+      {feedItems.length > 0 && (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
+          <Carousel style={{ marginTop: 11 }}>
+            {feedItems.map((card, i) => (
+              <Pressable
+                key={card.id}
+                onPress={() => setActiveCard(card)}
+                style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}
+              >
+                <Image source={card.imageSource} style={s.fyImage} resizeMode="cover" />
+                <View style={{ padding: 13 }}>
+                  <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
+                  <Text style={s.fyTitle}>{card.title}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </Carousel>
+        </View>
+      )}
 
       <BottomSheet open={!!activeCard} onClose={() => setActiveCard(null)} title={activeCard?.title}>
         {activeCard && (
