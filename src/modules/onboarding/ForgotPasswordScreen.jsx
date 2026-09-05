@@ -8,16 +8,18 @@ import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from '../../shared/utils/validation.js';
 export default function ForgotPasswordScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const canSubmit = EMAIL_RE.test(email.trim());
+  const canSubmit = isValidEmail(email);
+  const showEmailError = emailTouched && email.trim().length > 0 && !canSubmit;
   async function handleSend() {
     if (!canSubmit || loading) return;
     setError('');
@@ -65,7 +67,15 @@ export default function ForgotPasswordScreen() {
 
             <View style={s.form}>
               <Text style={s.label}>Email</Text>
-              <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" style={s.input} />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                onBlur={() => setEmailTouched(true)}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={[s.input, showEmailError && { borderBottomColor: colors.error }]}
+              />
+              {showEmailError ? <Text style={s.fieldErrorTx}>Enter a valid email address</Text> : null}
             </View>
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
@@ -110,6 +120,7 @@ function createStyles(c) {
     sub: { fontSize: 12, color: c.authBody, marginTop: 8, lineHeight: 18, textAlign: 'center' },
     form: { alignSelf: 'stretch', marginTop: 26 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 16, textAlign: 'center' },
+    fieldErrorTx: { fontSize: 10.5, color: c.error, fontWeight: '600', marginTop: 5 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {
       fontSize: 12,

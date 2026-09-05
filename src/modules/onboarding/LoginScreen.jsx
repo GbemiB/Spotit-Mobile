@@ -9,19 +9,23 @@ import LogoMark from '../../components/ui/LogoMark.jsx';
 import { FaceIDIcon, FingerprintIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as biometricUtils from '../../shared/utils/biometric.js';
+import { isValidEmail } from '../../shared/utils/validation.js';
 export default function LoginScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
-  const canSubmit = email.trim() && password.length > 0;
+  const emailValid = isValidEmail(email);
+  const showEmailError = emailTouched && email.trim().length > 0 && !emailValid;
+  const canSubmit = emailValid && password.length > 0;
   useEffect(() => {
     (async () => {
       const available = await biometricUtils.isBiometricAvailable();
@@ -132,7 +136,15 @@ export default function LoginScreen() {
             <View style={s.form}>
               <View style={s.field}>
                 <Text style={s.label}>Email</Text>
-                <TextInput value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" style={s.input} />
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  onBlur={() => setEmailTouched(true)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={[s.input, showEmailError && { borderBottomColor: colors.error }]}
+                />
+                {showEmailError ? <Text style={s.fieldErrorTx}>Enter a valid email address</Text> : null}
               </View>
               <View style={s.field}>
                 <Text style={s.label}>Password</Text>
@@ -195,6 +207,7 @@ function createStyles(c) {
     form: { marginTop: 24 },
     field: { marginBottom: 18 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
+    fieldErrorTx: { fontSize: 10.5, color: c.error, fontWeight: '600', marginTop: 5 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {
       fontSize: 12,

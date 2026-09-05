@@ -8,6 +8,7 @@ import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import { CheckIcon } from '../../components/ui/icons.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
+import { isValidEmail } from '../../shared/utils/validation.js';
 import TermsScreen from './TermsScreen.jsx';
 export default function SignupScreen() {
   const { dispatch } = useApp();
@@ -17,11 +18,14 @@ export default function SignupScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const canSubmit = firstName.trim() && lastName.trim() && email.trim() && agreed;
+  const emailValid = isValidEmail(email);
+  const showEmailError = emailTouched && email.trim().length > 0 && !emailValid;
+  const canSubmit = firstName.trim() && lastName.trim() && emailValid && agreed;
   async function handleCreate() {
     if (!canSubmit || loading) return;
     setError('');
@@ -79,11 +83,13 @@ export default function SignupScreen() {
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
+                  onBlur={() => setEmailTouched(true)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   placeholder=""
-                  style={s.input}
+                  style={[s.input, showEmailError && { borderBottomColor: colors.error }]}
                 />
+                {showEmailError ? <Text style={s.fieldErrorTx}>Enter a valid email address</Text> : null}
               </View>
             </View>
             <Text style={s.hint}>We&apos;ll email you a code to verify this address — you&apos;ll set a password after that.</Text>
@@ -163,6 +169,7 @@ function createStyles(c) {
       borderBottomColor: c.authBorderStrong,
     },
     hint: { fontSize: 10.5, color: c.authLabel, marginTop: 7, lineHeight: 14 },
+    fieldErrorTx: { fontSize: 10.5, color: c.error, fontWeight: '600', marginTop: 5 },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 10, textAlign: 'center' },
     agreeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 10, fontSize: 10 },
     checkbox: {
