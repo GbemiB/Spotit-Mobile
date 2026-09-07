@@ -31,7 +31,7 @@ import * as rewardsApi from '../../shared/api/rewards.js';
 const CONTENT_IMAGES = {
   lifestyle: require('../../../assets/lifestyle.png'),
   food: require('../../../assets/food.png'),
-  product: require('../../../assets/product.png'),
+  product: require('../../../assets/fitness.png'),
 };
 const TAG_COLORS = {
   Education: '#C04E68',
@@ -44,7 +44,7 @@ const TAG_COLORS = {
   Tips: '#C58A3D',
 };
 const IMAGE_KEYS = ['lifestyle', 'food', 'product'];
-const MAX_FEED_ITEMS = 8;
+const MAX_FEED_ITEMS = 3;
 function insightFor(phase, cycleLength) {
   const ovDay = cycleLength - 14;
   if (phase.key === 'ovulation') {
@@ -167,6 +167,23 @@ export default function HomeScreen() {
   }, []);
   function goSettings() {
     dispatch({ type: A.GO, screen: 'settings' });
+  }
+  function renderBody(text, accentColor) {
+    if (!text?.includes('**')) return <Text style={s.fyDetailBody}>{text}</Text>;
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return (
+      <Text style={s.fyDetailBody}>
+        {parts.map((part, i) =>
+          i % 2 === 1 ? (
+            <Text key={i} style={{ fontWeight: '700', color: accentColor }}>
+              {part}
+            </Text>
+          ) : (
+            part
+          ),
+        )}
+      </Text>
+    );
   }
   return (
     <ScrollView
@@ -354,7 +371,7 @@ export default function HomeScreen() {
           <View>
             <Image source={activeCard.imageSource} style={s.fyDetailImage} resizeMode="cover" />
             <Text style={[s.fyTag, { color: activeCard.tagColor, marginTop: 14 }]}>{activeCard.tag.toUpperCase()}</Text>
-            <Text style={s.fyDetailBody}>{activeCard.body}</Text>
+            {renderBody(activeCard.body, activeCard.tagColor || colors.primary)}
           </View>
         )}
       </BottomSheet>
