@@ -89,24 +89,51 @@ function AppContent() {
     biometric.updateStoredRefreshToken(refreshToken, userId, onboarded);
   }, [authDone, refreshToken]);
 
-  // After signup or login, offer biometric enrollment once per account (if hardware is available).
+  // Offer biometric enrollment once per account — but only after the app has settled on
+  // a real screen (onboarding finished). Prompting during the auth -> onboarding transition
+  // made iOS cancel the Face ID sheet, which silently left biometric disabled forever with
+  // no way back. `refreshToken` is in the deps so the stored credential is never stale.
+  const bioPromptRef = useRef(false);
   useEffect(() => {
-    if (!authDone || !userId) return;
-    (async () => {
+    if (!authDone || !userId || !onboarded || !refreshToken) return;
+    if (bioPromptRef.current) return;
+    let cancelled = false;
+
+    async function attemptEnroll(label) {
+      const res = await biometric.enrollBiometric({ refreshToken, userId, onboarded });
+      if (res.enrolled) {
+        dispatch({ type: A.SHOW_TOAST, icon: '🔐', text: `${label} login enabled` });
+        return;
+      }
+      if (res.cancelled) return;
+      bioPromptRef.current = false; // not enabled — allow another offer next launch
+      if (res.retryable) {
+        Alert.alert(`Enable ${label} Login`, res.error, [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Try Again', onPress: () => attemptEnroll(label) },
+        ]);
+      } else {
+        Alert.alert(`${label} unavailable`, res.error, [{ text: 'OK' }]);
+      }
+    }
+
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
       const available = await biometric.isBiometricAvailable();
       const asked = await biometric.hasBeenAskedAboutBiometric(userId);
-      if (!available || asked) return;
+      if (cancelled || !available || asked) return;
+      bioPromptRef.current = true;
       const label = await biometric.getBiometricLabel();
-      Alert.alert(
-        `Enable ${label} Login`,
-        `Log in faster next time using ${label}?`,
-        [
-          { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric(userId) },
-          { text: 'Enable', onPress: () => biometric.enrollBiometric({ refreshToken, userId, onboarded }) },
-        ],
-      );
-    })();
-  }, [authDone, userId]);
+      Alert.alert(`Enable ${label} Login`, `Log in faster next time using ${label}?`, [
+        { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric(userId) },
+        { text: 'Enable', onPress: () => attemptEnroll(label) },
+      ]);
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [authDone, userId, onboarded, refreshToken]);
   useEffect(() => {
     const id = setInterval(() => dispatch({ type: A.TODAY_CHANGED, today: todayISO() }), 60000);
     return () => clearInterval(id);

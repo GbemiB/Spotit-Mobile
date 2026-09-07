@@ -46,21 +46,69 @@ export async function enableBiometric({ refreshToken, userId, onboarded }) {
   await markAskedAboutBiometric(userId);
 }
 
-// Prompts the user to scan their face/fingerprint. Only stores credentials on
-// a successful scan. Returns true if enrolled, false if cancelled or failed.
+// A deliberate "no" from the user — suppress future prompts.
+const DELIBERATE_CANCEL = new Set(['user_cancel', 'user_fallback']);
+// A real setup gap the user must fix elsewhere — no point auto-retrying the scan.
+const NOT_RETRYABLE = new Set(['not_available', 'not_enrolled', 'passcode_not_set', 'no_space']);
+
+function describeAuthError(code) {
+  switch (code) {
+    case 'not_available':
+      return 'Biometric login is not available on this build. On iOS, Face ID needs a development or store build — it does not work in Expo Go or the plain simulator.';
+    case 'not_enrolled':
+      return 'No Face ID / fingerprint is set up on this device yet. Add one in your device settings, then try again.';
+    case 'passcode_not_set':
+      return 'Set a device passcode first, then enable biometric login.';
+    case 'lockout':
+      return 'Too many failed attempts. Unlock your device with its passcode, then try again.';
+    case 'authentication_failed':
+      return 'Your face / fingerprint was not recognised. Please try again.';
+    case 'system_cancel':
+    case 'app_cancel':
+      return 'The prompt was interrupted before you could confirm. Please try again.';
+    case 'timeout':
+      return 'The prompt timed out. Please try again.';
+    default:
+      return `Biometric scan did not complete${code ? ` (${code})` : ''}. Please try again.`;
+  }
+}
+
+// Prompts the user to scan their face/fingerprint and, on success, stores credentials.
+// Returns one of:
+//   { enrolled: true }                                    — credentials stored, biometric is on
+//   { enrolled: false, cancelled: true }                  — user deliberately declined the scan
+//   { enrolled: false, error, code, retryable: boolean }  — scan failed; `retryable` says
+//                                                            whether offering "Try Again" helps
+// Only a deliberate decline marks the account "asked"; a transient failure (the OS
+// cancelling the sheet during a screen transition, a lockout, a hardware race) leaves
+// the prompt free to appear again, so a hiccup can't silently disable biometric forever.
 export async function enrollBiometric({ refreshToken, userId, onboarded }) {
-  const label = await getBiometricLabel();
-  const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: `Confirm your ${label} to enable biometric login`,
-    cancelLabel: 'Cancel',
-    disableDeviceFallback: true,
-  });
+  let result;
+  try {
+    const label = await getBiometricLabel();
+    result = await LocalAuthentication.authenticateAsync({
+      promptMessage: `Confirm your ${label} to enable biometric login`,
+      cancelLabel: 'Cancel',
+      disableDeviceFallback: true,
+    });
+  } catch (e) {
+    return {
+      enrolled: false,
+      error: e?.message || 'Could not start biometric setup. Please try again.',
+      code: 'exception',
+      retryable: true,
+    };
+  }
   if (!result.success) {
-    await markAskedAboutBiometric(userId);
-    return false;
+    const code = result.error;
+    if (DELIBERATE_CANCEL.has(code)) {
+      await markAskedAboutBiometric(userId);
+      return { enrolled: false, cancelled: true };
+    }
+    return { enrolled: false, error: describeAuthError(code), code, retryable: !NOT_RETRYABLE.has(code) };
   }
   await enableBiometric({ refreshToken, userId, onboarded });
-  return true;
+  return { enrolled: true };
 }
 
 // Full disable — used when biometric is permanently turned off (invalid token, account delete).
