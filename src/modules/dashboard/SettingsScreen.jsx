@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
@@ -15,7 +15,6 @@ import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import TermsScreen from '../onboarding/TermsScreen.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
-import * as biometricUtils from '../../shared/utils/biometric.js';
 import { clearDeviceRegistration } from '../../shared/utils/device.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
@@ -62,8 +61,7 @@ export default function SettingsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels, userId, refreshToken, onboarded } =
-    state;
+  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels } = state;
   const insets = useSafeAreaInsets();
   const level = levelInfo(femPoints, levels);
   const [confirming, setConfirming] = useState(null);
@@ -71,19 +69,6 @@ export default function SettingsScreen() {
   useEffect(() => {
     setNameDraft(userName);
   }, [userName]);
-  const [bioAvailable, setBioAvailable] = useState(false);
-  const [bioEnabled, setBioEnabled] = useState(false);
-  const [bioLabel, setBioLabel] = useState('Biometric');
-  const [bioBusy, setBioBusy] = useState(false);
-  useEffect(() => {
-    (async () => {
-      const available = await biometricUtils.isBiometricAvailable();
-      if (!available) return;
-      setBioAvailable(true);
-      setBioLabel(await biometricUtils.getBiometricLabel());
-      setBioEnabled(await biometricUtils.isBiometricEnabled(userId));
-    })();
-  }, [userId]);
   const [exporting, setExporting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -123,37 +108,6 @@ export default function SettingsScreen() {
     dispatch({ type: A.SET_THEME, pref });
     saveProfile({ themePref: pref });
   }
-  async function enableBiometricFlow() {
-    const res = await biometricUtils.enrollBiometric({ refreshToken, userId, onboarded });
-    if (res.enrolled) {
-      setBioEnabled(true);
-      toast('🔐', `${bioLabel} login enabled`);
-    } else if (res.cancelled) {
-      // user backed out — nothing to say
-    } else if (res.retryable) {
-      Alert.alert(`Enable ${bioLabel} login`, res.error, [
-        { text: 'Not now', style: 'cancel' },
-        { text: 'Try Again', onPress: enableBiometricFlow },
-      ]);
-    } else {
-      Alert.alert(`${bioLabel} unavailable`, res.error, [{ text: 'OK' }]);
-    }
-  }
-  async function handleToggleBiometric() {
-    if (bioBusy) return;
-    setBioBusy(true);
-    try {
-      if (bioEnabled) {
-        await biometricUtils.disableBiometric();
-        setBioEnabled(false);
-        toast('🔓', `${bioLabel} login turned off`);
-      } else {
-        await enableBiometricFlow();
-      }
-    } finally {
-      setBioBusy(false);
-    }
-  }
   async function handleToggleNotif(key) {
     dispatch({ type: A.TOGGLE_NOTIF, key });
     try {
@@ -179,7 +133,6 @@ export default function SettingsScreen() {
   async function confirmLogout() {
     setConfirming(null);
     await authApi.logout(state.accessToken).catch(() => {});
-    await biometricUtils.clearBiometricSession();
     clearDeviceRegistration();
     dispatch({ type: A.LOGOUT });
   }
@@ -202,7 +155,6 @@ export default function SettingsScreen() {
     try {
       await authApi.deleteAccount(accessToken);
       setConfirming(null);
-      await biometricUtils.disableBiometric();
       clearDeviceRegistration();
       dispatch({ type: A.LOGOUT });
     } catch (e) {
@@ -292,21 +244,6 @@ export default function SettingsScreen() {
             })}
           </View>
         </View>
-
-        {bioAvailable && (
-          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-            <SectionHeader title="Security" />
-            <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
-              <Row
-                label={`${bioLabel} login`}
-                sub={`Sign in with ${bioLabel} instead of your password`}
-                right={<Toggle value={bioEnabled} onChange={handleToggleBiometric} />}
-                last
-                s={s}
-              />
-            </Card>
-          </View>
-        )}
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="About" />

@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform, AppState, Alert } from 'react-native';
+import { View, StyleSheet, Platform, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -17,7 +17,7 @@ import {
 } from '@expo-google-fonts/manrope';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
 import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
@@ -34,8 +34,7 @@ import * as rewardsApi from './src/shared/api/rewards.js';
 import * as shopApi from './src/shared/api/shop.js';
 import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
-import { getDeviceId, isDeviceRegistered, markDeviceRegistered, clearDeviceRegistration } from './src/shared/utils/device.js';
-import * as biometric from './src/shared/utils/biometric.js';
+import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
 
 function PrivacyScreen() {
   const { colors } = useTheme();
@@ -52,88 +51,22 @@ function AppContent() {
     periodPickerOpen,
     toast,
     accessToken,
-    refreshToken,
-    userId,
     lastPeriodDate,
     cycleLength,
     periodLength,
     today,
   } = state;
-  const backgroundAtRef = useRef(null);
-  const authDoneRef = useRef(authDone);
-  authDoneRef.current = authDone;
-  // Idle timeout: force logout if app was backgrounded for > 1 hour.
+  // Refresh "today" whenever the app comes back to the foreground. No idle/session
+  // timeout — this is a utility app, so a login is meant to last until the user
+  // explicitly signs out (or the refresh token finally expires server-side).
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
-        if (backgroundAtRef.current !== null && authDoneRef.current) {
-          if (Date.now() - backgroundAtRef.current > 3_600_000) {
-            clearDeviceRegistration();
-            dispatch({ type: A.LOGOUT });
-            backgroundAtRef.current = null;
-            return;
-          }
-        }
-        backgroundAtRef.current = null;
         dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
-      } else {
-        backgroundAtRef.current = Date.now();
       }
     });
     return () => sub.remove();
   }, []);
-
-  // Keep the biometric-stored refresh token in sync after every login.
-  useEffect(() => {
-    if (!authDone || !refreshToken) return;
-    biometric.updateStoredRefreshToken(refreshToken, userId, onboarded);
-  }, [authDone, refreshToken]);
-
-  // Offer biometric enrollment once per account — but only after the app has settled on
-  // a real screen (onboarding finished). Prompting during the auth -> onboarding transition
-  // made iOS cancel the Face ID sheet, which silently left biometric disabled forever with
-  // no way back. `refreshToken` is in the deps so the stored credential is never stale.
-  const bioPromptRef = useRef(false);
-  useEffect(() => {
-    if (!authDone || !userId || !onboarded || !refreshToken) return;
-    if (bioPromptRef.current) return;
-    let cancelled = false;
-
-    async function attemptEnroll(label) {
-      const res = await biometric.enrollBiometric({ refreshToken, userId, onboarded });
-      if (res.enrolled) {
-        dispatch({ type: A.SHOW_TOAST, icon: '🔐', text: `${label} login enabled` });
-        return;
-      }
-      if (res.cancelled) return;
-      bioPromptRef.current = false; // not enabled — allow another offer next launch
-      if (res.retryable) {
-        Alert.alert(`Enable ${label} Login`, res.error, [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Try Again', onPress: () => attemptEnroll(label) },
-        ]);
-      } else {
-        Alert.alert(`${label} unavailable`, res.error, [{ text: 'OK' }]);
-      }
-    }
-
-    const timer = setTimeout(async () => {
-      if (cancelled) return;
-      const available = await biometric.isBiometricAvailable();
-      const asked = await biometric.hasBeenAskedAboutBiometric(userId);
-      if (cancelled || !available || asked) return;
-      bioPromptRef.current = true;
-      const label = await biometric.getBiometricLabel();
-      Alert.alert(`Enable ${label} Login`, `Log in faster next time using ${label}?`, [
-        { text: 'Not now', style: 'cancel', onPress: () => biometric.markAskedAboutBiometric(userId) },
-        { text: 'Enable', onPress: () => attemptEnroll(label) },
-      ]);
-    }, 600);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [authDone, userId, onboarded, refreshToken]);
   useEffect(() => {
     const id = setInterval(() => dispatch({ type: A.TODAY_CHANGED, today: todayISO() }), 60000);
     return () => clearInterval(id);

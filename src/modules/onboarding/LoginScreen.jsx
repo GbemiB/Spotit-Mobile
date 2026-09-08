@@ -1,14 +1,12 @@
 import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { FaceIDIcon, FingerprintIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
-import * as biometricUtils from '../../shared/utils/biometric.js';
 import { isValidEmail } from '../../shared/utils/validation.js';
 export default function LoginScreen() {
   const { dispatch } = useApp();
@@ -21,22 +19,9 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [biometricLabel, setBiometricLabel] = useState('Biometric');
   const emailValid = isValidEmail(email);
   const showEmailError = emailTouched && email.trim().length > 0 && !emailValid;
   const canSubmit = emailValid && password.length > 0;
-  useEffect(() => {
-    (async () => {
-      const available = await biometricUtils.isBiometricAvailable();
-      const enabled = await biometricUtils.isBiometricEnabled();
-      if (available && enabled) {
-        setBiometricEnabled(true);
-        setBiometricLabel(await biometricUtils.getBiometricLabel());
-      }
-    })();
-  }, []);
-  const isFaceID = biometricLabel === 'Face ID';
   async function handleLogin() {
     if (!canSubmit || loading) return;
     setError('');
@@ -82,34 +67,6 @@ export default function LoginScreen() {
         return;
       }
       setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function handleBiometricLogin() {
-    setError('');
-    setLoading(true);
-    try {
-      const stored = await biometricUtils.authenticateWithBiometric();
-      if (!stored) return; // user cancelled — no error shown
-      const data = await authApi.refresh({ refreshToken: stored.refreshToken });
-      dispatch({
-        type: A.AUTH_SUCCESS,
-        accessToken: data.accessToken,
-        refreshToken: stored.refreshToken,
-        userId: stored.userId,
-        onboarded: stored.onboarded,
-      });
-    } catch (e) {
-      if (e.noCredentials) {
-        setError('Please log in with your password to re-activate Face ID.');
-      } else if (e.errorCode === 'invalid_refresh_token') {
-        await biometricUtils.disableBiometric();
-        setBiometricEnabled(false);
-        setError('Session expired. Please log in with your password.');
-      } else {
-        setError(e.message || 'Biometric login failed. Please try your password.');
-      }
     } finally {
       setLoading(false);
     }
@@ -180,12 +137,6 @@ export default function LoginScreen() {
               </LinearGradient>
             </Pressable>
 
-            {biometricEnabled && (
-              <Pressable onPress={handleBiometricLogin} disabled={loading} style={s.biometricBtn}>
-                {isFaceID ? <FaceIDIcon size={22} color={colors.primary} /> : <FingerprintIcon size={40} color={colors.primary} />}
-              </Pressable>
-            )}
-
             <View style={s.footer}>
               <Text style={s.footerTx}>New here? </Text>
               <Pressable onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' })}>
@@ -223,8 +174,6 @@ function createStyles(c) {
     forgotTx: { fontSize: 11.5, fontWeight: '700', color: c.authAccent },
     cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     ctaTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
-    biometricBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 4 },
-    biometricTx: { fontSize: 13, fontWeight: '600', color: c.primary },
     footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, paddingTop: 14 },
     footerTx: { fontSize: 12, color: c.authBody },
     footerLink: { fontSize: 12, color: c.authAccent, fontWeight: '700' },

@@ -8,10 +8,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spotit.app",
-      "infoPlist": {
-        "NSFaceIDUsageDescription": "Use Face ID to log in to Spotit quickly and securely."
-      }
+      "bundleIdentifier": "com.spotit.app"
     },
     "android": {
       "package": "com.spotit.app",
@@ -43,7 +40,6 @@
           }
         }
       ],
-      "expo-secure-store",
       "expo-status-bar"
     ]
   }

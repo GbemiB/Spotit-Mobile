@@ -43,6 +43,11 @@ export default function OtpVerifyScreen() {
   const [signupVerified, setSignupVerified] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
+  const scrollRef = useRef(null);
+  // Bring the focused password field (and the CTA below it) above the keyboard.
+  function scrollPasswordIntoView() {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+  }
   const code = digits.join('');
   const codeComplete = code.length === CODE_LENGTH;
   const passwordsMismatch = confirmPassword.length > 0 && newPassword.trim() !== confirmPassword.trim();
@@ -164,8 +169,13 @@ export default function OtpVerifyScreen() {
     <LinearGradient colors={colors.authGradient} start={{ x: 0, y: 0 }} end={{ x: 0.35, y: 1 }} style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={{ paddingTop: insets.top + 30, paddingBottom: insets.bottom + 30 }}
+          ref={scrollRef}
+          contentContainerStyle={{
+            paddingTop: insets.top + 30,
+            paddingBottom: insets.bottom + (awaitingPassword ? 160 : 30),
+          }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <View style={s.topBar}>
@@ -236,6 +246,7 @@ export default function OtpVerifyScreen() {
                     <TextInput
                       value={newPassword}
                       onChangeText={setNewPassword}
+                      onFocus={scrollPasswordIntoView}
                       secureTextEntry={!showPass}
                       autoCorrect={false}
                       autoCapitalize="none"
@@ -253,6 +264,7 @@ export default function OtpVerifyScreen() {
                     <TextInput
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
+                      onFocus={scrollPasswordIntoView}
                       secureTextEntry={!showConfirmPass}
                       autoCorrect={false}
                       autoCapitalize="none"
