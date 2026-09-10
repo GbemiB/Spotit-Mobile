@@ -80,7 +80,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={s.header}>
-            <LogoMark size={76} />
+            <LogoMark size={65} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>

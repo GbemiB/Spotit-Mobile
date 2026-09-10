@@ -185,7 +185,7 @@ export default function OtpVerifyScreen() {
           </View>
 
           <View style={s.header}>
-            <LogoMark size={85} />
+            <LogoMark size={60} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>
@@ -193,9 +193,6 @@ export default function OtpVerifyScreen() {
           </View>
 
           <View style={s.body}>
-            <View style={s.iconBadge}>
-              <EnvelopeIcon size={20} />
-            </View>
             <Text style={s.title}>
               {awaitingPassword
                 ? isReset

@@ -59,7 +59,7 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={s.header}>
-            <LogoMark size={85} />
+            <LogoMark size={60} />
             <Text style={s.wordmark}>
               Spot
               <Text style={{ color: colors.primary }}> it</Text>

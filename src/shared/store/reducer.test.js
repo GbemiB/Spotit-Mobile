@@ -169,13 +169,13 @@ describe('rewards/shop result actions', () => {
       history: [],
       challenges: [
         { id: 'log_week', title: 'Log every day', reward: 150, done: 7, total: 7, completed: true, claimed: false },
-        { id: 'read_3', title: 'Read 3 articles', reward: 120, done: 3, total: 3, completed: true, claimed: false },
+        { id: 'log_streak', title: 'Keep a 5-day streak', reward: 120, done: 5, total: 5, completed: true, claimed: false },
       ],
     };
     const next = reducer(state, { type: A.CHALLENGE_CLAIM_RESULT, challengeId: 'log_week', pointsAwarded: 150, newBalance: 250 });
     expect(next.femPoints).toBe(250);
     expect(next.challenges.find(c => c.id === 'log_week').claimed).toBe(true);
-    expect(next.challenges.find(c => c.id === 'read_3').claimed).toBe(false);
+    expect(next.challenges.find(c => c.id === 'log_streak').claimed).toBe(false);
   });
   test('REDEEM_RESULT locks the redeemed product and deducts points', () => {
     const state = {
