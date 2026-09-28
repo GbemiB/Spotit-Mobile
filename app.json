@@ -20,12 +20,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "842cf2cc-fee0-4b3b-a5a9-864075d3992b"
-      }
-    },
-    "owner": "gbemidev",
     "plugins": [
       "expo-font",
       [
@@ -41,6 +35,12 @@
         }
       ],
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "71955428-691c-4a81-a6c9-9c79dd418afa"
+      }
+    },
+    "owner": "spotitinternational"
   }
 }
