@@ -1,4 +1,4 @@
-import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useState, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { CheckIcon } from '../../components/ui/icons.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import { isValidEmail } from '../../shared/utils/validation.js';
+import { PRIVACY_POLICY_URL } from '../../shared/constants/legal.js';
 import TermsScreen from './TermsScreen.jsx';
 export default function SignupScreen() {
   const { dispatch } = useApp();
@@ -104,7 +105,7 @@ export default function SignupScreen() {
                   Terms of Service
                 </Text>{' '}
                 and{' '}
-                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>
+                <Text style={s.agreeLink} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
                   Privacy Policy
                 </Text>
               </Text>

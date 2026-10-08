@@ -1,10 +1,11 @@
-import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Linking } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { NOTIF_ROWS } from '../../shared/constants/rewards.js';
+import { PRIVACY_POLICY_URL } from '../../shared/constants/legal.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import Card from '../../components/ui/Card.jsx';
@@ -250,7 +251,7 @@ export default function SettingsScreen() {
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
             <Row label="App" right={<Text style={s.metaTx}>Spot it</Text>} s={s} />
             <Row label="Version" right={<Text style={s.metaTx}>1.0.0</Text>} s={s} />
-            <Pressable style={s.row} onPress={() => setShowTerms(true)}>
+            <Pressable style={s.row} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Privacy Policy</Text>
               <Text style={s.chevron}>›</Text>
             </Pressable>

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { levelInfo } from '../../shared/utils/levels.js';
-import { SHOP_PRODUCT_ICONS } from '../../shared/constants/rewards.js';
+import { SHOP_PRODUCT_ICONS, PREMIUM_ENABLED } from '../../shared/constants/rewards.js';
 import { formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
@@ -289,15 +289,14 @@ export default function RewardsScreen() {
           </Pressable>
         </View>
 
-  
-
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Text style={s.sectionTitle}>Redeem for skincare</Text>
           <Text style={s.shopIntro}>
-            Trade your Spotit points for free beauty & self-care products. Some items need a higher level or Premium.
+            Trade your Spotit points for free beauty & self-care products.
+            {PREMIUM_ENABLED ? ' Some items need a higher level or Premium.' : ' Some items need a higher level.'}
           </Text>
 
-          {isPremium ? (
+          {!PREMIUM_ENABLED ? null : isPremium ? (
             <Pressable
               onPress={autoRenew ? handleCancelRenewal : undefined}
               disabled={billingLoading}
