@@ -210,7 +210,10 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Notifications" />
+          <SectionHeader title="Reminder preferences" />
+          <Text style={s.notifNote}>
+            Reminders are coming soon. Choose what you'd like to hear about and we'll save your choices for when they arrive.
+          </Text>
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
             {NOTIF_ROWS.map((n, i) => (
               <Row
@@ -373,6 +376,7 @@ function createStyles(c) {
     notifIconWrap: { width: 20, height: 20, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
     notifLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
     notifSub: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
+    notifNote: { fontSize: 10.5, color: c.textMuted, marginTop: 6, lineHeight: 15 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
     inlineInput: { fontSize: 12, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },

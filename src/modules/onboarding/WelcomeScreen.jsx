@@ -20,8 +20,8 @@ const SLIDES = [
   },
   {
     image: require('../../../assets/illus-reminder.png'),
-    title: 'Never miss a reminder',
-    body: 'Gentle nudges for logging, periods, and ovulation — right when you need them.',
+    title: "See what's coming",
+    body: 'Your next period and ovulation day are predicted on your home screen and calendar, so you can plan ahead.',
   },
 ];
 export default function WelcomeScreen() {
