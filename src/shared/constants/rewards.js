@@ -3,8 +3,8 @@ export const SHOP_PRODUCT_ICONS = { rosewater_mist: '🌹', vitc_serum: '💧', 
 // policies reject paid upgrades that bypass their billing, and the current flow uses a mock receipt.
 export const PREMIUM_ENABLED = false;
 export const NOTIF_ROWS = [
-  { key: 'period', icon: '🩸', colorKey: 'primary', label: 'Period reminders', sub: 'A heads-up before your period starts' },
-  { key: 'ovulation', icon: '🌼', colorKey: 'tertiary', label: 'Ovulation updates', sub: 'Fertile window & ovulation day' },
-  { key: 'dailyLog', icon: '📝', colorKey: 'success', label: 'Daily log nudge', sub: 'A gentle prompt to log each evening' },
-  { key: 'digest', icon: '📊', colorKey: 'secondary', label: 'Weekly digest', sub: 'Your mood & cycle summary' },
+  { key: 'period', icon: '🩸', colorKey: 'primary', label: 'Period reminders', sub: 'A countdown to your predicted period' },
+  { key: 'ovulation', icon: '🌼', colorKey: 'tertiary', label: 'Ovulation updates', sub: 'A countdown to your predicted ovulation day' },
+  { key: 'dailyLog', icon: '📝', colorKey: 'success', label: 'Daily log nudge', sub: 'An evening prompt on your period days' },
+  { key: 'digest', icon: '📊', colorKey: 'secondary', label: 'Weekly digest', sub: 'Sundays: your logging and mood summary' },
 ];

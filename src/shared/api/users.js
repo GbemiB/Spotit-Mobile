@@ -8,8 +8,15 @@ export function updateProfile({ firstName, lastName, cycleLength, periodLength, 
 export function getNotifications(token) {
   return apiRequest('/users/me/notifications', { token });
 }
-export function updateNotifications({ period, ovulation, dailyLog, digest }, token) {
-  return apiRequest('/users/me/notifications', { method: 'PATCH', body: { period, ovulation, dailyLog, digest }, token });
+// Send only the fields that changed; the server leaves the rest alone.
+export function updateNotifications(changes, token) {
+  return apiRequest('/users/me/notifications', { method: 'PATCH', body: changes, token });
+}
+export function getInbox(token) {
+  return apiRequest('/notifications', { token });
+}
+export function markInboxRead(token) {
+  return apiRequest('/notifications/read', { method: 'POST', token });
 }
 export function requestExport(token) {
   return apiRequest('/users/me/export', { method: 'POST', token });

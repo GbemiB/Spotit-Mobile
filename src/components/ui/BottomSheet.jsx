@@ -1,7 +1,7 @@
 import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
-export default function BottomSheet({ open, onClose, title, children }) {
+export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel', children }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   return (
@@ -16,7 +16,7 @@ export default function BottomSheet({ open, onClose, title, children }) {
             <View style={s.titleRow}>
               <Text style={s.title}>{title}</Text>
               <Pressable onPress={onClose}>
-                <Text style={s.cancel}>Cancel</Text>
+                <Text style={s.cancel}>{closeLabel}</Text>
               </Pressable>
             </View>
           )}

@@ -28,6 +28,8 @@ import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
 import * as billingApi from '../../shared/api/billing.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
+import * as usersApi from '../../shared/api/users.js';
+import NotificationsSheet from './NotificationsSheet.jsx';
 const CONTENT_IMAGES = {
   lifestyle: require('../../../assets/lifestyle.png'),
   food: require('../../../assets/food.png'),
@@ -93,7 +95,8 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content } = state;
+  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content, inbox } = state;
+  const [inboxOpen, setInboxOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -168,6 +171,15 @@ export default function HomeScreen() {
   function goSettings() {
     dispatch({ type: A.GO, screen: 'settings' });
   }
+  function openInbox() {
+    setInboxOpen(true);
+    if (inbox.unreadCount > 0) usersApi.markInboxRead(accessToken).catch(() => {});
+  }
+  // The unread dots stay while the sheet is open, so she can see what is new; they clear when it closes.
+  function closeInbox() {
+    setInboxOpen(false);
+    if (inbox.unreadCount > 0) dispatch({ type: A.INBOX_READ });
+  }
   function renderBody(text, accentColor) {
     if (!text?.includes('**')) return <Text style={s.fyDetailBody}>{text}</Text>;
     const parts = text.split(/\*\*(.*?)\*\*/g);
@@ -201,9 +213,9 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
-        <Pressable onPress={goSettings} style={s.bellBtn}>
+        <Pressable onPress={openInbox} style={s.bellBtn} accessibilityRole="button" accessibilityLabel="Notifications">
           <BellIcon size={18} color={colors.textPrimary} />
-          <View style={s.bellDot} />
+          {inbox.unreadCount > 0 && <View style={s.bellDot} />}
         </Pressable>
       </View>
 
@@ -375,6 +387,7 @@ export default function HomeScreen() {
           </View>
         )}
       </BottomSheet>
+      <NotificationsSheet open={inboxOpen} onClose={closeInbox} items={inbox.items} />
     </ScrollView>
   );
 }

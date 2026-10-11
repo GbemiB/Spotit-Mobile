@@ -3,11 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { reducer, INIT } from './reducer.js';
 import { A } from './actions.js';
 import { configureAuthClient } from '../api/client.js';
+import { loadTokens, saveTokens, clearTokens } from '../utils/tokenStore.js';
 const PERSIST_KEYS = [
   'onboarded',
   'authDone',
-  'accessToken',
-  'refreshToken',
   'userId',
   'userName',
   'goal',
@@ -40,7 +39,9 @@ export function AppProvider({ children }) {
   const [ready, setReady] = useState(false);
   const ttRef = useRef(null);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => {
+    stateRef.current = state;
+  });
   useEffect(() => {
     configureAuthClient({
       getRefreshToken: () => stateRef.current.refreshToken,
@@ -49,14 +50,26 @@ export function AppProvider({ children }) {
     });
   }, []);
   useEffect(() => {
-    AsyncStorage.getItem('spotit_state').then(raw => {
-      if (raw) {
-        try {
-          dispatch({ type: A.HYDRATE, payload: JSON.parse(raw) });
-        } catch {}
+    (async () => {
+      let saved = null;
+      try {
+        const raw = await AsyncStorage.getItem('spotit_state');
+        if (raw) saved = JSON.parse(raw);
+      } catch {}
+      if (saved) {
+        let tokens = await loadTokens();
+        // Builds before 1.1 kept the tokens inside spotit_state; move them across once.
+        if (!tokens.accessToken && saved.accessToken) {
+          tokens = { accessToken: saved.accessToken, refreshToken: saved.refreshToken ?? null };
+          await saveTokens(tokens);
+        }
+        dispatch({ type: A.HYDRATE, payload: { ...saved, ...tokens } });
+      } else {
+        // The iOS keychain can outlive an uninstall; don't carry a session into a fresh install.
+        await clearTokens();
       }
       setReady(true);
-    });
+    })();
   }, []);
   useEffect(() => {
     if (!ready) return;
@@ -66,6 +79,10 @@ export function AppProvider({ children }) {
     });
     AsyncStorage.setItem('spotit_state', JSON.stringify(data));
   }, [state, ready]);
+  useEffect(() => {
+    if (!ready) return;
+    saveTokens({ accessToken: state.accessToken, refreshToken: state.refreshToken });
+  }, [state.accessToken, state.refreshToken, ready]);
   useEffect(() => {
     if (state.toast) {
       clearTimeout(ttRef.current);

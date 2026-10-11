@@ -15,6 +15,9 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://spotit-backend-dev.onrender.com/api/v1"
       }
     },
     "production": {

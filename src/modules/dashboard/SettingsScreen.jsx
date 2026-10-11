@@ -1,11 +1,12 @@
-import { View, ScrollView, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Linking, AppState } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Application from 'expo-application';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { NOTIF_ROWS } from '../../shared/constants/rewards.js';
-import { PRIVACY_POLICY_URL } from '../../shared/constants/legal.js';
+import { PRIVACY_POLICY_URL, TERMS_URL } from '../../shared/constants/legal.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import Card from '../../components/ui/Card.jsx';
@@ -13,14 +14,19 @@ import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
-import TermsScreen from '../onboarding/TermsScreen.jsx';
+import appConfig from '../../../app.json';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
-import { clearDeviceRegistration } from '../../shared/utils/device.js';
+import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
+import { DAY_OPTIONS, toggleDay, shiftTime, timeLabel } from '../../shared/utils/reminders.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
 }
+// The installed build's version; app.json covers the web preview, where there is no native binary.
+const APP_VERSION = Application.nativeApplicationVersion || appConfig.expo.version;
+// The countdown setting that belongs to each reminder switch.
+const REMINDER_DAYS_KEY = { period: 'periodDaysBefore', ovulation: 'ovulationDaysBefore' };
 const THEME_OPTIONS = [
   { key: 'light', label: 'Light' },
   { key: 'dark', label: 'Dark' },
@@ -39,6 +45,43 @@ function Row({ icon, iconBg, label, sub, right, last, s, compact }) {
         {sub ? <Text style={compact ? s.notifSub : s.rowSub}>{sub}</Text> : null}
       </View>
       {right}
+    </View>
+  );
+}
+// Which days of a countdown are sent: any of "3 days before" ... "On the day".
+function DayChips({ selected, max, onToggle, colors, s }) {
+  return (
+    <View style={s.chipRow}>
+      {DAY_OPTIONS.filter(o => o.days <= max).map(o => {
+        const active = selected.includes(o.days);
+        return (
+          <Pressable
+            key={o.days}
+            onPress={() => onToggle(o.days)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: active }}
+            style={[s.chip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          >
+            <Text style={[s.chipTx, { color: active ? colors.white : colors.textSecondary }]}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+function TimeStepper({ label, value, onChange, s }) {
+  return (
+    <View style={s.timeRow}>
+      <Text style={[s.notifSub, { flex: 1, marginTop: 0 }]}>{label}</Text>
+      <View style={s.stepper}>
+        <Pressable onPress={() => onChange(shiftTime(value, -30))} style={s.stepBtnSm} accessibilityLabel={`${label}: earlier`}>
+          <Text style={s.stepTx}>−</Text>
+        </Pressable>
+        <Text style={s.stepVal}>{timeLabel(value)}</Text>
+        <Pressable onPress={() => onChange(shiftTime(value, 30))} style={s.stepBtnSm} accessibilityLabel={`${label}: later`}>
+          <Text style={s.stepTx}>+</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -73,7 +116,6 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
   function patch(obj) {
     dispatch({ type: A.UPDATE_SETTINGS, patch: obj });
   }
@@ -109,15 +151,43 @@ export default function SettingsScreen() {
     dispatch({ type: A.SET_THEME, pref });
     saveProfile({ themePref: pref });
   }
-  async function handleToggleNotif(key) {
-    dispatch({ type: A.TOGGLE_NOTIF, key });
+  // 'granted' | 'undetermined' | 'denied' | 'unsupported'. Re-read when she comes back from the phone's settings.
+  const [permission, setPermission] = useState('granted');
+  useEffect(() => {
+    getPermissionState().then(setPermission);
+    const sub = AppState.addEventListener('change', next => {
+      if (next === 'active') getPermissionState().then(setPermission);
+    });
+    return () => sub.remove();
+  }, []);
+  // Sends only what changed. The screen updates at once and is put back if the server refuses.
+  async function saveNotifs(changes) {
+    const before = notifs;
+    dispatch({ type: A.SET_NOTIF_PREFS, prefs: changes });
     try {
-      const data = await usersApi.updateNotifications({ ...notifs, [key]: !notifs[key] }, accessToken);
+      const data = await usersApi.updateNotifications(changes, accessToken);
       dispatch({ type: A.NOTIFICATIONS_UPDATED, ...data });
     } catch (e) {
-      dispatch({ type: A.TOGGLE_NOTIF, key });
+      dispatch({ type: A.SET_NOTIF_PREFS, prefs: before });
       toast('🌸', e.message);
     }
+  }
+  async function allowNotifications() {
+    await markPromptSeen();
+    const result = await requestPermission();
+    setPermission(result);
+    if (result === 'granted') await syncPushRegistration(accessToken);
+  }
+  function handleToggleNotif(key) {
+    const turningOn = !notifs[key];
+    saveNotifs({ [key]: turningOn });
+    // Switching a reminder on is a clear yes, so the system prompt can follow straight away.
+    if (turningOn && permission === 'undetermined') allowNotifications();
+  }
+  // Unticking the last day would leave a reminder that is on but never sent, so that turns the switch off instead.
+  function handleToggleDay(key, daysKey, day) {
+    const next = toggleDay(notifs[daysKey], day);
+    saveNotifs(next.length === 0 ? { [key]: false } : { [daysKey]: next });
   }
   async function handleExport() {
     if (exporting) return;
@@ -133,8 +203,8 @@ export default function SettingsScreen() {
   }
   async function confirmLogout() {
     setConfirming(null);
-    await authApi.logout(state.accessToken).catch(() => {});
-    clearDeviceRegistration();
+    await unlinkPush(accessToken);
+    await authApi.logout(accessToken).catch(() => {});
     dispatch({ type: A.LOGOUT });
   }
   async function confirmReset() {
@@ -154,9 +224,9 @@ export default function SettingsScreen() {
     if (deleting) return;
     setDeleting(true);
     try {
+      await unlinkPush(accessToken);
       await authApi.deleteAccount(accessToken);
       setConfirming(null);
-      clearDeviceRegistration();
       dispatch({ type: A.LOGOUT });
     } catch (e) {
       toast('🌸', e.message);
@@ -210,25 +280,70 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Reminder preferences" />
-          <Text style={s.notifNote}>
-            Reminders are coming soon. Choose what you'd like to hear about and we'll save your choices for when they arrive.
-          </Text>
+          <SectionHeader title="Reminders" />
+          <Text style={s.notifNote}>{"Choose each reminder separately. Times are in your phone's time zone."}</Text>
+          {permission === 'denied' && (
+            <Card style={s.permCard}>
+              <Text style={s.permTx}>{"Notifications are turned off for Spot it, so reminders can't reach this phone."}</Text>
+              <Button variant="secondary" onPress={() => Linking.openSettings()}>
+                Open settings
+              </Button>
+            </Card>
+          )}
+          {permission === 'undetermined' && (
+            <Card style={s.permCard}>
+              <Text style={s.permTx}>Allow notifications so your reminders can reach this phone.</Text>
+              <Button onPress={allowNotifications}>Allow notifications</Button>
+            </Card>
+          )}
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
-            {NOTIF_ROWS.map((n, i) => (
-              <Row
-                key={n.key}
-                icon={n.icon}
-                iconBg={colors[`${n.colorKey}Soft`]}
-                label={n.label}
-                sub={n.sub}
-                right={<Toggle value={notifs[n.key]} onChange={() => handleToggleNotif(n.key)} />}
-                last={i === NOTIF_ROWS.length - 1}
-                compact
+            {NOTIF_ROWS.map((n, i) => {
+              const on = notifs[n.key];
+              const last = i === NOTIF_ROWS.length - 1;
+              const daysKey = REMINDER_DAYS_KEY[n.key];
+              const hasDetail = on && (daysKey || n.key === 'dailyLog');
+              return (
+                <View key={n.key} style={!last && s.notifGroup}>
+                  <Row
+                    icon={n.icon}
+                    iconBg={colors[`${n.colorKey}Soft`]}
+                    label={n.label}
+                    sub={n.sub}
+                    right={<Toggle value={on} onChange={() => handleToggleNotif(n.key)} />}
+                    last
+                    compact
+                    s={s}
+                  />
+                  {hasDetail && (
+                    <View style={s.notifDetail}>
+                      {daysKey && (
+                        <DayChips
+                          selected={notifs[daysKey]}
+                          max={notifs.maxDaysBefore}
+                          onToggle={day => handleToggleDay(n.key, daysKey, day)}
+                          colors={colors}
+                          s={s}
+                        />
+                      )}
+                      {n.key === 'dailyLog' && (
+                        <TimeStepper label="Evening time" value={notifs.eveningTime} onChange={v => saveNotifs({ eveningTime: v })} s={s} />
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </Card>
+          {(notifs.period || notifs.ovulation) && (
+            <Card style={{ marginTop: 10, paddingVertical: 4, paddingHorizontal: 14 }}>
+              <TimeStepper
+                label="Morning time for period and ovulation reminders"
+                value={notifs.morningTime}
+                onChange={v => saveNotifs({ morningTime: v })}
                 s={s}
               />
-            ))}
-          </Card>
+            </Card>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -253,12 +368,12 @@ export default function SettingsScreen() {
           <SectionHeader title="About" />
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
             <Row label="App" right={<Text style={s.metaTx}>Spot it</Text>} s={s} />
-            <Row label="Version" right={<Text style={s.metaTx}>1.0.0</Text>} s={s} />
+            <Row label="Version" right={<Text style={s.metaTx}>{APP_VERSION}</Text>} s={s} />
             <Pressable style={s.row} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Privacy Policy</Text>
               <Text style={s.chevron}>›</Text>
             </Pressable>
-            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={() => setShowTerms(true)}>
+            <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={() => Linking.openURL(TERMS_URL)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Terms of Service</Text>
               <Text style={s.chevron}>›</Text>
             </Pressable>
@@ -326,7 +441,6 @@ export default function SettingsScreen() {
         onConfirm={confirmDelete}
         onCancel={() => setConfirming(null)}
       />
-      <TermsScreen visible={showTerms} onAgree={() => setShowTerms(false)} onClose={() => setShowTerms(false)} />
     </View>
   );
 }
@@ -377,6 +491,22 @@ function createStyles(c) {
     notifLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
     notifSub: { fontSize: 9.5, color: c.textMuted, marginTop: 1 },
     notifNote: { fontSize: 10.5, color: c.textMuted, marginTop: 6, lineHeight: 15 },
+    notifGroup: { borderBottomWidth: 1, borderBottomColor: c.border },
+    notifDetail: { paddingHorizontal: 14, paddingBottom: 12, gap: 8 },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    chip: {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 99,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.background,
+    },
+    chipTx: { fontSize: 10, fontWeight: '700' },
+    timeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+    stepBtnSm: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },
+    permCard: { marginTop: 10, padding: 16, gap: 12 },
+    permTx: { fontSize: 11, color: c.textSecondary, lineHeight: 17 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
     inlineInput: { fontSize: 12, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },

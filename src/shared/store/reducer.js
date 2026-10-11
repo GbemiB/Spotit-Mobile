@@ -36,7 +36,18 @@ export const INIT = {
   lastLogDate: null,
   lastClaimedDate: null,
   logs: {},
-  notifs: { period: true, ovulation: true, dailyLog: true, digest: false },
+  notifs: {
+    period: true,
+    ovulation: true,
+    dailyLog: true,
+    digest: false,
+    morningTime: '09:00',
+    eveningTime: '20:00',
+    periodDaysBefore: [3, 2, 1, 0],
+    ovulationDaysBefore: [3, 2, 1, 0],
+    maxDaysBefore: 3,
+  },
+  inbox: { items: [], unreadCount: 0 },
   themePref: 'dark',
   isPremium: false,
   plan: null,
@@ -117,7 +128,8 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
 export function reducer(state, action) {
   switch (action.type) {
     case A.HYDRATE: {
-      const merged = { ...state, ...action.payload };
+      // notifs is merged key by key: a state saved by 1.0 holds only the four switches.
+      const merged = { ...state, ...action.payload, notifs: { ...state.notifs, ...action.payload?.notifs } };
       if (merged.authDone && !merged.accessToken) {
         return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
       }
@@ -209,9 +221,32 @@ export function reducer(state, action) {
     }
     case A.TOGGLE_NOTIF:
       return { ...state, notifs: { ...state.notifs, [action.key]: !state.notifs[action.key] } };
+    case A.SET_NOTIF_PREFS:
+      return { ...state, notifs: { ...state.notifs, ...action.prefs } };
     case A.NOTIFICATIONS_HYDRATED:
-    case A.NOTIFICATIONS_UPDATED:
-      return { ...state, notifs: { period: action.period, ovulation: action.ovulation, dailyLog: action.dailyLog, digest: action.digest } };
+    case A.NOTIFICATIONS_UPDATED: {
+      const { period, ovulation, dailyLog, digest, morningTime, eveningTime, periodDaysBefore, ovulationDaysBefore, maxDaysBefore } =
+        action;
+      return {
+        ...state,
+        notifs: {
+          period,
+          ovulation,
+          dailyLog,
+          digest,
+          // A 1.0 server sends only the four switches; keep what we have for the rest.
+          morningTime: morningTime ?? state.notifs.morningTime,
+          eveningTime: eveningTime ?? state.notifs.eveningTime,
+          periodDaysBefore: periodDaysBefore ?? state.notifs.periodDaysBefore,
+          ovulationDaysBefore: ovulationDaysBefore ?? state.notifs.ovulationDaysBefore,
+          maxDaysBefore: maxDaysBefore ?? state.notifs.maxDaysBefore,
+        },
+      };
+    }
+    case A.INBOX_HYDRATED:
+      return { ...state, inbox: { items: action.items || [], unreadCount: action.unreadCount || 0 } };
+    case A.INBOX_READ:
+      return { ...state, inbox: { items: state.inbox.items.map(item => ({ ...item, read: true })), unreadCount: 0 } };
     case A.SET_THEME:
       return { ...state, themePref: action.pref };
     case A.SUBSCRIPTION_UPDATED: {
@@ -296,6 +331,7 @@ export function reducer(state, action) {
         userId: null,
         onboardStep: INIT.onboardStep,
         onboardDraft: { ...INIT.onboardDraft },
+        inbox: INIT.inbox,
       };
     case A.RESET_DATA:
       return {

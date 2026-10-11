@@ -1,10 +1,11 @@
 import { API_BASE_URL } from './config.js';
 export class ApiError extends Error {
-  constructor(message, status, errorCode, otpId) {
+  constructor(message, status, errorCode, otpId, expiresInSeconds) {
     super(message);
     this.status = status;
     this.errorCode = errorCode;
     this.otpId = otpId;
+    this.expiresInSeconds = expiresInSeconds;
   }
 }
 const SENSITIVE_KEYS = ['password', 'newPassword', 'receipt', 'pushToken', 'accessToken', 'refreshToken'];
@@ -54,6 +55,7 @@ async function rawRequest(path, { method = 'GET', body, token } = {}) {
       envelope.code,
       envelope.data?.errorCode,
       envelope.data?.otpId,
+      envelope.data?.expiresInSeconds,
     );
   }
   return envelope.data;

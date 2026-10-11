@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#FBF3EF",
         "foregroundImage": "./assets/icon-adaptive.png"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,7 +35,15 @@
           }
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#C04E68",
+          "defaultChannel": "reminders"
+        }
+      ]
     ],
     "extra": {
       "eas": {

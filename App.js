@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform, AppState } from 'react-native';
+import { View, StyleSheet, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -26,7 +26,6 @@ import PeriodPickerSheet from './src/modules/tracker/PeriodPickerSheet.jsx';
 import BottomNav from './src/components/nav/BottomNav.jsx';
 import Toast from './src/components/ui/Toast.jsx';
 import * as logsApi from './src/shared/api/logs.js';
-import * as devicesApi from './src/shared/api/devices.js';
 import * as cycleApi from './src/shared/api/cycle.js';
 import * as billingApi from './src/shared/api/billing.js';
 import * as usersApi from './src/shared/api/users.js';
@@ -34,7 +33,18 @@ import * as rewardsApi from './src/shared/api/rewards.js';
 import * as shopApi from './src/shared/api/shop.js';
 import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
-import { getDeviceId, isDeviceRegistered, markDeviceRegistered } from './src/shared/utils/device.js';
+import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
+import {
+  configureNotifications,
+  syncPushRegistration,
+  requestPermission,
+  wasPromptSeen,
+  markPromptSeen,
+  listenForReminderTaps,
+  listenForReminders,
+} from './src/shared/utils/push.js';
+
+configureNotifications();
 
 function PrivacyScreen() {
   const { colors } = useTheme();
@@ -56,6 +66,7 @@ function AppContent() {
     periodLength,
     today,
   } = state;
+  const [resumedAt, setResumedAt] = useState(0);
   // Refresh "today" whenever the app comes back to the foreground. No idle/session
   // timeout — this is a utility app, so a login is meant to last until the user
   // explicitly signs out (or the refresh token finally expires server-side).
@@ -63,6 +74,7 @@ function AppContent() {
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
         dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
+        setResumedAt(Date.now());
       }
     });
     return () => sub.remove();
@@ -81,18 +93,37 @@ function AppContent() {
       .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
       .catch(() => {});
   }, [authDone, onboarded, today]);
+  const [askReminders, setAskReminders] = useState(false);
+  // Keep this phone registered for reminders, with its current time zone. Once someone is past onboarding and
+  // has never been asked, explain reminders before the system prompt appears: iOS shows that prompt only once.
+  // Runs again on every return to the foreground, which also picks up permission granted in the phone's settings.
   useEffect(() => {
     if (!authDone || !accessToken) return;
-    if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
     (async () => {
-      if (await isDeviceRegistered()) return;
-      const pushToken = await getDeviceId();
-      try {
-        await devicesApi.registerDevice({ pushToken, platform: Platform.OS }, accessToken);
-        await markDeviceRegistered();
-      } catch {}
+      const permission = await syncPushRegistration(accessToken);
+      if (permission === 'undetermined' && onboarded && !(await wasPromptSeen())) setAskReminders(true);
     })();
-  }, [authDone, accessToken]);
+  }, [authDone, onboarded, accessToken, resumedAt]);
+  async function answerReminderPrompt(accepted) {
+    setAskReminders(false);
+    await markPromptSeen();
+    if (accepted && (await requestPermission()) === 'granted') await syncPushRegistration(accessToken);
+  }
+  function refreshInbox() {
+    usersApi
+      .getInbox(accessToken)
+      .then(data => dispatch({ type: A.INBOX_HYDRATED, ...data }))
+      .catch(() => {});
+  }
+  useEffect(() => {
+    if (!authDone || !onboarded) return;
+    refreshInbox();
+    return listenForReminders(refreshInbox);
+  }, [authDone, onboarded, accessToken, resumedAt]);
+  useEffect(() => {
+    if (!authDone || !onboarded) return;
+    return listenForReminderTaps(tab => dispatch({ type: A.GO, screen: tab }));
+  }, [authDone, onboarded]);
   useEffect(() => {
     if (!authDone || !onboarded) return;
     cycleApi
@@ -182,6 +213,15 @@ function AppContent() {
       <BottomNav screen={screen} dispatch={dispatch} />
       {periodPickerOpen && <PeriodPickerSheet />}
       {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
+      <ConfirmModal
+        visible={askReminders}
+        title="Turn on reminders?"
+        message="Get a heads-up before your period and ovulation, with the days counted down for you. You choose which reminders you get in Profile."
+        confirmLabel="Turn on"
+        cancelLabel="Not now"
+        onConfirm={() => answerReminderPrompt(true)}
+        onCancel={() => answerReminderPrompt(false)}
+      />
     </View>
   );
 }

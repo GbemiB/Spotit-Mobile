@@ -234,9 +234,57 @@ describe('profile and notifications', () => {
     });
     expect(next.userName).toBe('Existing Name');
   });
-  test('NOTIFICATIONS_HYDRATED replaces the notification prefs wholesale', () => {
+  test('NOTIFICATIONS_HYDRATED takes the switches, times and countdown days from the server', () => {
+    const next = reducer(INIT, {
+      type: A.NOTIFICATIONS_HYDRATED,
+      period: false,
+      ovulation: true,
+      dailyLog: false,
+      digest: true,
+      morningTime: '07:30',
+      eveningTime: '21:00',
+      periodDaysBefore: [1, 0],
+      ovulationDaysBefore: [0],
+      maxDaysBefore: 3,
+    });
+    expect(next.notifs).toEqual({
+      period: false,
+      ovulation: true,
+      dailyLog: false,
+      digest: true,
+      morningTime: '07:30',
+      eveningTime: '21:00',
+      periodDaysBefore: [1, 0],
+      ovulationDaysBefore: [0],
+      maxDaysBefore: 3,
+    });
+  });
+  test('NOTIFICATIONS_HYDRATED from a server that only knows the four switches keeps the other settings', () => {
     const next = reducer(INIT, { type: A.NOTIFICATIONS_HYDRATED, period: false, ovulation: true, dailyLog: false, digest: true });
-    expect(next.notifs).toEqual({ period: false, ovulation: true, dailyLog: false, digest: true });
+    expect(next.notifs).toEqual({ ...INIT.notifs, period: false, ovulation: true, dailyLog: false, digest: true });
+  });
+  test('SET_NOTIF_PREFS changes only the given settings', () => {
+    const next = reducer(INIT, { type: A.SET_NOTIF_PREFS, prefs: { ovulation: false, periodDaysBefore: [2, 0] } });
+    expect(next.notifs).toEqual({ ...INIT.notifs, ovulation: false, periodDaysBefore: [2, 0] });
+  });
+  test('HYDRATE fills in reminder settings missing from a state saved by 1.0', () => {
+    const saved = { notifs: { period: false, ovulation: true, dailyLog: true, digest: false } };
+    const next = reducer(INIT, { type: A.HYDRATE, payload: saved });
+    expect(next.notifs.period).toBe(false);
+    expect(next.notifs.periodDaysBefore).toEqual([3, 2, 1, 0]);
+    expect(next.notifs.morningTime).toBe('09:00');
+  });
+  test('INBOX_HYDRATED stores the inbox and INBOX_READ clears the unread marks', () => {
+    const items = [{ id: 'a', title: 'Period reminder', body: 'In 3 days.', read: false }];
+    const hydrated = reducer(INIT, { type: A.INBOX_HYDRATED, items, unreadCount: 1 });
+    expect(hydrated.inbox).toEqual({ items, unreadCount: 1 });
+    const read = reducer(hydrated, { type: A.INBOX_READ });
+    expect(read.inbox.unreadCount).toBe(0);
+    expect(read.inbox.items[0].read).toBe(true);
+  });
+  test('LOGOUT empties the inbox', () => {
+    const state = { ...INIT, inbox: { items: [{ id: 'a' }], unreadCount: 1 } };
+    expect(reducer(state, { type: A.LOGOUT }).inbox).toEqual(INIT.inbox);
   });
   test('TOGGLE_NOTIF flips a single key without touching the others', () => {
     const next = reducer(INIT, { type: A.TOGGLE_NOTIF, key: 'digest' });

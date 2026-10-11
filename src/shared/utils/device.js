@@ -15,10 +15,8 @@ export async function getDeviceId() {
 export async function isDeviceRegistered() {
   return (await AsyncStorage.getItem(REGISTERED_KEY)) === '1';
 }
-export async function markDeviceRegistered() {
-  await AsyncStorage.setItem(REGISTERED_KEY, '1');
-}
-// Call on logout so the device is re-linked to whoever logs in next.
+// Builds before 1.1 set this flag after registering the device id as a stand-in push token; push.js reads it
+// once to remove that row from the server.
 export async function clearDeviceRegistration() {
   await AsyncStorage.removeItem(REGISTERED_KEY);
 }

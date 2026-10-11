@@ -9,8 +9,7 @@ import { CheckIcon } from '../../components/ui/icons.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import { isValidEmail } from '../../shared/utils/validation.js';
-import { PRIVACY_POLICY_URL } from '../../shared/constants/legal.js';
-import TermsScreen from './TermsScreen.jsx';
+import { PRIVACY_POLICY_URL, TERMS_URL } from '../../shared/constants/legal.js';
 export default function SignupScreen() {
   const { dispatch } = useApp();
   const { colors } = useTheme();
@@ -21,7 +20,6 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const emailValid = isValidEmail(email);
@@ -101,7 +99,7 @@ export default function SignupScreen() {
               </View>
               <Text style={s.agreeTx}>
                 I agree to the{' '}
-                <Text style={s.agreeLink} onPress={() => setShowTerms(true)}>
+                <Text style={s.agreeLink} onPress={() => Linking.openURL(TERMS_URL)}>
                   Terms of Service
                 </Text>{' '}
                 and{' '}
@@ -110,15 +108,6 @@ export default function SignupScreen() {
                 </Text>
               </Text>
             </Pressable>
-
-            <TermsScreen
-              visible={showTerms}
-              onAgree={() => {
-                setAgreed(true);
-                setShowTerms(false);
-              }}
-              onClose={() => setShowTerms(false)}
-            />
 
             {error ? <Text style={s.errorTx}>{error}</Text> : null}
 
