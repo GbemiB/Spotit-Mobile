@@ -255,7 +255,6 @@ describe('profile and notifications', () => {
       morningTime: '07:30',
       eveningTime: '21:00',
       periodDaysBefore: [1, 0],
-      ovulationDaysBefore: [0],
       maxDaysBefore: 3,
     });
   });

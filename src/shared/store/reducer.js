@@ -44,7 +44,6 @@ export const INIT = {
     morningTime: '06:00',
     eveningTime: '20:00',
     periodDaysBefore: [3, 2, 1, 0],
-    ovulationDaysBefore: [3, 2, 1, 0],
     maxDaysBefore: 3,
   },
   inbox: { items: [], unreadCount: 0 },
@@ -225,8 +224,7 @@ export function reducer(state, action) {
       return { ...state, notifs: { ...state.notifs, ...action.prefs } };
     case A.NOTIFICATIONS_HYDRATED:
     case A.NOTIFICATIONS_UPDATED: {
-      const { period, ovulation, dailyLog, digest, morningTime, eveningTime, periodDaysBefore, ovulationDaysBefore, maxDaysBefore } =
-        action;
+      const { period, ovulation, dailyLog, digest, morningTime, eveningTime, periodDaysBefore, maxDaysBefore } = action;
       return {
         ...state,
         notifs: {
@@ -238,7 +236,6 @@ export function reducer(state, action) {
           morningTime: morningTime ?? state.notifs.morningTime,
           eveningTime: eveningTime ?? state.notifs.eveningTime,
           periodDaysBefore: periodDaysBefore ?? state.notifs.periodDaysBefore,
-          ovulationDaysBefore: ovulationDaysBefore ?? state.notifs.ovulationDaysBefore,
           maxDaysBefore: maxDaysBefore ?? state.notifs.maxDaysBefore,
         },
       };

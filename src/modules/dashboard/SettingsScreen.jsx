@@ -26,7 +26,8 @@ function splitName(fullName) {
 // The installed build's version; app.json covers the web preview, where there is no native binary.
 const APP_VERSION = Application.nativeApplicationVersion || appConfig.expo.version;
 // The countdown setting that belongs to each reminder switch.
-const REMINDER_DAYS_KEY = { period: 'periodDaysBefore', ovulation: 'ovulationDaysBefore' };
+// Only the period reminder has a countdown; ovulation is announced on the day.
+const REMINDER_DAYS_KEY = { period: 'periodDaysBefore' };
 const THEME_OPTIONS = [
   { key: 'light', label: 'Light' },
   { key: 'dark', label: 'Dark' },
