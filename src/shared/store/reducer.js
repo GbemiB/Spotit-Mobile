@@ -41,7 +41,7 @@ export const INIT = {
     ovulation: true,
     dailyLog: true,
     digest: false,
-    morningTime: '09:00',
+    morningTime: '06:00',
     eveningTime: '20:00',
     periodDaysBefore: [3, 2, 1, 0],
     ovulationDaysBefore: [3, 2, 1, 0],

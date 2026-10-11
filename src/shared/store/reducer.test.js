@@ -272,7 +272,7 @@ describe('profile and notifications', () => {
     const next = reducer(INIT, { type: A.HYDRATE, payload: saved });
     expect(next.notifs.period).toBe(false);
     expect(next.notifs.periodDaysBefore).toEqual([3, 2, 1, 0]);
-    expect(next.notifs.morningTime).toBe('09:00');
+    expect(next.notifs.morningTime).toBe('06:00');
   });
   test('INBOX_HYDRATED stores the inbox and INBOX_READ clears the unread marks', () => {
     const items = [{ id: 'a', title: 'Period reminder', body: 'In 3 days.', read: false }];
