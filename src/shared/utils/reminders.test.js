@@ -1,4 +1,4 @@
-import { DAY_OPTIONS, toggleDay, shiftTime, timeLabel } from './reminders.js';
+import { DAY_OPTIONS, toggleDay, timeLabel } from './reminders.js';
 describe('toggleDay', () => {
   test('removes a day that is selected', () => {
     expect(toggleDay([3, 2, 1, 0], 2)).toEqual([3, 1, 0]);
@@ -14,16 +14,6 @@ describe('toggleDay', () => {
     const selected = [3, 2];
     toggleDay(selected, 1);
     expect(selected).toEqual([3, 2]);
-  });
-});
-describe('shiftTime', () => {
-  test('moves by half hours', () => {
-    expect(shiftTime('09:00', 30)).toBe('09:30');
-    expect(shiftTime('09:00', -30)).toBe('08:30');
-  });
-  test('wraps around midnight in both directions', () => {
-    expect(shiftTime('23:30', 30)).toBe('00:00');
-    expect(shiftTime('00:00', -30)).toBe('23:30');
   });
 });
 describe('timeLabel', () => {

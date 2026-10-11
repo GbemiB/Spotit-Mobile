@@ -18,7 +18,7 @@ import appConfig from '../../../app.json';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
 import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
-import { DAY_OPTIONS, toggleDay, shiftTime, timeLabel } from '../../shared/utils/reminders.js';
+import { DAY_OPTIONS, toggleDay, timeLabel } from '../../shared/utils/reminders.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
@@ -67,22 +67,6 @@ function DayChips({ selected, max, onToggle, colors, s }) {
           </Pressable>
         );
       })}
-    </View>
-  );
-}
-function TimeStepper({ label, value, onChange, s }) {
-  return (
-    <View style={s.timeRow}>
-      <Text style={[s.notifSub, { flex: 1, marginTop: 0 }]}>{label}</Text>
-      <View style={s.stepper}>
-        <Pressable onPress={() => onChange(shiftTime(value, -30))} style={s.stepBtnSm} accessibilityLabel={`${label}: earlier`}>
-          <Text style={s.stepTx}>−</Text>
-        </Pressable>
-        <Text style={s.stepVal}>{timeLabel(value)}</Text>
-        <Pressable onPress={() => onChange(shiftTime(value, 30))} style={s.stepBtnSm} accessibilityLabel={`${label}: later`}>
-          <Text style={s.stepTx}>+</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -282,7 +266,9 @@ export default function SettingsScreen() {
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Reminders" />
-          <Text style={s.notifNote}>{"Choose each reminder separately. Times are in your phone's time zone."}</Text>
+          <Text style={s.notifNote}>
+            {`Choose each reminder separately. Period and ovulation reminders arrive at ${timeLabel(notifs.morningTime)}, the log nudge at ${timeLabel(notifs.eveningTime)}, in your phone's time zone.`}
+          </Text>
           {permission === 'denied' && (
             <Card style={s.permCard}>
               <Text style={s.permTx}>{"Notifications are turned off for Spot it, so reminders can't reach this phone."}</Text>
@@ -302,7 +288,7 @@ export default function SettingsScreen() {
               const on = notifs[n.key];
               const last = i === NOTIF_ROWS.length - 1;
               const daysKey = REMINDER_DAYS_KEY[n.key];
-              const hasDetail = on && (daysKey || n.key === 'dailyLog');
+              const hasDetail = on && daysKey;
               return (
                 <View key={n.key} style={!last && s.notifGroup}>
                   <Row
@@ -326,25 +312,12 @@ export default function SettingsScreen() {
                           s={s}
                         />
                       )}
-                      {n.key === 'dailyLog' && (
-                        <TimeStepper label="Evening time" value={notifs.eveningTime} onChange={v => saveNotifs({ eveningTime: v })} s={s} />
-                      )}
                     </View>
                   )}
                 </View>
               );
             })}
           </Card>
-          {(notifs.period || notifs.ovulation) && (
-            <Card style={{ marginTop: 10, paddingVertical: 4, paddingHorizontal: 14 }}>
-              <TimeStepper
-                label="Morning time for period and ovulation reminders"
-                value={notifs.morningTime}
-                onChange={v => saveNotifs({ morningTime: v })}
-                s={s}
-              />
-            </Card>
-          )}
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -504,8 +477,6 @@ function createStyles(c) {
       backgroundColor: c.background,
     },
     chipTx: { fontSize: 10, fontWeight: '700' },
-    timeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-    stepBtnSm: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },
     permCard: { marginTop: 10, padding: 16, gap: 12 },
     permTx: { fontSize: 11, color: c.textSecondary, lineHeight: 17 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
