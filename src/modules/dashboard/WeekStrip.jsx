@@ -232,7 +232,7 @@ function createStyles(c) {
     todayRing: { position: 'absolute', top: -1.5, left: -1.5, right: -1.5, bottom: -1.5, borderRadius: 14, borderWidth: 2 },
     dow: { fontSize: 10.5, fontWeight: '600', color: c.textSecondary },
     circle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    num: { fontSize: 11.5, fontWeight: '700', color: c.textSecondary },
+    num: { fontSize: 10.5, fontWeight: '700', color: c.textSecondary },
     dot: { width: 6, height: 6, borderRadius: 3 },
     detail: {
       flexDirection: 'row',
@@ -247,8 +247,8 @@ function createStyles(c) {
     },
     detailLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
     detailDot: { width: 8, height: 8, borderRadius: 4 },
-    detailDay: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
-    detailText: { fontSize: 12, color: c.textSecondary, flexShrink: 1 },
-    logLink: { fontSize: 12, fontWeight: '700', color: c.primaryDark },
+    detailDay: { fontSize: 10, fontWeight: '700', color: c.textPrimary },
+    detailText: { fontSize: 10, color: c.textSecondary, flexShrink: 1 },
+    logLink: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
   });
 }

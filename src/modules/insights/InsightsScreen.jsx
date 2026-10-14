@@ -26,7 +26,7 @@ function localDigest(logs) {
 }
 function regularityCopy(regularity) {
   if (!regularity || regularity.status === 'insufficient_data') {
-    return { title: 'Not enough data yet', sub: 'Log at least one period to see your regularity check here.', ok: null };
+    return { title: 'Not enough data yet', sub: 'Log at least three periods to see your regularity check here.', ok: null };
   }
   if (regularity.status === 'regular') {
     return { title: 'Your cycles look regular', sub: 'No anomalies detected · not medical advice', ok: true };
@@ -138,8 +138,8 @@ export default function InsightsScreen() {
             <Text style={[s.digestBody, { color: digestBody }]}>
               {digest.topMood ? (
                 <>
-                  Your average mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of 7
-                  days.
+                  Your most common mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of
+                  7 days.
                 </>
               ) : (
                 'Log your mood and symptoms daily to see a personalized digest here.'

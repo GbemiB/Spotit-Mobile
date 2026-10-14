@@ -177,10 +177,10 @@ function createStyles(c) {
     tile: { width: 46, height: 46, borderRadius: 15, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
     tileSpin: { position: 'absolute', width: 66, height: 66, left: -10, top: -10 },
     titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-    name: { fontSize: 14, fontWeight: '700', color: c.textPrimary },
-    points: { fontSize: 13, fontWeight: '800', color: c.tertiaryDeep },
+    name: { fontSize: 10, fontWeight: '700', color: c.textPrimary },
+    points: { fontSize: 12, fontWeight: '800', color: c.tertiaryDeep },
     track: { height: 8, borderRadius: 4, backgroundColor: c.border, marginTop: 8, overflow: 'hidden' },
     fill: { height: 8, borderRadius: 4, overflow: 'hidden' },
-    toNext: { fontSize: 12, color: c.textSecondary, marginTop: 6 },
+    toNext: { fontSize: 10, color: c.textSecondary, marginTop: 6 },
   });
 }

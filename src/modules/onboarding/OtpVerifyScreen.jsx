@@ -26,7 +26,7 @@ export default function OtpVerifyScreen() {
   const insets = useSafeAreaInsets();
   const isReset = state.otpPurpose === 'password_reset';
   const email = isReset ? state.resetEmail : state.pendingEmail;
-  const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(''));
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -40,12 +40,11 @@ export default function OtpVerifyScreen() {
   const [otpConfirmed, setOtpConfirmed] = useState(false);
   const [signupVerified, setSignupVerified] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
-  const inputRefs = useRef([]);
+  const codeInputRef = useRef(null);
   const scrollRef = useRef(null);
   function scrollPasswordIntoView() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
   }
-  const code = digits.join('');
   const codeComplete = code.length === CODE_LENGTH;
   const passwordsMismatch = confirmPassword.length > 0 && newPassword.trim() !== confirmPassword.trim();
   const awaitingPassword = (isReset && otpConfirmed) || (!isReset && signupVerified);
@@ -56,31 +55,10 @@ export default function OtpVerifyScreen() {
     const id = setInterval(() => setSecondsLeft(remainingSeconds(state.otpExpiresAt)), 1000);
     return () => clearInterval(id);
   }, [state.otpExpiresAt]);
-  function setDigitAt(i, value) {
-    const clean = value.replace(/[^0-9]/g, '');
-    if (clean.length > 1) {
-      const next = [...digits];
-      let idx = i;
-      for (const ch of clean) {
-        if (idx >= CODE_LENGTH) break;
-        next[idx] = ch;
-        idx += 1;
-      }
-      setDigits(next);
-      inputRefs.current[Math.min(idx, CODE_LENGTH - 1)]?.focus();
-      return;
-    }
-    const next = [...digits];
-    next[i] = clean;
-    setDigits(next);
-    if (clean && i < CODE_LENGTH - 1) {
-      inputRefs.current[i + 1]?.focus();
-    }
-  }
-  function onKeyPress(i, e) {
-    if (e.nativeEvent.key === 'Backspace' && !digits[i] && i > 0) {
-      inputRefs.current[i - 1]?.focus();
-    }
+  function onCodeChange(value) {
+    const next = value.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH);
+    setCode(next);
+    if (next.length === CODE_LENGTH && next !== code && !awaitingPassword) handleVerify(next);
   }
   function handleBack() {
     if (isReset) {
@@ -91,24 +69,25 @@ export default function OtpVerifyScreen() {
       dispatch({ type: A.SET_AUTH_SCREEN, screen: state.otpPurpose === 'login_verify' ? 'login' : 'signup' });
     }
   }
-  async function handleVerify() {
-    if (!canVerify || loading) return;
+  async function handleVerify(enteredCode = code) {
+    const ready = awaitingPassword ? canVerify : enteredCode.length === CODE_LENGTH;
+    if (!ready || loading) return;
     setError('');
     setLoading(true);
     try {
       if (awaitingPassword) {
         if (isReset) {
-          await authApi.resetPassword({ email, code, newPassword: newPassword.trim() });
+          await authApi.resetPassword({ email, code: enteredCode, newPassword: newPassword.trim() });
           setResetDone(true);
         } else {
           await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword.trim() });
           setSignupDone(true);
         }
       } else if (isReset) {
-        await authApi.verifyResetOtp({ email, code });
+        await authApi.verifyResetOtp({ email, code: enteredCode });
         setOtpConfirmed(true);
       } else if (state.otpPurpose === 'login_verify') {
-        const data = await authApi.verifyLoginOtp({ otpId: state.pendingOtpId, code });
+        const data = await authApi.verifyLoginOtp({ otpId: state.pendingOtpId, code: enteredCode });
         dispatch({
           type: A.AUTH_SUCCESS,
           accessToken: data.accessToken,
@@ -117,7 +96,7 @@ export default function OtpVerifyScreen() {
           onboarded: data.user.onboarded,
         });
       } else {
-        await authApi.verifyOtp({ otpId: state.pendingOtpId, code });
+        await authApi.verifyOtp({ otpId: state.pendingOtpId, code: enteredCode });
         setSignupVerified(true);
       }
     } catch (e) {
@@ -125,8 +104,8 @@ export default function OtpVerifyScreen() {
         setSecondsLeft(0);
       }
       if (e.errorCode === 'invalid_code') {
-        setDigits(Array(CODE_LENGTH).fill(''));
-        inputRefs.current[0]?.focus();
+        setCode('');
+        codeInputRef.current?.focus();
       }
       setError(e.message);
     } finally {
@@ -143,10 +122,10 @@ export default function OtpVerifyScreen() {
         type: A.UPDATE_SETTINGS,
         patch: { otpExpiresAt: Date.now() + data.expiresInSeconds * 1000, ...(isReset ? {} : { pendingOtpId: data.otpId }) },
       });
-      setDigits(Array(CODE_LENGTH).fill(''));
+      setCode('');
       setOtpConfirmed(false);
       setSignupVerified(false);
-      inputRefs.current[0]?.focus();
+      codeInputRef.current?.focus();
       setResent(true);
       setTimeout(() => setResent(false), 3000);
     } catch (e) {
@@ -206,23 +185,25 @@ export default function OtpVerifyScreen() {
             )}
 
             {!awaitingPassword && (
-              <View style={s.otpRow}>
-                {digits.map((d, i) => (
-                  <TextInput
-                    key={i}
-                    ref={el => {
-                      inputRefs.current[i] = el;
-                    }}
-                    value={d}
-                    onChangeText={v => setDigitAt(i, v)}
-                    onKeyPress={e => onKeyPress(i, e)}
-                    keyboardType="number-pad"
-                    textContentType="oneTimeCode"
-                    autoComplete="one-time-code"
-                    style={[s.otpBox, d && s.otpBoxFilled]}
-                  />
+              <Pressable style={s.otpRow} onPress={() => codeInputRef.current?.focus()}>
+                {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                  <View key={i} style={[s.otpBox, code[i] && s.otpBoxFilled]}>
+                    <Text style={s.otpDigit}>{code[i] || ''}</Text>
+                  </View>
                 ))}
-              </View>
+                <TextInput
+                  ref={codeInputRef}
+                  value={code}
+                  onChangeText={onCodeChange}
+                  maxLength={CODE_LENGTH}
+                  keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+                  autoFocus
+                  caretHidden
+                  style={s.otpHiddenInput}
+                />
+              </Pressable>
             )}
 
             {awaitingPassword && (
@@ -270,7 +251,7 @@ export default function OtpVerifyScreen() {
 
             <Pressable
               disabled={!canVerify || loading}
-              onPress={handleVerify}
+              onPress={() => handleVerify()}
               style={{ marginTop: 24, opacity: canVerify && !loading ? 1 : 0.5, alignSelf: 'stretch' }}
             >
               <LinearGradient colors={colors.authGradientCta} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}>
@@ -359,12 +340,12 @@ function createStyles(c) {
       borderWidth: 1,
       borderColor: c.authBorder,
       backgroundColor: c.authInputBg,
-      textAlign: 'center',
-      fontSize: 24,
-      fontWeight: '300',
-      color: c.authHeading,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
+    otpDigit: { fontSize: 24, fontWeight: '300', color: c.authHeading },
     otpBoxFilled: { borderColor: c.authHeading },
+    otpHiddenInput: { ...StyleSheet.absoluteFillObject, opacity: 0, color: 'transparent' },
     passwordForm: { alignSelf: 'stretch', marginTop: 22 },
     field: { marginBottom: 8 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },

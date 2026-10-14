@@ -1,7 +1,6 @@
 import { View, Animated, Easing, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
 import { Text } from '../../shared/styles/index.js';
 import { useAnimatedValue } from './HeroCardFx.jsx';
 
@@ -153,71 +152,10 @@ export function ShakeEvery({ every = 3000, reduceMotion, children }) {
   );
 }
 
-export function StreakBadge({ streak, colors, compact = false, reduceMotion }) {
-  const label = streak > 0 ? `${streak}-day streak` : 'Start a streak';
-  const flicker = useAnimatedValue(0);
-  const bump = useAnimatedValue(0);
-  useEffect(() => {
-    if (reduceMotion) return undefined;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(flicker, { toValue: 1, duration: 220, useNativeDriver: true }),
-        Animated.timing(flicker, { toValue: -1, duration: 220, useNativeDriver: true }),
-        Animated.timing(flicker, { toValue: 0.6, duration: 200, useNativeDriver: true }),
-        Animated.timing(flicker, { toValue: 0, duration: 160, useNativeDriver: true }),
-      ]),
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [reduceMotion, flicker]);
-  useEffect(() => {
-    if (reduceMotion) return undefined;
-    const anim = Animated.sequence([
-      Animated.timing(bump, { toValue: 1, duration: 200, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.spring(bump, { toValue: 0, speed: 20, bounciness: 14, useNativeDriver: true }),
-    ]);
-    anim.start();
-    return () => anim.stop();
-  }, [streak, reduceMotion, bump]);
-  return (
-    <Animated.View
-      style={[
-        compact ? styles.streakCompact : styles.streak,
-        { backgroundColor: colors.tertiarySoft, transform: [{ scale: bump.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }] },
-      ]}
-      accessible
-      accessibilityLabel={label}
-    >
-      <Animated.View
-        style={{
-          transform: [
-            { rotate: flicker.interpolate({ inputRange: [-1, 1], outputRange: ['5deg', '-8deg'] }) },
-            { scaleY: flicker.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.05, 1, 1.3] }) },
-          ],
-        }}
-      >
-        <Svg
-          width={compact ? 12 : 15}
-          height={compact ? 12 : 15}
-          viewBox="0 0 24 24"
-          fill="#F0A14A"
-          stroke="#C9782F"
-          strokeWidth={1.6}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <Path d={FLAME} />
-        </Svg>
-      </Animated.View>
-      <Text style={[compact ? styles.streakTextCompact : styles.streakText, { color: colors.tertiaryDeep }]}>{label}</Text>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   greetingRow: { flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'wrap' },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 32, paddingHorizontal: 11, borderRadius: 16 },
-  streakText: { fontSize: 12, fontWeight: '700' },
+  streakText: { fontSize: 10, fontWeight: '500' },
   streakCompact: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -228,5 +166,5 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     marginTop: 5,
   },
-  streakTextCompact: { fontSize: 10.5, fontWeight: '700' },
+  streakTextCompact: { fontSize: 8.5, fontWeight: '700' },
 });

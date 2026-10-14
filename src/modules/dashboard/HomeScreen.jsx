@@ -32,7 +32,7 @@ import MoodCheckIn from './MoodCheckIn.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import ForYouCarousel from './ForYouCarousel.jsx';
 import OvulationCard from './OvulationCard.jsx';
-import { RiseIn, GreetingLine, AvatarRing, ShakeEvery, StreakBadge } from './HomeFx.jsx';
+import { RiseIn, GreetingLine, AvatarRing, ShakeEvery } from './HomeFx.jsx';
 import {
   HeroFrame,
   HeroBackdrop,
@@ -231,7 +231,6 @@ export default function HomeScreen() {
           </AvatarRing>
           <View style={{ minWidth: 0, flexShrink: 1 }}>
             <GreetingLine greeting={greeting} name={firstName} greetingStyle={s.greeting} nameStyle={s.name} reduceMotion={reduceMotion} />
-            <StreakBadge streak={streak ?? 0} colors={colors} compact reduceMotion={reduceMotion} />
           </View>
         </View>
         <View style={s.headerRight}>
