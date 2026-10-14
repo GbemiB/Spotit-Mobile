@@ -1,5 +1,5 @@
-import { View, Animated, StyleSheet } from 'react-native';
-import { useMemo, useRef, useEffect } from 'react';
+import { View, Animated, Easing, StyleSheet } from 'react-native';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { cycleDayOf, phaseFor, toISO } from '../../shared/utils/cycle.js';
 import { DAYS_SHORT } from '../../shared/constants/cycle.js';
@@ -29,7 +29,38 @@ function PulseRing({ color }) {
     />
   );
 }
-export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLength }) {
+function PopIn({ index, animate, style, children }) {
+  const [v] = useState(() => new Animated.Value(animate ? 0 : 1));
+  useEffect(() => {
+    if (!animate) return undefined;
+    const anim = Animated.timing(v, {
+      toValue: 1,
+      duration: 550,
+      delay: 700 + index * 70,
+      easing: Easing.out(Easing.back(2)),
+      useNativeDriver: true,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [animate, index, v]);
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: v,
+          transform: [
+            { scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+            { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLength, animate = false }) {
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const cells = useMemo(() => {
@@ -53,8 +84,8 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
   }, [lastPeriodDate, cycleLength, periodLength]);
   return (
     <View style={s.row}>
-      {cells.map(c => (
-        <View key={c.key} style={s.col}>
+      {cells.map((c, i) => (
+        <PopIn key={c.key} index={i} animate={animate} style={s.col}>
           <Text style={s.dow} numberOfLines={1} adjustsFontSizeToFit>
             {c.label}
           </Text>
@@ -74,7 +105,7 @@ export default function OvulationStrip({ lastPeriodDate, cycleLength, periodLeng
               <Text style={[s.mark, { color: isDark ? 'rgba(255,255,255,0.4)' : '#B9A9A2' }]}>{c.mark}</Text>
             </View>
           )}
-        </View>
+        </PopIn>
       ))}
     </View>
   );

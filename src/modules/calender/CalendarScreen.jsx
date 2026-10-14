@@ -1,5 +1,5 @@
-import { View, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
-import { useMemo, useEffect, useState } from 'react';
+import { View, Pressable, ScrollView, Alert, Keyboard, Platform, StyleSheet } from 'react-native';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
@@ -155,6 +155,22 @@ export default function CalendarScreen() {
       })
       .catch(() => {});
   }, [viewYear, viewMonth, lastPeriodDate]);
+  const scrollRef = useRef(null);
+  const notesFocused = useRef(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, e => {
+      setKeyboardHeight(e.endCoordinates.height);
+      if (notesFocused.current) setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    });
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
   async function handleSaveLog() {
     if (saving) return;
     setError('');
@@ -190,7 +206,13 @@ export default function CalendarScreen() {
   }
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingBottom: keyboardHeight ? keyboardHeight + 24 : insets.bottom + 110 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={s.headerRow}>
           <Text style={s.screenTitle}>Calendar</Text>
           <View style={s.monthNav}>
@@ -291,6 +313,13 @@ export default function CalendarScreen() {
                 <TextInput
                   value={activeDraft.notes}
                   onChangeText={v => updateDraft({ notes: v })}
+                  onFocus={() => {
+                    notesFocused.current = true;
+                    if (keyboardHeight) setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+                  }}
+                  onBlur={() => {
+                    notesFocused.current = false;
+                  }}
                   placeholder="How are you feeling today?"
                   placeholderTextColor={colors.textFaint}
                   multiline

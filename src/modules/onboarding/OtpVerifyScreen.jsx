@@ -9,7 +9,7 @@ import LogoMark from '../../components/ui/LogoMark.jsx';
 import { EnvelopeIcon, ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 4;
 function remainingSeconds(expiresAt) {
   if (!expiresAt) return 0;
   return Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
@@ -42,7 +42,6 @@ export default function OtpVerifyScreen() {
   const [secondsLeft, setSecondsLeft] = useState(() => remainingSeconds(state.otpExpiresAt));
   const inputRefs = useRef([]);
   const scrollRef = useRef(null);
-  // Bring the focused password field (and the CTA below it) above the keyboard.
   function scrollPasswordIntoView() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
   }
@@ -102,7 +101,6 @@ export default function OtpVerifyScreen() {
           await authApi.resetPassword({ email, code, newPassword: newPassword.trim() });
           setResetDone(true);
         } else {
-          // The phone is registered for reminders in App.js, once she is signed in and has allowed notifications.
           await authApi.completeSignup({ leadId: state.pendingOtpId, password: newPassword.trim() });
           setSignupDone(true);
         }
@@ -353,16 +351,16 @@ function createStyles(c) {
     title: { fontSize: 23, fontWeight: '600', letterSpacing: -0.2, lineHeight: 27, color: c.authHeading, textAlign: 'center' },
     sub: { fontSize: 12, color: c.authBody, marginTop: 10, marginBottom: 10, lineHeight: 18, textAlign: 'center' },
     subEmail: { color: c.authHeading, fontWeight: '700' },
-    otpRow: { flexDirection: 'row', gap: 8, marginTop: 26 },
+    otpRow: { flexDirection: 'row', gap: 12, marginTop: 26 },
     otpBox: {
-      width: 40,
-      height: 52,
-      borderRadius: 12,
+      width: 56,
+      height: 62,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: c.authBorder,
       backgroundColor: c.authInputBg,
       textAlign: 'center',
-      fontSize: 20,
+      fontSize: 24,
       fontWeight: '300',
       color: c.authHeading,
     },

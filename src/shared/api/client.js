@@ -86,9 +86,6 @@ export async function apiRequest(path, options = {}, _isRetry = false) {
         const newToken = await refreshAccessToken();
         return await apiRequest(path, { ...options, token: newToken }, true);
       } catch (refreshErr) {
-        // Only sign the user out when the refresh was genuinely rejected (no/expired/invalid
-        // refresh token). A network error or timeout while refreshing must NOT log them out —
-        // they stay signed in and the next request retries the refresh.
         const authRejected =
           refreshErr instanceof ApiError &&
           (refreshErr.status === 401 || refreshErr.status === 403);

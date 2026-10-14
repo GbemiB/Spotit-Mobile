@@ -1,18 +1,18 @@
 import { View, ScrollView, Pressable, Platform, StyleSheet } from 'react-native';
 import { useMemo, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { levelInfo } from '../../shared/utils/levels.js';
 import { SHOP_PRODUCT_ICONS, PREMIUM_ENABLED } from '../../shared/constants/rewards.js';
 import { formatDisplayDate, todayISO } from '../../shared/utils/cycle.js';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
+import { useTheme, Text } from '../../shared/styles/index.js';
 import Card from '../../components/ui/Card.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import * as billingApi from '../../shared/api/billing.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
 import * as shopApi from '../../shared/api/shop.js';
+import RewardsHeroCard from './RewardsHeroCard.jsx';
 function shopView(products) {
   return products.map(p => ({
     ...p,
@@ -248,28 +248,14 @@ export default function RewardsScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
-          <LinearGradient colors={['#E2647C', '#C8466A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-            <Text style={s.heroFlower}>🌸</Text>
-            <Text style={s.heroLabel}>Current level</Text>
-            <Text style={s.heroLevel}>{level.name}</Text>
-            <Text style={s.heroPoints}>{femPoints.toLocaleString()} Spotit points</Text>
-            <View style={{ marginTop: 16 }}>
-              <ProgressBar value={level.pct} color={colors.white} trackColor="rgba(255,255,255,0.25)" height={8} />
-            </View>
-            <Text style={s.heroProgress}>
-              {level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
-            </Text>
-            <View style={s.heroStatsRow}>
-              <View>
-                <Text style={s.heroStatNum}>{streak}</Text>
-                <Text style={s.heroStatLbl}>Day streak 🔥</Text>
-              </View>
-              <View>
-                <Text style={s.heroStatNum}>{earnedBadgeCount}</Text>
-                <Text style={s.heroStatLbl}>Badges earned</Text>
-              </View>
-            </View>
-          </LinearGradient>
+          <RewardsHeroCard
+            levelName={level.name}
+            points={femPoints}
+            pct={level.pct}
+            toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+            streak={streak}
+            badgeCount={earnedBadgeCount}
+          />
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 14 }}>
@@ -371,22 +357,6 @@ function createStyles(c) {
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
     headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     sectionTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },
-    hero: { position: 'relative', borderRadius: 28, padding: 22, overflow: 'hidden' },
-    heroFlower: { position: 'absolute', top: -30, right: -20, fontSize: 118, opacity: 0.14 },
-    heroLabel: { fontSize: 10.5, opacity: 0.85, fontWeight: '600', color: c.white },
-    heroLevel: { fontFamily: FONT.serif, fontSize: 30, marginTop: 15, color: c.white },
-    heroPoints: { fontSize: 11, opacity: 0.9, marginTop: 2, color: c.white },
-    heroProgress: { fontSize: 9.5, opacity: 0.85, marginTop: 7, color: c.white },
-    heroStatsRow: {
-      flexDirection: 'row',
-      gap: 20,
-      marginTop: 16,
-      paddingTop: 14,
-      borderTopWidth: 1,
-      borderTopColor: 'rgba(255,255,255,0.22)',
-    },
-    heroStatNum: { fontSize: 17, fontWeight: '700', color: c.white },
-    heroStatLbl: { fontSize: 9, opacity: 0.85, color: c.white, marginTop: 2 },
     rewardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, marginBottom: 2 },
     rewardDesc: { fontSize: 10, color: c.textMuted, lineHeight: 18 },
     adRow: {

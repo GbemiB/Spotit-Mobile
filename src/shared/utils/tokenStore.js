@@ -2,9 +2,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 const KEYS = { accessToken: 'spotit_access_token', refreshToken: 'spotit_refresh_token' };
-// Readable after the first unlock so a token refresh still works when the app wakes on a locked phone.
 const OPTIONS = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK };
-// SecureStore has no web implementation, so the web preview keeps using AsyncStorage.
 const secure = Platform.OS === 'ios' || Platform.OS === 'android';
 async function read(key) {
   try {

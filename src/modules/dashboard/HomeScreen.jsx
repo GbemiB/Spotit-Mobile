@@ -1,6 +1,5 @@
 import { View, ScrollView, Pressable, Image, Animated, RefreshControl, StyleSheet } from 'react-native';
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
@@ -19,10 +18,7 @@ import { levelInfo } from '../../shared/utils/levels.js';
 import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { BellIcon } from '../../components/ui/icons.jsx';
-import OvulationStrip from '../../components/cycle/OvulationStrip.jsx';
 import Card from '../../components/ui/Card.jsx';
-import ProgressBar from '../../components/ui/ProgressBar.jsx';
-import Carousel from '../../components/ui/Carousel.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
@@ -30,6 +26,24 @@ import * as billingApi from '../../shared/api/billing.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
 import * as usersApi from '../../shared/api/users.js';
 import NotificationsSheet from './NotificationsSheet.jsx';
+import PointsCard from './PointsCard.jsx';
+import LogPeriodCta from './LogPeriodCta.jsx';
+import MoodCheckIn from './MoodCheckIn.jsx';
+import WeekStrip from './WeekStrip.jsx';
+import ForYouCarousel from './ForYouCarousel.jsx';
+import OvulationCard from './OvulationCard.jsx';
+import { RiseIn, GreetingLine, AvatarRing, ShakeEvery, StreakBadge } from './HomeFx.jsx';
+import {
+  HeroFrame,
+  HeroBackdrop,
+  AnimatedCycleBar,
+  AnimatedHeadline,
+  AnimatedLabel,
+  RiseText,
+  FadeIn,
+  useReduceMotion,
+  useCountTo,
+} from './HeroCardFx.jsx';
 const CONTENT_IMAGES = {
   lifestyle: require('../../../assets/lifestyle.png'),
   food: require('../../../assets/food.png'),
@@ -59,6 +73,10 @@ function insightFor(phase, cycleLength) {
     return { title: 'Your fertile window is open', body: 'You’re in your fertile window — a good time to track symptoms closely.' };
   }
   return { title: 'Track your ovulation', body: `Ovulation is predicted around day ${ovDay} of your cycle.` };
+}
+function shortDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 function GlowBlob({ size, color, duration, delay = 0, style }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -95,7 +113,8 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content, inbox } = state;
+  const { userName, femPoints, streak, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content, inbox } =
+    state;
   const [inboxOpen, setInboxOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
@@ -142,6 +161,19 @@ export default function HomeScreen() {
   const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints, levels);
+  const reduceMotion = useReduceMotion();
+  const ovDay = cycleLength - 14;
+  const daysToOv = hasCycleData ? (ovDay - cycleDay + cycleLength) % cycleLength : null;
+  const ovDateLabel = daysToOv === 0 ? 'Ovulation today' : daysToOv != null ? `Ovulation ${shortDate(addDays(today, daysToOv))}` : null;
+  const heroParts =
+    phaseKey === 'period'
+      ? [{ text: 'You’re on' }, { text: `day ${cycleDay}`, highlight: true }, { text: 'of your period' }]
+      : phaseKey === 'fertile'
+        ? [{ text: 'You’re in your' }, { text: 'fertile window', highlight: true }]
+        : phaseKey === 'ovulation'
+          ? [{ text: 'Today is your predicted' }, { text: 'ovulation day', highlight: true }]
+          : null;
+  const daysUntilShown = useCountTo(milestone?.daysUntil, cycleLength, reduceMotion);
   const insight = insightFor(phase, cycleLength);
   const feedItems = (Array.isArray(content) ? content : [])
     .filter(c => c && c.title && c.enabled !== false && c.active !== false && !c.hidden)
@@ -157,17 +189,6 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
   const firstName = userName?.trim().split(/\s+/)[0] || userName;
-  const eggFloat = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(eggFloat, { toValue: 1, duration: 1500, useNativeDriver: true }),
-        Animated.timing(eggFloat, { toValue: 0, duration: 1500, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
   function goSettings() {
     dispatch({ type: A.GO, screen: 'settings' });
   }
@@ -175,7 +196,6 @@ export default function HomeScreen() {
     setInboxOpen(true);
     if (inbox.unreadCount > 0) usersApi.markInboxRead(accessToken).catch(() => {});
   }
-  // The unread dots stay while the sheet is open, so she can see what is new; they clear when it closes.
   function closeInbox() {
     setInboxOpen(false);
     if (inbox.unreadCount > 0) dispatch({ type: A.INBOX_READ });
@@ -204,178 +224,145 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <View style={s.header}>
+      <RiseIn index={0} style={s.header} reduceMotion={reduceMotion}>
         <View style={s.headerLeft}>
-          <Avatar name={userName} onPress={goSettings} />
-          <View style={{ minWidth: 0 }}>
-            <Text style={s.greeting}>
-              {greeting} <Text style={s.name}>{firstName}</Text>
-            </Text>
+          <AvatarRing size={38} reduceMotion={reduceMotion}>
+            <Avatar name={userName} onPress={goSettings} />
+          </AvatarRing>
+          <View style={{ minWidth: 0, flexShrink: 1 }}>
+            <GreetingLine greeting={greeting} name={firstName} greetingStyle={s.greeting} nameStyle={s.name} reduceMotion={reduceMotion} />
+            <StreakBadge streak={streak ?? 0} colors={colors} compact reduceMotion={reduceMotion} />
           </View>
         </View>
-        <Pressable onPress={openInbox} style={s.bellBtn} accessibilityRole="button" accessibilityLabel="Notifications">
-          <BellIcon size={18} color={colors.textPrimary} />
-          {inbox.unreadCount > 0 && <View style={s.bellDot} />}
-        </Pressable>
-      </View>
+        <View style={s.headerRight}>
+          <Pressable onPress={openInbox} style={s.bellBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+            <ShakeEvery reduceMotion={reduceMotion}>
+              <BellIcon size={18} color={colors.textPrimary} />
+            </ShakeEvery>
+            {inbox.unreadCount > 0 && <View style={s.bellDot} />}
+          </Pressable>
+        </View>
+      </RiseIn>
 
-      <View style={s.section}>
-        <Card style={s.hero}>
-          <GlowBlob size={180} duration={3500} color={isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC'} style={{ top: -50, right: -40 }} />
-          <GlowBlob
-            size={170}
-            duration={4250}
-            delay={1800}
-            color={isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC'}
-            style={{ bottom: -60, left: -50 }}
-          />
-          {hasCycleData ? (
-            <>
-              <Text style={s.phaseLabel}>
-                {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
-              </Text>
-              {phaseKey === 'period' ? (
-                <Text style={s.heroSerif}>
-                  You&apos;re on <Text style={[s.heroSerif, { color: colors.primary }]}>day {cycleDay}</Text> of your period
-                </Text>
-              ) : phaseKey === 'fertile' ? (
-                <Text style={s.heroSerif}>
-                  You&apos;re in your <Text style={[s.heroSerif, { color: colors.primary }]}>fertile window</Text>
-                </Text>
-              ) : phaseKey === 'ovulation' ? (
-                <Text style={s.heroSerif}>
-                  Today is your predicted <Text style={[s.heroSerif, { color: colors.primary }]}>ovulation day</Text>
-                </Text>
-              ) : (
-                <View style={s.heroRow}>
-                  <Text style={s.heroSerifSm}>
-                    {milestone?.key === 'fertile'
-                      ? 'Your fertile window starts in'
-                      : milestone?.key === 'ovulation'
-                        ? 'Ovulation in'
-                        : 'Your period starts in'}
+      <RiseIn index={1} style={s.section} reduceMotion={reduceMotion}>
+        <HeroFrame borderColor={colors.border} radius={32} reduceMotion={reduceMotion}>
+          <Card style={[s.hero, s.heroInner]}>
+            <GlowBlob size={180} duration={3500} color={isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC'} style={{ top: -50, right: -40 }} />
+            <GlowBlob
+              size={170}
+              duration={4250}
+              delay={1800}
+              color={isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC'}
+              style={{ bottom: -60, left: -50 }}
+            />
+            <HeroBackdrop isDark={isDark} reduceMotion={reduceMotion} />
+            {hasCycleData ? (
+              <>
+                <AnimatedLabel style={s.phaseLabel} reduceMotion={reduceMotion}>
+                  {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
+                </AnimatedLabel>
+                {heroParts ? (
+                  <AnimatedHeadline parts={heroParts} style={s.heroSerif} highlightColor={colors.primary} reduceMotion={reduceMotion} />
+                ) : (
+                  <View style={s.heroRow}>
+                    <RiseText style={s.heroSerifSm} delay={350} reduceMotion={reduceMotion}>
+                      {milestone?.key === 'fertile'
+                        ? 'Your fertile window starts in'
+                        : milestone?.key === 'ovulation'
+                          ? 'Ovulation in'
+                          : 'Your period starts in'}
+                    </RiseText>
+                    <RiseText style={[s.heroSerifBig, { color: colors.primary }]} delay={450} pop reduceMotion={reduceMotion}>
+                      {daysUntilShown}
+                    </RiseText>
+                    <RiseText style={s.heroSerifSm} delay={550} reduceMotion={reduceMotion}>
+                      {milestone?.daysUntil === 1 ? 'day' : 'days'}
+                    </RiseText>
+                  </View>
+                )}
+                <FadeIn delay={1000} reduceMotion={reduceMotion}>
+                  <Text style={s.predictedTx}>
+                    {phaseKey === 'period' || phaseKey === 'fertile' || phaseKey === 'ovulation'
+                      ? `Next period predicted ${formatDisplayDate(nextP)}`
+                      : `Predicted ${formatDisplayDate(milestoneDate)}`}
                   </Text>
-                  <Text style={[s.heroSerifBig, { color: colors.primary }]}>{milestone?.daysUntil}</Text>
-                  <Text style={s.heroSerifSm}>{milestone?.daysUntil === 1 ? 'day' : 'days'}</Text>
+                </FadeIn>
+                <View style={{ marginTop: 16 }}>
+                  <AnimatedCycleBar
+                    value={cycleDay / cycleLength}
+                    colors={colors.gradient.primaryAccent}
+                    trackColor={colors.border}
+                    accent={colors.primary}
+                    surface={colors.surface}
+                    height={8}
+                    fertile={{ start: (ovDay - 6) / cycleLength, end: ovDay / cycleLength }}
+                    fertileColor={isDark ? 'rgba(95,169,140,0.85)' : 'rgba(95,169,140,0.8)'}
+                    ovulation={(ovDay - 0.5) / cycleLength}
+                    ovulationColor={phases.ovulation}
+                    reduceMotion={reduceMotion}
+                  />
                 </View>
-              )}
-              <Text style={s.predictedTx}>
-                {phaseKey === 'period' || phaseKey === 'fertile' || phaseKey === 'ovulation'
-                  ? `Next period predicted ${formatDisplayDate(nextP)}`
-                  : `Predicted ${formatDisplayDate(milestoneDate)}`}
-              </Text>
-              <View style={{ marginTop: 16 }}>
-                <ProgressBar value={cycleDay / cycleLength} colors={colors.gradient.primaryAccent} trackColor={colors.border} height={8} />
-              </View>
-              <View style={s.dayRow}>
-                <Text style={s.dayLbl}>Day 1</Text>
-                <Text style={s.dayLbl}>Day {cycleLength}</Text>
-              </View>
-            </>
-          ) : (
-            <>
-              <Text style={s.phaseLabel}>No period logged yet</Text>
-              <Text style={s.heroSerif}>Log a period to see your predictions</Text>
-              <Text style={s.predictedTx}>Track today&apos;s flow and we&apos;ll start predicting your next cycle.</Text>
-            </>
-          )}
-        </Card>
-      </View>
-
-      <View style={s.section}>
-        <Pressable onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}>
-          <LinearGradient colors={colors.gradient.primaryAccent} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.logCta}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.logCtaTitle}>{phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}</Text>
-              <Text style={s.logCtaSub}>
-                {phaseKey === 'period'
-                  ? 'Tap to confirm or adjust the end date'
-                  : `Mark when your next period starts and earn points as you do!`}
-              </Text>
-            </View>
-            <View style={s.logCtaPlusWrap}>
-              <Text style={s.logCtaPlus}>+</Text>
-            </View>
-          </LinearGradient>
-        </Pressable>
-      </View>
-
-      <View style={s.section}>
-        <Pressable onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}>
-          <Card style={s.levelStrip}>
-            <LinearGradient colors={['#F6D9BE', '#F0C088']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.levelIconWrap}>
-              <Text style={{ fontSize: 17 }}>🌸</Text>
-            </LinearGradient>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={s.levelName}>{level.name}</Text>
-                <Text style={s.levelSp}>· {femPoints.toLocaleString()} SP</Text>
-              </View>
-              <View style={{ marginTop: 7 }}>
-                <ProgressBar value={level.pct} colors={['#E2B86A', '#D6A24E']} trackColor={colors.border} height={6} />
-              </View>
-              <Text style={s.levelProgress}>
-                {level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
-              </Text>
-            </View>
-            <Text style={s.chevron}>›</Text>
+                <FadeIn delay={1100} reduceMotion={reduceMotion}>
+                  <View style={s.dayRow}>
+                    <Text style={s.dayLbl}>Day 1</Text>
+                    <Text style={[s.ovLbl, { left: `${((ovDay - 0.5) / cycleLength) * 100}%` }]}>{ovDateLabel}</Text>
+                    <Text style={s.dayLbl}>Day {cycleLength}</Text>
+                  </View>
+                </FadeIn>
+              </>
+            ) : (
+              <>
+                <Text style={s.phaseLabel}>No period logged yet</Text>
+                <Text style={s.heroSerif}>Log a period to see your predictions</Text>
+                <Text style={s.predictedTx}>Track today&apos;s flow and we&apos;ll start predicting your next cycle.</Text>
+              </>
+            )}
           </Card>
-        </Pressable>
-      </View>
+        </HeroFrame>
+      </RiseIn>
 
-      <View style={s.section}>
-        <LinearGradient
-          colors={isDark ? ['#2A1810', '#301B0F'] : ['#FBF2EC', '#FCEAE0']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.6, y: 1 }}
-          style={s.ovCard}
-        >
-          <GlowBlob
-            size={90}
-            duration={2250}
-            color={isDark ? 'rgba(214,162,78,0.30)' : 'rgba(214,162,78,0.28)'}
-            style={{ top: -24, right: -16 }}
-          />
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Animated.Text
-              style={{
-                fontSize: 17,
-                marginTop: 1,
-                transform: [{ translateY: eggFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }],
-              }}
-            >
-              🌼
-            </Animated.Text>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={s.ovTitle}>{insight.title}</Text>
-              <Text style={s.ovBody}>{insight.body}</Text>
-            </View>
-          </View>
-          <View style={{ marginTop: 14 }}>
-            <OvulationStrip lastPeriodDate={lastPeriodDate} cycleLength={cycleLength} periodLength={periodLength} />
-          </View>
-        </LinearGradient>
-      </View>
+      <RiseIn index={2} style={s.section} reduceMotion={reduceMotion}>
+        <MoodCheckIn />
+      </RiseIn>
+
+      <RiseIn index={3} style={s.section} reduceMotion={reduceMotion}>
+        <LogPeriodCta
+          title={phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}
+          subtitle={
+            phaseKey === 'period' ? 'Tap to confirm or adjust the end date' : `Mark when your next period starts and earn points as you do!`
+          }
+          onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}
+        />
+      </RiseIn>
+
+      <RiseIn index={4} style={s.section} reduceMotion={reduceMotion}>
+        <WeekStrip />
+      </RiseIn>
+
+      <RiseIn index={5} style={s.section} reduceMotion={reduceMotion}>
+        <PointsCard
+          levelName={level.name}
+          points={femPoints.toLocaleString()}
+          pct={level.pct}
+          toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+          onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}
+        />
+      </RiseIn>
+
+      <RiseIn index={6} style={s.section} reduceMotion={reduceMotion}>
+        <OvulationCard
+          title={insight.title}
+          body={insight.body}
+          lastPeriodDate={lastPeriodDate}
+          cycleLength={cycleLength}
+          periodLength={periodLength}
+        />
+      </RiseIn>
 
       {feedItems.length > 0 && (
-        <View style={{ marginBottom: 8 }}>
-          <Text style={[s.sectionTitle, { paddingHorizontal: 24 }]}>For you today</Text>
-          <Carousel style={{ marginTop: 11 }}>
-            {feedItems.map((card, i) => (
-              <Pressable
-                key={card.id}
-                onPress={() => setActiveCard(card)}
-                style={[s.fyCard, { marginLeft: i === 0 ? 24 : 12, marginRight: i === feedItems.length - 1 ? 24 : 0 }]}
-              >
-                <Image source={card.imageSource} style={s.fyImage} resizeMode="cover" />
-                <View style={{ padding: 13 }}>
-                  <Text style={[s.fyTag, { color: card.tagColor }]}>{card.tag.toUpperCase()}</Text>
-                  <Text style={s.fyTitle}>{card.title}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </Carousel>
-        </View>
+        <RiseIn index={7} style={{ marginBottom: 8 }} reduceMotion={reduceMotion}>
+          <ForYouCarousel items={feedItems} onOpen={setActiveCard} />
+        </RiseIn>
       )}
 
       <BottomSheet open={!!activeCard} onClose={() => setActiveCard(null)} title={activeCard?.title}>
@@ -396,6 +383,7 @@ function createStyles(c) {
     screen: { flex: 1, backgroundColor: c.background },
     section: { paddingHorizontal: 24, marginBottom: 14 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 20 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1, minWidth: 0 },
     greeting: { fontSize: 11, color: c.textMuted, fontWeight: '600', letterSpacing: 0.2 },
     name: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
@@ -421,53 +409,25 @@ function createStyles(c) {
       borderColor: c.surface,
     },
     hero: { borderRadius: 32, padding: 20, overflow: 'hidden' },
+    heroInner: { borderRadius: 30.5, borderWidth: 0 },
     phaseLabel: { fontSize: 9, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
     heroSerif: { fontFamily: FONT.serif, fontSize: 28, color: c.textPrimary, marginTop: 12, lineHeight: 40 },
     heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 9, marginTop: 12, flexWrap: 'wrap' },
-    heroSerifSm: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary },
+    heroSerifSm: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary, maxWidth: '100%' },
     heroSerifBig: { fontFamily: FONT.serif, fontSize: 42 },
     predictedTx: { fontSize: 10, color: c.textMuted, marginTop: 8 },
     dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
+    ovLbl: {
+      position: 'absolute',
+      width: 120,
+      marginLeft: -60,
+      textAlign: 'center',
+      fontSize: 8.5,
+      fontWeight: '700',
+      color: c.tertiaryDeep,
+    },
     dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
-    logCta: {
-      borderRadius: 22,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      shadowColor: c.primary,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.28,
-      shadowRadius: 18,
-      elevation: 6,
-    },
-    logCtaTitle: { color: c.white, fontWeight: '700', fontSize: 14 },
-    logCtaSub: { color: 'rgba(255,255,255,0.82)', fontSize: 10.5, marginTop: 5 },
-    logCtaPlusWrap: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: 'rgba(255,255,255,0.22)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: 12,
-    },
-    logCtaPlus: { color: c.white, fontSize: 20, fontWeight: '300' },
-    levelStrip: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
-    levelIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-    levelName: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary },
-    levelSp: { fontSize: 9, color: c.textMuted },
-    levelProgress: { fontSize: 8.5, color: c.textDisabled, marginTop: 5 },
-    chevron: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
-    ovCard: { borderRadius: 22, padding: 17, overflow: 'hidden' },
-    ovTitle: { fontSize: 12, fontWeight: '700', color: c.tertiaryDeep },
-    ovBody: { fontSize: 11, color: c.textSecondary, lineHeight: 19, marginTop: 3 },
-    sectionTitle: { fontSize: 12.5, fontWeight: '700', letterSpacing: -0.1, color: c.textPrimary },
-    fyCard: { width: 208, borderRadius: 20, overflow: 'hidden', backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
-    fyImage: { width: 208, height: 118, backgroundColor: c.surfaceAlt },
     fyTag: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
-    fyTitle: { fontSize: 11.5, fontWeight: '600', color: c.textPrimary, marginTop: 4, lineHeight: 18 },
     fyDetailImage: { width: '100%', height: 180, borderRadius: 20, backgroundColor: c.surfaceAlt },
     fyDetailBody: { fontSize: 11.5, color: c.textSecondary, lineHeight: 21, marginTop: 10 },
   });

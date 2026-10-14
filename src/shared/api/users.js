@@ -8,7 +8,6 @@ export function updateProfile({ firstName, lastName, cycleLength, periodLength, 
 export function getNotifications(token) {
   return apiRequest('/users/me/notifications', { token });
 }
-// Send only the fields that changed; the server leaves the rest alone.
 export function updateNotifications(changes, token) {
   return apiRequest('/users/me/notifications', { method: 'PATCH', body: changes, token });
 }

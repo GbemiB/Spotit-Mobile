@@ -43,8 +43,6 @@ export default function LoginScreen() {
       await doLogin();
     } catch (e) {
       let err = e;
-      // The server may have been cold — the first request wakes it up.
-      // Retry once so the user gets the real error instead of a timeout.
       if (e.errorCode === 'timeout') {
         try {
           await doLogin();

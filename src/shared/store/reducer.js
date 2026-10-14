@@ -43,8 +43,8 @@ export const INIT = {
     digest: false,
     morningTime: '06:00',
     eveningTime: '20:00',
-    periodDaysBefore: [3, 2, 1, 0],
-    maxDaysBefore: 3,
+    periodDaysBefore: [2, 1, 0],
+    maxDaysBefore: 2,
   },
   inbox: { items: [], unreadCount: 0 },
   themePref: 'dark',
@@ -127,7 +127,6 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
 export function reducer(state, action) {
   switch (action.type) {
     case A.HYDRATE: {
-      // notifs is merged key by key: a state saved by 1.0 holds only the four switches.
       const merged = { ...state, ...action.payload, notifs: { ...state.notifs, ...action.payload?.notifs } };
       if (merged.authDone && !merged.accessToken) {
         return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
@@ -232,7 +231,6 @@ export function reducer(state, action) {
           ovulation,
           dailyLog,
           digest,
-          // A 1.0 server sends only the four switches; keep what we have for the rest.
           morningTime: morningTime ?? state.notifs.morningTime,
           eveningTime: eveningTime ?? state.notifs.eveningTime,
           periodDaysBefore: periodDaysBefore ?? state.notifs.periodDaysBefore,

@@ -67,9 +67,6 @@ function AppContent() {
     today,
   } = state;
   const [resumedAt, setResumedAt] = useState(0);
-  // Refresh "today" whenever the app comes back to the foreground. No idle/session
-  // timeout — this is a utility app, so a login is meant to last until the user
-  // explicitly signs out (or the refresh token finally expires server-side).
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
@@ -94,9 +91,6 @@ function AppContent() {
       .catch(() => {});
   }, [authDone, onboarded, today]);
   const [askReminders, setAskReminders] = useState(false);
-  // Keep this phone registered for reminders, with its current time zone. Once someone is past onboarding and
-  // has never been asked, explain reminders before the system prompt appears: iOS shows that prompt only once.
-  // Runs again on every return to the foreground, which also picks up permission granted in the phone's settings.
   useEffect(() => {
     if (!authDone || !accessToken) return;
     (async () => {

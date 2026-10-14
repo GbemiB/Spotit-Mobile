@@ -23,10 +23,7 @@ function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
 }
-// The installed build's version; app.json covers the web preview, where there is no native binary.
 const APP_VERSION = Application.nativeApplicationVersion || appConfig.expo.version;
-// The countdown setting that belongs to each reminder switch.
-// Only the period reminder has a countdown; ovulation is announced on the day.
 const REMINDER_DAYS_KEY = { period: 'periodDaysBefore' };
 const THEME_OPTIONS = [
   { key: 'light', label: 'Light' },
@@ -49,7 +46,6 @@ function Row({ icon, iconBg, label, sub, right, last, s, compact }) {
     </View>
   );
 }
-// Which days of a countdown are sent: any of "3 days before" ... "On the day".
 function DayChips({ selected, max, onToggle, colors, s }) {
   return (
     <View style={s.chipRow}>
@@ -136,7 +132,6 @@ export default function SettingsScreen() {
     dispatch({ type: A.SET_THEME, pref });
     saveProfile({ themePref: pref });
   }
-  // 'granted' | 'undetermined' | 'denied' | 'unsupported'. Re-read when she comes back from the phone's settings.
   const [permission, setPermission] = useState('granted');
   useEffect(() => {
     getPermissionState().then(setPermission);
@@ -145,7 +140,6 @@ export default function SettingsScreen() {
     });
     return () => sub.remove();
   }, []);
-  // Sends only what changed. The screen updates at once and is put back if the server refuses.
   async function saveNotifs(changes) {
     const before = notifs;
     dispatch({ type: A.SET_NOTIF_PREFS, prefs: changes });
@@ -166,10 +160,8 @@ export default function SettingsScreen() {
   function handleToggleNotif(key) {
     const turningOn = !notifs[key];
     saveNotifs({ [key]: turningOn });
-    // Switching a reminder on is a clear yes, so the system prompt can follow straight away.
     if (turningOn && permission === 'undetermined') allowNotifications();
   }
-  // Unticking the last day would leave a reminder that is on but never sent, so that turns the switch off instead.
   function handleToggleDay(key, daysKey, day) {
     const next = toggleDay(notifs[daysKey], day);
     saveNotifs(next.length === 0 ? { [key]: false } : { [daysKey]: next });

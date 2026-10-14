@@ -58,14 +58,12 @@ export function AppProvider({ children }) {
       } catch {}
       if (saved) {
         let tokens = await loadTokens();
-        // Builds before 1.1 kept the tokens inside spotit_state; move them across once.
         if (!tokens.accessToken && saved.accessToken) {
           tokens = { accessToken: saved.accessToken, refreshToken: saved.refreshToken ?? null };
           await saveTokens(tokens);
         }
         dispatch({ type: A.HYDRATE, payload: { ...saved, ...tokens } });
       } else {
-        // The iOS keychain can outlive an uninstall; don't carry a session into a fresh install.
         await clearTokens();
       }
       setReady(true);

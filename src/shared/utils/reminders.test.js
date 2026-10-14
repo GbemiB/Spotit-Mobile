@@ -24,6 +24,6 @@ describe('timeLabel', () => {
     expect(timeLabel('12:15')).toBe('12:15 PM');
   });
 });
-test('the day options count down from 3 days to the day itself', () => {
-  expect(DAY_OPTIONS.map(o => o.days)).toEqual([3, 2, 1, 0]);
+test('the day options are 2 days before, 1 day before and on the day', () => {
+  expect(DAY_OPTIONS.map(o => o.days)).toEqual([2, 1, 0]);
 });

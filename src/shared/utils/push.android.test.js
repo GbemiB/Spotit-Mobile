@@ -12,7 +12,6 @@ jest.mock('../api/devices.js', () => ({
   registerDevice: jest.fn(() => Promise.resolve()),
   unregisterDevice: jest.fn(() => Promise.resolve()),
 }));
-// push.js reads the platform when it loads, so each test loads a fresh copy after setting it.
 function loadPushOn(os) {
   let loaded;
   jest.isolateModules(() => {
