@@ -30,6 +30,7 @@ export const INIT = {
   cycleLength: DEFAULT_CYCLE_LENGTH,
   periodLength: DEFAULT_PERIOD_LENGTH,
   lastPeriodDate: null,
+  periodPromptDismissedOn: null,
   femPoints: 0,
   streak: 0,
   longestStreak: 0,

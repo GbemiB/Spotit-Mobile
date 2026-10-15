@@ -34,6 +34,9 @@ import * as shopApi from './src/shared/api/shop.js';
 import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
+import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx';
+import * as appApi from './src/shared/api/app.js';
+import { currentBuild, requiredUpdate } from './src/shared/utils/appVersion.js';
 import {
   configureNotifications,
   syncPushRegistration,
@@ -230,6 +233,16 @@ function ThemedApp() {
     const sub = AppState.addEventListener('change', next => setAppIsActive(next === 'active'));
     return () => sub.remove();
   }, []);
+  const [updateNeeded, setUpdateNeeded] = useState(null);
+  useEffect(() => {
+    if (!appIsActive) return;
+    const build = currentBuild();
+    if (build == null) return;
+    appApi
+      .getVersionPolicy()
+      .then(policy => setUpdateNeeded(requiredUpdate(policy, build)))
+      .catch(() => {});
+  }, [appIsActive]);
   useEffect(() => {
     if (!ready) return;
     const remaining = MIN_SPLASH_MS - (Date.now() - appMountedAt);
@@ -239,7 +252,7 @@ function ThemedApp() {
   const scheme = DEV_FORCE_SCHEME || (state.themePref === 'system' ? null : state.themePref);
   return (
     <ThemeProvider scheme={scheme}>
-      <AppContent />
+      {updateNeeded ? <UpdateRequiredScreen storeUrl={updateNeeded.storeUrl} /> : <AppContent />}
       {!appIsActive && <PrivacyScreen />}
     </ThemeProvider>
   );

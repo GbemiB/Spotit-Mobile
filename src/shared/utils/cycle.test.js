@@ -9,6 +9,7 @@ import {
   formatDisplayDate,
   addDays,
   datesBetween,
+  periodStatus,
 } from './cycle.js';
 function iso(year, month, day) {
   return toISO(new Date(year, month - 1, day));
@@ -125,5 +126,38 @@ describe('formatDisplayDate', () => {
   });
   test('formats a Date instance directly', () => {
     expect(formatDisplayDate(new Date(2026, 6, 4))).toBe('July 4');
+  });
+});
+describe('periodStatus', () => {
+  test('returns null without a logged period', () => {
+    expect(periodStatus('2026-10-15', null, 28)).toBeNull();
+  });
+  test('tracks normally inside the logged cycle', () => {
+    expect(periodStatus('2026-09-28', '2026-09-01', 28)).toEqual({ state: 'tracking', cyclesMissed: 0 });
+  });
+  test('is due on the predicted start day', () => {
+    expect(periodStatus('2026-09-29', '2026-09-01', 28)).toEqual({
+      state: 'due',
+      cyclesMissed: 1,
+      daysLate: 0,
+      expectedDate: '2026-09-29',
+    });
+  });
+  test('counts days late up to the grace period', () => {
+    expect(periodStatus('2026-10-01', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 2 });
+    expect(periodStatus('2026-10-06', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 7 });
+  });
+  test('moves on to the next cycle after the grace period', () => {
+    expect(periodStatus('2026-10-07', '2026-09-01', 28)).toMatchObject({ state: 'unconfirmed', daysLate: 8, cyclesMissed: 1 });
+  });
+  test('asks again when the following predicted period is due', () => {
+    expect(periodStatus('2026-10-27', '2026-09-01', 28)).toMatchObject({
+      state: 'due',
+      cyclesMissed: 2,
+      expectedDate: '2026-10-27',
+    });
+  });
+  test('uses a custom grace period', () => {
+    expect(periodStatus('2026-10-02', '2026-09-01', 28, 2)).toMatchObject({ state: 'unconfirmed', daysLate: 3 });
   });
 });

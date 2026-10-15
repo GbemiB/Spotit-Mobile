@@ -12,6 +12,7 @@ import {
   formatDisplayDate,
   todayISO,
   toISO,
+  periodStatus,
 } from '../../shared/utils/cycle.js';
 import { PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { levelInfo } from '../../shared/utils/levels.js';
@@ -19,6 +20,7 @@ import { useTheme, phases, Text, FONT } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import { BellIcon } from '../../components/ui/icons.jsx';
 import Card from '../../components/ui/Card.jsx';
+import Button from '../../components/ui/Button.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
@@ -113,8 +115,20 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, femPoints, streak, cycleLength, periodLength, lastPeriodDate, cycleStatus, accessToken, levels, content, inbox } =
-    state;
+  const {
+    userName,
+    femPoints,
+    streak,
+    cycleLength,
+    periodLength,
+    lastPeriodDate,
+    cycleStatus,
+    accessToken,
+    levels,
+    content,
+    inbox,
+    periodPromptDismissedOn,
+  } = state;
   const [inboxOpen, setInboxOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const [baseLogPoints, setBaseLogPoints] = useState(null);
@@ -153,12 +167,17 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [accessToken, dispatch]);
   const today = todayISO();
+  const status = periodStatus(today, lastPeriodDate, cycleLength);
+  const unconfirmed = (status?.cyclesMissed ?? 0) > 0;
+  const askStarted = status?.state === 'due' || status?.state === 'late';
+  const promptDismissed = askStarted && periodPromptDismissedOn === today;
   const cycleDay = cycleStatus?.cycleDay ?? cycleDayOf(today, lastPeriodDate, cycleLength);
   const hasCycleData = cycleDay != null;
-  const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
+  const reportedPhaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
+  const phaseKey = unconfirmed && reportedPhaseKey === 'period' ? phaseFor(cycleDay, 0, cycleLength).key : reportedPhaseKey;
   const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
-  const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
+  const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, unconfirmed ? 0 : periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints, levels);
   const reduceMotion = useReduceMotion();
@@ -173,6 +192,13 @@ export default function HomeScreen() {
         : phaseKey === 'ovulation'
           ? [{ text: 'Today is your predicted' }, { text: 'ovulation day', highlight: true }]
           : null;
+  const lateParts =
+    status?.state === 'due'
+      ? [{ text: 'Your period is' }, { text: 'due today', highlight: true }]
+      : [{ text: 'Your period is' }, { text: `${status?.daysLate} ${status?.daysLate === 1 ? 'day' : 'days'} late`, highlight: true }];
+  function dismissPeriodPrompt() {
+    dispatch({ type: A.UPDATE_SETTINGS, patch: { periodPromptDismissedOn: today } });
+  }
   const daysUntilShown = useCountTo(milestone?.daysUntil, cycleLength, reduceMotion);
   const insight = insightFor(phase, cycleLength);
   const feedItems = (Array.isArray(content) ? content : [])
@@ -255,7 +281,29 @@ export default function HomeScreen() {
               style={{ bottom: -60, left: -50 }}
             />
             <HeroBackdrop isDark={isDark} reduceMotion={reduceMotion} />
-            {hasCycleData ? (
+            {hasCycleData && askStarted ? (
+              <>
+                <AnimatedLabel style={s.phaseLabel} reduceMotion={reduceMotion}>
+                  Period expected · {formatDisplayDate(status.expectedDate)}
+                </AnimatedLabel>
+                <AnimatedHeadline parts={lateParts} style={s.heroSerif} highlightColor={colors.primary} reduceMotion={reduceMotion} />
+                <FadeIn delay={1000} reduceMotion={reduceMotion}>
+                  <Text style={s.predictedTx}>{promptDismissed ? 'We’ll ask again tomorrow.' : 'Has your period started?'}</Text>
+                </FadeIn>
+                {!promptDismissed && (
+                  <FadeIn delay={1100} reduceMotion={reduceMotion}>
+                    <View style={s.confirmRow}>
+                      <Button size="sm" onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}>
+                        Yes, log it
+                      </Button>
+                      <Button size="sm" variant="secondary" onPress={dismissPeriodPrompt}>
+                        Not yet
+                      </Button>
+                    </View>
+                  </FadeIn>
+                )}
+              </>
+            ) : hasCycleData ? (
               <>
                 <AnimatedLabel style={s.phaseLabel} reduceMotion={reduceMotion}>
                   {phase.label ? `${phase.label} · ` : ''}Day {cycleDay} of {cycleLength}
@@ -285,6 +333,9 @@ export default function HomeScreen() {
                       ? `Next period predicted ${formatDisplayDate(nextP)}`
                       : `Predicted ${formatDisplayDate(milestoneDate)}`}
                   </Text>
+                  {status?.state === 'unconfirmed' && (
+                    <Text style={s.predictedTx}>No period logged since {formatDisplayDate(lastPeriodDate)}</Text>
+                  )}
                 </FadeIn>
                 <View style={{ marginTop: 16 }}>
                   <AnimatedCycleBar
@@ -326,9 +377,13 @@ export default function HomeScreen() {
 
       <RiseIn index={3} style={s.section} reduceMotion={reduceMotion}>
         <LogPeriodCta
-          title={phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}
+          title={askStarted ? 'Has your period started?' : phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}
           subtitle={
-            phaseKey === 'period' ? 'Tap to confirm or adjust the end date' : `Mark when your next period starts and earn points as you do!`
+            askStarted
+              ? 'Tap to log it and earn points'
+              : phaseKey === 'period'
+                ? 'Tap to confirm or adjust the end date'
+                : `Mark when your next period starts and earn points as you do!`
           }
           onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}
         />
@@ -415,6 +470,7 @@ function createStyles(c) {
     heroSerifSm: { fontFamily: FONT.serif, fontSize: 24, color: c.textPrimary, maxWidth: '100%' },
     heroSerifBig: { fontFamily: FONT.serif, fontSize: 42 },
     predictedTx: { fontSize: 10, color: c.textMuted, marginTop: 8 },
+    confirmRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
     dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 7 },
     ovLbl: {
       position: 'absolute',

@@ -14,6 +14,7 @@ const PERSIST_KEYS = [
   'cycleLength',
   'periodLength',
   'lastPeriodDate',
+  'periodPromptDismissedOn',
   'onboardStep',
   'onboardDraft',
   'femPoints',

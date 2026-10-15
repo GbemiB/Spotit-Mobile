@@ -2,7 +2,7 @@
   "expo": {
     "name": "Spot It",
     "slug": "spotit",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "",
     "userInterfaceStyle": "automatic",
@@ -50,6 +50,14 @@
         "projectId": "71955428-691c-4a81-a6c9-9c79dd418afa"
       }
     },
-    "owner": "spotitinternational"
+    "owner": "spotitinternational",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/71955428-691c-4a81-a6c9-9c79dd418afa",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

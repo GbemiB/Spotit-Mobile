@@ -66,6 +66,24 @@ export function nextPeriodDate(lastPeriodDate, cycleLength) {
   next.setDate(next.getDate() + daysLeft);
   return next;
 }
+export const LATE_GRACE_DAYS = 7;
+function daysBetween(fromIso, toIso) {
+  const from = new Date(fromIso);
+  const to = new Date(toIso);
+  from.setHours(12, 0, 0, 0);
+  to.setHours(12, 0, 0, 0);
+  return Math.round((to - from) / 86400000);
+}
+export function periodStatus(todayIso, lastPeriodDate, cycleLength, graceDays = LATE_GRACE_DAYS) {
+  if (!lastPeriodDate || !cycleLength) return null;
+  const diff = daysBetween(lastPeriodDate, todayIso);
+  if (diff < cycleLength) return { state: 'tracking', cyclesMissed: 0 };
+  const cyclesMissed = Math.floor(diff / cycleLength);
+  const daysLate = diff % cycleLength;
+  const expectedDate = addDays(lastPeriodDate, cyclesMissed * cycleLength);
+  if (daysLate > graceDays) return { state: 'unconfirmed', cyclesMissed, daysLate, expectedDate };
+  return { state: daysLate === 0 ? 'due' : 'late', cyclesMissed, daysLate, expectedDate };
+}
 export function formatDisplayDate(isoOrDate) {
   if (!isoOrDate) return null;
   let d;
