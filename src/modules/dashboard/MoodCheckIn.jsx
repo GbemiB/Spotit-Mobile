@@ -5,6 +5,7 @@ import { A } from '../../shared/store/actions.js';
 import { todayISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import * as logsApi from '../../shared/api/logs.js';
+import { noteLogSaved } from '../../shared/utils/rateApp.js';
 import { useAnimatedValue, useReduceMotion } from './HeroCardFx.jsx';
 
 export const CHECK_IN_MOODS = [
@@ -167,6 +168,7 @@ function useMoodCheckIn() {
         streak: saved.streak,
         isNewEntry: saved.isNewEntry,
       });
+      noteLogSaved();
     } catch (e) {
       dispatch({ type: A.SHOW_TOAST, icon: '🌸', text: e.message });
     } finally {

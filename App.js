@@ -17,7 +17,7 @@ import {
 } from '@expo-google-fonts/manrope';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
 import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
@@ -37,6 +37,8 @@ import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
 import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx';
 import * as appApi from './src/shared/api/app.js';
 import { currentBuild, requiredUpdate } from './src/shared/utils/appVersion.js';
+import { levelInfo } from './src/shared/utils/levels.js';
+import { noteLevelUp } from './src/shared/utils/rateApp.js';
 import {
   configureNotifications,
   syncPushRegistration,
@@ -68,7 +70,17 @@ function AppContent() {
     cycleLength,
     periodLength,
     today,
+    femPoints,
+    levels,
   } = state;
+  const levelIdx = levels.length ? levelInfo(femPoints, levels).idx : null;
+  const prevLevelIdx = useRef(null);
+  useEffect(() => {
+    const before = prevLevelIdx.current;
+    prevLevelIdx.current = levelIdx;
+    if (!authDone || !onboarded || before === null || levelIdx === null) return;
+    if (levelIdx > before && toast) noteLevelUp();
+  }, [levelIdx]);
   const [resumedAt, setResumedAt] = useState(0);
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {

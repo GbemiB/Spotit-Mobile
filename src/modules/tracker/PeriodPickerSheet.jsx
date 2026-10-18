@@ -9,6 +9,7 @@ import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import Button from '../../components/ui/Button.jsx';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import * as logsApi from '../../shared/api/logs.js';
+import { noteLogSaved } from '../../shared/utils/rateApp.js';
 const DEFAULT_FLOW = 'medium';
 export default function PeriodPickerSheet() {
   const { state, dispatch } = useApp();
@@ -91,6 +92,7 @@ export default function PeriodPickerSheet() {
         clearedEntries: data.clearedEntries,
       });
       dispatch({ type: A.CLOSE_PERIOD_PICKER });
+      noteLogSaved();
     } catch (e) {
       setError(e.message);
     } finally {

@@ -23,6 +23,7 @@ import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
+import { noteLogSaved } from '../../shared/utils/rateApp.js';
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
 const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
 function toOptions(list, iconMap, key = 'icon') {
@@ -225,6 +226,7 @@ export default function CalendarScreen() {
         streak: data.streak,
         isNewEntry: data.isNewEntry,
       });
+      noteLogSaved();
     } catch (e) {
       setError(e.message);
     } finally {

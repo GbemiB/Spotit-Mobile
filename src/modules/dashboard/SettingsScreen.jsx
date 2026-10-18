@@ -19,6 +19,7 @@ import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
 import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
 import { DAY_OPTIONS, toggleDay, timeLabel } from '../../shared/utils/reminders.js';
+import { canRateApp, openStoreListing } from '../../shared/utils/rateApp.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
   return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') };
@@ -335,6 +336,12 @@ export default function SettingsScreen() {
           <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
             <Row label="App" right={<Text style={s.metaTx}>Spot it</Text>} s={s} />
             <Row label="Version" right={<Text style={s.metaTx}>{APP_VERSION}</Text>} s={s} />
+            {canRateApp ? (
+              <Pressable style={s.row} onPress={openStoreListing}>
+                <Text style={[s.rowLabel, { color: colors.primary }]}>Rate Spot it</Text>
+                <Text style={s.chevron}>›</Text>
+              </Pressable>
+            ) : null}
             <Pressable style={s.row} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Privacy Policy</Text>
               <Text style={s.chevron}>›</Text>

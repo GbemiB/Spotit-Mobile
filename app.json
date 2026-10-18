@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.spotit.app",
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.spotit.app",
       "adaptiveIcon": {
         "backgroundColor": "#FBF3EF",
         "foregroundImage": "./assets/icon-adaptive.png"
