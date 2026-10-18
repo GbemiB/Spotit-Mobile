@@ -1,13 +1,23 @@
 import { View, Pressable, ScrollView, Alert, Keyboard, Platform, StyleSheet } from 'react-native';
-import { useMemo, useEffect, useState, useRef } from 'react';
+import { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { cycleDayOf, phaseFor, formatDisplayDate, toISO } from '../../shared/utils/cycle.js';
+import {
+  cycleDayOf,
+  calendarDay,
+  addDays,
+  todayISO,
+  formatDisplayDate,
+  toISO,
+  trackingStartOf,
+  periodLogStartForMonth,
+} from '../../shared/utils/cycle.js';
 import { MONTHS, PHASE_NOTES, PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { MOODS, SYMPTOMS, SYMPTOM_CATEGORIES } from '../../shared/constants/options.js';
-import { useTheme, phases, Text, TextInput, FONT } from '../../shared/styles/index.js';
+import { useTheme, calendarPalette, Text, TextInput, FONT } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
+import CalendarGuideSheet from './CalendarGuideSheet.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
@@ -30,11 +40,6 @@ function groupByCategory(options) {
   const known = SYMPTOM_CATEGORIES.filter(cat => byCategory[cat]?.length).map(cat => ({ category: cat, items: byCategory[cat] }));
   return byCategory.Other ? [...known, { category: 'Other', items: byCategory.Other }] : known;
 }
-const PHASE_KEYS = [
-  { color: phases.period, label: PHASE_LABELS.period },
-  { color: phases.fertile, label: PHASE_LABELS.fertile },
-  { color: phases.ovulation, label: PHASE_LABELS.ovulation },
-];
 function SectionLabel({ children, s }) {
   return <Text style={s.secLabel}>{children}</Text>;
 }
@@ -104,25 +109,59 @@ function draftFrom(date, log) {
 }
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const cal = calendarPalette[isDark ? 'dark' : 'light'];
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { viewYear, viewMonth, selDate, logs, cycleLength, periodLength, lastPeriodDate, accessToken, calendarPhases } = state;
+  const [guideOpen, setGuideOpen] = useState(false);
+  const logStart = periodLogStartForMonth(state.viewYear, state.viewMonth, todayISO());
+  const {
+    viewYear,
+    viewMonth,
+    selDate,
+    logs,
+    cycleLength,
+    periodLength,
+    lastPeriodDate,
+    trackingStartDate,
+    accessToken,
+    calendarPhases,
+    periodPickerOpen,
+  } = state;
   const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [moodOptions, setMoodOptions] = useState(() => toOptions(MOODS, MOOD_EMOJI, 'emoji'));
   const [symptomOptions, setSymptomOptions] = useState(SYMPTOMS);
-  const cycleState = { lastPeriodDate, cycleLength, periodLength };
+  const cycleState = { lastPeriodDate, cycleLength, periodLength, trackingStart: trackingStartDate };
   const selLog = logs[selDate];
-  const selCycleDay = cycleDayOf(selDate, lastPeriodDate, cycleLength);
-  const selPhaseKey = calendarPhases[selDate] ?? phaseFor(selCycleDay, periodLength, cycleLength).key;
+  const goPrevMonth = useCallback(() => dispatch({ type: A.PREV_MONTH }), [dispatch]);
+  const goNextMonth = useCallback(() => dispatch({ type: A.NEXT_MONTH }), [dispatch]);
+  const selInfo = selDate
+    ? (calendarPhases[selDate] ?? calendarDay(selDate, { ...cycleState, logs, todayIso: todayISO() }))
+    : { phase: null, predicted: false, marker: null };
+  const selPhaseKey = selInfo.phase;
+  const trackingStart = trackingStartOf(trackingStartDate, lastPeriodDate);
+  const beforeTracking = !!selDate && !!trackingStart && selDate < trackingStart;
+  const inTrackedCycle =
+    !!selDate && !!lastPeriodDate && selDate >= lastPeriodDate && (selInfo.predicted || selDate < addDays(lastPeriodDate, cycleLength));
+  const selCycleDay = inTrackedCycle ? cycleDayOf(selDate, lastPeriodDate, cycleLength) : null;
   const selPhase = {
     key: selPhaseKey,
-    label: selPhaseKey ? PHASE_LABELS[selPhaseKey] : lastPeriodDate ? 'Not tracked' : 'No data yet',
-    color: selPhaseKey ? phases[selPhaseKey] : null,
+    label: selPhaseKey
+      ? `${PHASE_LABELS[selPhaseKey]}${selInfo.predicted ? ' (predicted)' : ''}`
+      : selInfo.marker === 'missed'
+        ? 'No period logged'
+        : selInfo.marker === 'expected'
+          ? 'Period expected'
+          : beforeTracking
+            ? 'Before tracking started'
+            : lastPeriodDate
+              ? 'Not tracked'
+              : 'No data yet',
+    color: selPhaseKey ? cal[selPhaseKey] : null,
   };
-  const isPeriodDay = selPhaseKey === 'period';
+  const isPeriodDay = !!selDate && selPhaseKey === 'period';
   const [formDraft, setFormDraft] = useState(() => draftFrom(selDate, logs[selDate]));
   const activeDraft = formDraft.date === selDate ? formDraft : draftFrom(selDate, selLog);
   function updateDraft(patch) {
@@ -142,19 +181,19 @@ export default function CalendarScreen() {
     const to = toISO(new Date(viewYear, viewMonth + 1, 0));
     logsApi
       .getLogsInRange({ from, to }, accessToken)
-      .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
+      .then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} }))
       .catch(() => {});
     cycleApi
       .getCalendar({ year: viewYear, month: viewMonth + 1 }, accessToken)
       .then(data => {
         const phasesByDate = {};
         (data.days || []).forEach(d => {
-          phasesByDate[d.date] = d.phase;
+          phasesByDate[d.date] = { phase: d.phase, predicted: !!d.predicted, marker: d.marker ?? null };
         });
         dispatch({ type: A.CALENDAR_PHASES_HYDRATED, phases: phasesByDate });
       })
       .catch(() => {});
-  }, [viewYear, viewMonth, lastPeriodDate]);
+  }, [viewYear, viewMonth, lastPeriodDate, periodPickerOpen]);
   const scrollRef = useRef(null);
   const notesFocused = useRef(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -227,16 +266,49 @@ export default function CalendarScreen() {
             </Text>
           </View>
         </View>
-        <Text style={s.screenSub}>Tap any day to see it, or log symptoms for a period day.</Text>
+        <View style={s.subRow}>
+          <Text style={[s.screenSub, s.subText]}>Tap any day to see it, or swipe to change month.</Text>
+          {!selDate && logStart && (
+            <Pressable
+              onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER, startDate: logStart })}
+              style={s.logPeriodPill}
+              accessibilityRole="button"
+            >
+              <Text style={s.logPeriodPillTx}>+ Log a period</Text>
+            </Pressable>
+          )}
+        </View>
 
         <View style={s.phaseKeyWrap}>
-          {PHASE_KEYS.map(p => (
-            <View key={p.label} style={s.phaseKeyItem}>
-              <View style={[s.phaseKeyDot, { backgroundColor: p.color }]} />
-              <Text style={s.phaseKeyLabel}>{p.label}</Text>
+          {['period', 'fertile', 'ovulation'].map(key => (
+            <View key={key} style={s.phaseKeyItem}>
+              <View style={[s.phaseKeyDot, { backgroundColor: cal.tint[key], borderColor: cal[key] }]} />
+              <Text style={s.phaseKeyLabel}>{PHASE_LABELS[key]}</Text>
             </View>
           ))}
+          <View style={s.phaseKeyItem}>
+            <View style={[s.phaseKeyDot, s.phaseKeyDashed, { borderColor: cal.period }]} />
+            <Text style={s.phaseKeyLabel}>Predicted period</Text>
+          </View>
+          <View style={s.phaseKeyItem}>
+            <Text style={[s.phaseKeyToday, { color: cal.today }]}>{Number(todayISO().slice(8))}</Text>
+            <Text style={s.phaseKeyLabel}>Today</Text>
+          </View>
+          <View style={s.phaseKeyItem}>
+            <View style={[s.phaseKeyLogged, { backgroundColor: cal.dot }]} />
+            <Text style={s.phaseKeyLabel}>Logged</Text>
+          </View>
+          <Pressable
+            onPress={() => setGuideOpen(true)}
+            style={s.infoBtn}
+            accessibilityRole="button"
+            accessibilityLabel="How to read your calendar"
+            hitSlop={8}
+          >
+            <Text style={s.infoTx}>i</Text>
+          </Pressable>
         </View>
+        <CalendarGuideSheet open={guideOpen} onClose={() => setGuideOpen(false)} />
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={s.gridCard}>
@@ -247,6 +319,8 @@ export default function CalendarScreen() {
               logs={logs}
               cycleState={cycleState}
               phaseByDate={calendarPhases}
+              onPrevMonth={goPrevMonth}
+              onNextMonth={goNextMonth}
               onSelect={d => {
                 setFormDraft(draftFrom(d, logs[d]));
                 dispatch({ type: A.SEL_DATE, date: d });
@@ -256,21 +330,41 @@ export default function CalendarScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 24 }}>
-          <Card style={{ padding: 18, marginBottom: 14, borderRadius: 22 }}>
-            <Text style={s.selDateLabel}>{formatDisplayDate(selDate).toUpperCase()}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8 }}>
-              <View style={[s.phaseDot, { backgroundColor: selPhase.color }]} />
-              <Text style={s.selPhaseName}>{selPhase.label}</Text>
-              {selCycleDay != null && <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>}
-            </View>
-            <Text style={s.phaseNote}>
-              {selPhase.key
-                ? PHASE_NOTES[selPhase.key]
-                : lastPeriodDate
-                  ? 'This day falls outside the period, fertile, and ovulation windows we track.'
-                  : 'Log your last period to see cycle phases here.'}
-            </Text>
-          </Card>
+          {!selDate ? (
+            <Card style={{ padding: 18, marginBottom: 14, borderRadius: 22 }}>
+              <Text style={s.selDateLabel}>{`${MONTHS[viewMonth]} ${viewYear}`.toUpperCase()}</Text>
+              <Text style={[s.selPhaseName, { marginTop: 8 }]}>Tap a day to see it</Text>
+            </Card>
+          ) : (
+            <Card style={{ padding: 18, marginBottom: 14, borderRadius: 22 }}>
+              <Text style={s.selDateLabel}>{formatDisplayDate(selDate).toUpperCase()}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8 }}>
+                <View style={[s.phaseDot, { backgroundColor: selPhase.color }]} />
+                <Text style={s.selPhaseName}>{selPhase.label}</Text>
+                {selCycleDay != null && <Text style={s.cdTx}>Cycle day {selCycleDay}</Text>}
+              </View>
+              <Text style={s.phaseNote}>
+                {selPhase.key
+                  ? PHASE_NOTES[selPhase.key]
+                  : beforeTracking
+                    ? 'Your calendar starts in the month of your first period with Spot it.'
+                    : lastPeriodDate
+                      ? 'This day falls outside the period, fertile, and ovulation windows we track.'
+                      : 'Log your last period to see cycle phases here.'}
+              </Text>
+              {selDate <= todayISO() && (
+                <View style={{ marginTop: 14 }}>
+                  <Button
+                    size="sm"
+                    variant={selLog?.flow ? 'secondary' : 'primary'}
+                    onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER, startDate: selDate })}
+                  >
+                    {selLog?.flow ? 'Edit this period' : 'Log period from this day'}
+                  </Button>
+                </View>
+              )}
+            </Card>
+          )}
 
           {isPeriodDay ? (
             <Card style={{ padding: 18, marginBottom: 14 }}>
@@ -369,6 +463,19 @@ function createStyles(c) {
     navArrow: { fontSize: 14, color: c.primaryDark, fontWeight: '500', lineHeight: 20 },
     monthTitle: { fontSize: 12, fontWeight: '500', color: c.primaryDark },
     screenSub: { fontSize: 11.5, color: c.textMuted, paddingHorizontal: 24, marginBottom: 18 },
+    subRow: { flexDirection: 'row', alignItems: 'center', paddingRight: 24, marginBottom: 18, gap: 10 },
+    subText: { flex: 1, marginBottom: 0 },
+    logPeriodPill: {
+      paddingHorizontal: 12,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.primarySoft,
+      borderWidth: 1,
+      borderColor: c.primarySoftBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logPeriodPillTx: { fontSize: 11.5, fontWeight: '700', color: c.primaryDark },
     gridCard: {
       padding: 14,
       borderRadius: 28,
@@ -380,7 +487,22 @@ function createStyles(c) {
     },
     phaseKeyWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: 24, marginTop: 18, marginBottom: 16 },
     phaseKeyItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-    phaseKeyDot: { width: 12, height: 12, borderRadius: 6 },
+    phaseKeyDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5 },
+    phaseKeyDashed: { borderStyle: 'dashed', backgroundColor: 'transparent' },
+    phaseKeyToday: { fontSize: 10.5, fontWeight: '800' },
+    phaseKeyLogged: { width: 5, height: 5, borderRadius: 3, marginHorizontal: 3 },
+    infoBtn: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 'auto',
+    },
+    infoTx: { fontFamily: FONT.serif, fontSize: 14, color: c.textSecondary, marginTop: -1 },
     phaseKeyLabel: { fontSize: 10.5, color: c.textSecondary },
     selDateLabel: { fontSize: 10, color: c.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
     phaseDot: { width: 11, height: 11, borderRadius: 6 },

@@ -1,5 +1,5 @@
 import { A } from './actions.js';
-import { todayISO } from '../utils/cycle.js';
+import { todayISO, trackingStartOf } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
 import { toLevelList } from '../utils/levels.js';
 const MAX_HISTORY = 20;
@@ -10,6 +10,7 @@ export const INIT = {
   accessToken: null,
   refreshToken: null,
   userId: null,
+  dataOwnerId: null,
   pendingOtpId: null,
   pendingEmail: null,
   otpPurpose: null,
@@ -30,6 +31,7 @@ export const INIT = {
   cycleLength: DEFAULT_CYCLE_LENGTH,
   periodLength: DEFAULT_PERIOD_LENGTH,
   lastPeriodDate: null,
+  trackingStartDate: null,
   periodPromptDismissedOn: null,
   femPoints: 0,
   streak: 0,
@@ -61,6 +63,7 @@ export const INIT = {
   shopProducts: [],
   screen: 'home',
   periodPickerOpen: false,
+  periodPickerStart: null,
   toast: null,
   selDate: todayISO(),
   viewMonth: new Date().getMonth(),
@@ -70,6 +73,54 @@ export const INIT = {
   calendarPhases: {},
   insights: { trends: null, digest: null, regularity: null },
 };
+const USER_DATA_KEYS = [
+  'userName',
+  'goal',
+  'dob',
+  'cycleLength',
+  'periodLength',
+  'lastPeriodDate',
+  'trackingStartDate',
+  'periodPromptDismissedOn',
+  'femPoints',
+  'streak',
+  'longestStreak',
+  'lastLogDate',
+  'lastClaimedDate',
+  'logs',
+  'notifs',
+  'inbox',
+  'isPremium',
+  'plan',
+  'renewsAt',
+  'autoRenew',
+  'history',
+  'badges',
+  'challenges',
+  'shopProducts',
+  'cycleStatus',
+  'calendarPhases',
+  'insights',
+];
+function withoutUserData(state) {
+  const cleared = { ...state, dataOwnerId: null };
+  USER_DATA_KEYS.forEach(k => {
+    cleared[k] = INIT[k];
+  });
+  return cleared;
+}
+function replaceLogRange(logs, from, to, fresh) {
+  const kept = {};
+  Object.keys(logs).forEach(d => {
+    if (!from || !to || d < from || d > to) kept[d] = logs[d];
+  });
+  return { ...kept, ...fresh };
+}
+function selectionForMonth(year, month) {
+  const today = todayISO();
+  const first = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  return today.slice(0, 7) === first.slice(0, 7) ? today : null;
+}
 function withHistory(state, entry) {
   return { ...state, history: [entry, ...state.history].slice(0, MAX_HISTORY) };
 }
@@ -92,7 +143,10 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
   }
   return next;
 }
-function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, pointsAwarded, newBalance, streak, clearedEntries }) {
+function applySavedPeriod(
+  state,
+  { dates, flow, date, entry, lastPeriodDate, trackingStartDate, pointsAwarded, newBalance, streak, clearedEntries },
+) {
   const today = todayISO();
   const logs = { ...state.logs };
   dates.forEach(d => {
@@ -110,7 +164,9 @@ function applySavedPeriod(state, { dates, flow, date, entry, lastPeriodDate, poi
     ...state,
     logs,
     lastPeriodDate: lastPeriodDate ?? state.lastPeriodDate,
+    trackingStartDate: trackingStartDate ?? state.trackingStartDate,
     cycleStatus: null,
+    calendarPhases: {},
     lastLogDate: dates.includes(today) ? today : state.lastLogDate,
     femPoints: newBalance,
     streak,
@@ -129,8 +185,16 @@ export function reducer(state, action) {
   switch (action.type) {
     case A.HYDRATE: {
       const merged = { ...state, ...action.payload, notifs: { ...state.notifs, ...action.payload?.notifs } };
+      if (action.payload?.dataOwnerId === undefined) merged.dataOwnerId = merged.userId ?? null;
       if (merged.authDone && !merged.accessToken) {
-        return { ...merged, authDone: false, authScreen: 'welcome', accessToken: null, refreshToken: null, userId: null };
+        return {
+          ...withoutUserData(merged),
+          authDone: false,
+          authScreen: 'welcome',
+          accessToken: null,
+          refreshToken: null,
+          userId: null,
+        };
       }
       return merged;
     }
@@ -141,9 +205,9 @@ export function reducer(state, action) {
     case A.GO:
       return { ...state, screen: action.screen };
     case A.OPEN_PERIOD_PICKER:
-      return { ...state, periodPickerOpen: true };
+      return { ...state, periodPickerOpen: true, periodPickerStart: action.startDate ?? null };
     case A.CLOSE_PERIOD_PICKER:
-      return { ...state, periodPickerOpen: false };
+      return { ...state, periodPickerOpen: false, periodPickerStart: null };
     case A.ONBOARD_FIELD:
       return { ...state, onboardDraft: { ...state.onboardDraft, [action.field]: action.value } };
     case A.NEXT_ONBOARD:
@@ -160,6 +224,8 @@ export function reducer(state, action) {
         goal: action.goal || state.onboardDraft.goal,
         dob: state.onboardDraft.dob,
         lastPeriodDate: state.onboardDraft.lastPeriod || null,
+        trackingStartDate: trackingStartOf(null, state.onboardDraft.lastPeriod || null),
+        calendarPhases: {},
         cycleLength: action.cycleLength ?? state.cycleLength,
         periodLength: action.periodLength ?? state.periodLength,
         onboardStep: 0,
@@ -175,7 +241,7 @@ export function reducer(state, action) {
       return { ...state, logs };
     }
     case A.LOGS_HYDRATED:
-      return { ...state, logs: { ...state.logs, ...action.logs } };
+      return { ...state, logs: replaceLogRange(state.logs, action.from, action.to, action.logs) };
     case A.CYCLE_STATUS_HYDRATED:
       return { ...state, cycleStatus: action.status };
     case A.CALENDAR_PHASES_HYDRATED:
@@ -251,9 +317,20 @@ export function reducer(state, action) {
     }
     case A.PROFILE_HYDRATED:
     case A.PROFILE_UPDATED: {
-      const { firstName, lastName, goal, dob, cycleLength, periodLength, lastPeriodDate, themePref, isPremium } = action;
+      const { firstName, lastName, goal, dob, cycleLength, periodLength, lastPeriodDate, trackingStartDate, themePref, isPremium } = action;
       const userName = [firstName, lastName].filter(Boolean).join(' ').trim();
-      return { ...state, userName: userName || state.userName, goal, dob, cycleLength, periodLength, lastPeriodDate, themePref, isPremium };
+      return {
+        ...state,
+        userName: userName || state.userName,
+        goal,
+        dob,
+        cycleLength,
+        periodLength,
+        lastPeriodDate,
+        trackingStartDate: trackingStartDate ?? trackingStartOf(null, lastPeriodDate),
+        themePref,
+        isPremium,
+      };
     }
     case A.REWARDS_HYDRATED: {
       const { points, streak, longestStreak } = action;
@@ -284,7 +361,7 @@ export function reducer(state, action) {
         m = 11;
         y--;
       }
-      return { ...state, viewMonth: m, viewYear: y };
+      return { ...state, viewMonth: m, viewYear: y, selDate: selectionForMonth(y, m) };
     }
     case A.NEXT_MONTH: {
       let m = state.viewMonth + 1,
@@ -293,7 +370,7 @@ export function reducer(state, action) {
         m = 0;
         y++;
       }
-      return { ...state, viewMonth: m, viewYear: y };
+      return { ...state, viewMonth: m, viewYear: y, selDate: selectionForMonth(y, m) };
     }
     case A.UPDATE_SETTINGS:
       return { ...state, ...action.patch };
@@ -302,7 +379,8 @@ export function reducer(state, action) {
       return { ...state, authScreen: action.screen };
     case A.AUTH_SUCCESS:
       return {
-        ...state,
+        ...(state.dataOwnerId === action.userId ? state : withoutUserData(state)),
+        dataOwnerId: action.userId,
         accessToken: action.accessToken,
         refreshToken: action.refreshToken,
         userId: action.userId,
@@ -319,7 +397,7 @@ export function reducer(state, action) {
       return { ...state, accessToken: action.accessToken };
     case A.LOGOUT:
       return {
-        ...state,
+        ...withoutUserData(state),
         authDone: false,
         authScreen: 'welcome',
         accessToken: null,

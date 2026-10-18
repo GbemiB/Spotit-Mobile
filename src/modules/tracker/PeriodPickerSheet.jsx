@@ -14,17 +14,18 @@ export default function PeriodPickerSheet() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { lastPeriodDate, cycleLength, periodLength, cycleStatus, logs, accessToken } = state;
+  const { lastPeriodDate, trackingStartDate, cycleLength, periodLength, cycleStatus, logs, accessToken, periodPickerStart } = state;
   const today = todayISO();
   const phaseKey = cycleStatus?.phase ?? phaseFor(cycleDayOf(today, lastPeriodDate, cycleLength), periodLength, cycleLength).key;
-  const newCycle = (periodStatus(today, lastPeriodDate, cycleLength)?.cyclesMissed ?? 0) > 0;
+  const status = periodStatus(today, lastPeriodDate, cycleLength);
+  const newCycle = !!status && status.state !== 'tracking';
   const ongoing = !newCycle && phaseKey === 'period';
-  const defaultStart = lastPeriodDate && !newCycle ? lastPeriodDate : today;
+  const defaultStart = periodPickerStart ?? (lastPeriodDate && !newCycle ? lastPeriodDate : today);
   const defaultEnd = addDays(defaultStart, periodLength - 1);
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
   const [activeField, setActiveField] = useState('start');
-  const initialAnchor = new Date(ongoing ? lastPeriodDate : today);
+  const initialAnchor = new Date(periodPickerStart ?? (ongoing ? lastPeriodDate : today));
   const [viewYear, setViewYear] = useState(initialAnchor.getFullYear());
   const [viewMonth, setViewMonth] = useState(initialAnchor.getMonth());
   const [saving, setSaving] = useState(false);
@@ -41,6 +42,7 @@ export default function PeriodPickerSheet() {
   }
   function handleDayTap(iso) {
     if (activeField === 'start') {
+      if (iso > today) return;
       setStart(iso);
       setEnd(addDays(iso, periodLength - 1));
       setActiveField('end');
@@ -82,6 +84,7 @@ export default function PeriodPickerSheet() {
           intimate: data.startDayEntry.intimate,
         },
         lastPeriodDate: data.lastPeriodDate,
+        trackingStartDate: data.trackingStartDate,
         pointsAwarded: data.pointsAwarded,
         newBalance: data.newBalance,
         streak: data.streak,
@@ -131,10 +134,11 @@ export default function PeriodPickerSheet() {
           year={viewYear}
           month={viewMonth}
           logs={logs}
-          cycleState={{ lastPeriodDate, cycleLength, periodLength }}
+          cycleState={{ lastPeriodDate, cycleLength, periodLength, trackingStart: trackingStartDate }}
           rangeStart={start}
           rangeEnd={end}
           onSelect={handleDayTap}
+          disabledAfter={activeField === 'start' ? today : null}
         />
 
         {error ? <Text style={s.errorTx}>{error}</Text> : null}

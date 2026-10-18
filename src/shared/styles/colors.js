@@ -1,5 +1,27 @@
 export const phases = { period: '#E5383B', fertile: '#5FA98C', ovulation: '#D6A24E' };
 export const brandFixed = { apple: '#000000' };
+export const calendarPalette = {
+  light: {
+    period: '#DC5A74',
+    fertile: '#4E9E78',
+    ovulation: '#C28A33',
+    tint: { period: 'rgba(220,90,116,0.22)', fertile: 'rgba(95,169,140,0.22)', ovulation: 'rgba(214,162,78,0.26)' },
+    today: '#C04E68',
+    ring: '#9A8B90',
+    dot: '#6E6066',
+    missed: '#9A8B90',
+  },
+  dark: {
+    period: '#E2647C',
+    fertile: '#6BBF9B',
+    ovulation: '#E0B564',
+    tint: { period: 'rgba(226,100,124,0.34)', fertile: 'rgba(107,191,155,0.26)', ovulation: 'rgba(224,181,100,0.30)' },
+    today: '#E2647C',
+    ring: '#C7B8BD',
+    dot: '#C7B8BD',
+    missed: '#96878C',
+  },
+};
 export const light = {
   white: '#FFFFFF',
   black: '#000000',

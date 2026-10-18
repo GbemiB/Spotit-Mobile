@@ -90,7 +90,7 @@ function AppContent() {
     const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
     logsApi
       .getLogsInRange({ from, to }, accessToken)
-      .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
+      .then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} }))
       .catch(() => {});
   }, [authDone, onboarded, today]);
   const [askReminders, setAskReminders] = useState(false);

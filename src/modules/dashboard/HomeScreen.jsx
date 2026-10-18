@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import {
-  cycleDayOf,
   phaseFor,
   nextPeriodDate,
   nextMilestone,
@@ -32,6 +31,7 @@ import PointsCard from './PointsCard.jsx';
 import LogPeriodCta from './LogPeriodCta.jsx';
 import MoodCheckIn from './MoodCheckIn.jsx';
 import WeekStrip from './WeekStrip.jsx';
+import ArticleSources from './ArticleSources.jsx';
 import ForYouCarousel from './ForYouCarousel.jsx';
 import OvulationCard from './OvulationCard.jsx';
 import { RiseIn, GreetingLine, AvatarRing, ShakeEvery } from './HomeFx.jsx';
@@ -149,7 +149,7 @@ export default function HomeScreen() {
     const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
     await Promise.allSettled([
       cycleApi.getCurrent(accessToken).then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status })),
-      logsApi.getLogsInRange({ from, to }, accessToken).then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} })),
+      logsApi.getLogsInRange({ from, to }, accessToken).then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} })),
       billingApi
         .getStatus(accessToken)
         .then(data =>
@@ -168,16 +168,16 @@ export default function HomeScreen() {
   }, [accessToken, dispatch]);
   const today = todayISO();
   const status = periodStatus(today, lastPeriodDate, cycleLength);
-  const unconfirmed = (status?.cyclesMissed ?? 0) > 0;
-  const askStarted = status?.state === 'due' || status?.state === 'late';
+  const unconfirmed = !!status && status.state !== 'tracking';
+  const askStarted = unconfirmed;
   const promptDismissed = askStarted && periodPromptDismissedOn === today;
-  const cycleDay = cycleStatus?.cycleDay ?? cycleDayOf(today, lastPeriodDate, cycleLength);
+  const cycleDay = status?.cycleDay ?? cycleStatus?.cycleDay ?? null;
   const hasCycleData = cycleDay != null;
   const reportedPhaseKey = cycleStatus?.phase ?? phaseFor(cycleDay, periodLength, cycleLength).key;
-  const phaseKey = unconfirmed && reportedPhaseKey === 'period' ? phaseFor(cycleDay, 0, cycleLength).key : reportedPhaseKey;
+  const phaseKey = unconfirmed ? null : reportedPhaseKey;
   const phase = { key: phaseKey, label: PHASE_LABELS[phaseKey], color: phases[phaseKey] };
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
-  const milestone = hasCycleData ? nextMilestone(cycleDay, cycleLength, unconfirmed ? 0 : periodLength) : null;
+  const milestone = hasCycleData && !unconfirmed ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const level = levelInfo(femPoints, levels);
   const reduceMotion = useReduceMotion();
@@ -195,7 +195,10 @@ export default function HomeScreen() {
   const lateParts =
     status?.state === 'due'
       ? [{ text: 'Your period is' }, { text: 'due today', highlight: true }]
-      : [{ text: 'Your period is' }, { text: `${status?.daysLate} ${status?.daysLate === 1 ? 'day' : 'days'} late`, highlight: true }];
+      : [
+          { text: 'Your period is predicted to be' },
+          { text: `${status?.daysLate} ${status?.daysLate === 1 ? 'day' : 'days'} late`, highlight: true },
+        ];
   function dismissPeriodPrompt() {
     dispatch({ type: A.UPDATE_SETTINGS, patch: { periodPromptDismissedOn: today } });
   }
@@ -210,6 +213,7 @@ export default function HomeScreen() {
       tagColor: TAG_COLORS[c.tag] || (c.sponsored ? TAG_COLORS.Sponsored : '#B0A09A'),
       title: c.title,
       body: c.body,
+      references: c.references,
       imageSource: CONTENT_IMAGES[c.imageKey] || CONTENT_IMAGES[IMAGE_KEYS[i % IMAGE_KEYS.length]],
     }));
   const hour = new Date().getHours();
@@ -287,6 +291,11 @@ export default function HomeScreen() {
                   Period expected · {formatDisplayDate(status.expectedDate)}
                 </AnimatedLabel>
                 <AnimatedHeadline parts={lateParts} style={s.heroSerif} highlightColor={colors.primary} reduceMotion={reduceMotion} />
+                {status.missedCycles > 0 && (
+                  <FadeIn delay={900} reduceMotion={reduceMotion}>
+                    <Text style={s.predictedTx}>No period logged for {formatDisplayDate(addDays(status.expectedDate, -cycleLength))}</Text>
+                  </FadeIn>
+                )}
                 <FadeIn delay={1000} reduceMotion={reduceMotion}>
                   <Text style={s.predictedTx}>{promptDismissed ? 'We’ll ask again tomorrow.' : 'Has your period started?'}</Text>
                 </FadeIn>
@@ -333,9 +342,6 @@ export default function HomeScreen() {
                       ? `Next period predicted ${formatDisplayDate(nextP)}`
                       : `Predicted ${formatDisplayDate(milestoneDate)}`}
                   </Text>
-                  {status?.state === 'unconfirmed' && (
-                    <Text style={s.predictedTx}>No period logged since {formatDisplayDate(lastPeriodDate)}</Text>
-                  )}
                 </FadeIn>
                 <View style={{ marginTop: 16 }}>
                   <AnimatedCycleBar
@@ -425,6 +431,7 @@ export default function HomeScreen() {
             <Image source={activeCard.imageSource} style={s.fyDetailImage} resizeMode="cover" />
             <Text style={[s.fyTag, { color: activeCard.tagColor, marginTop: 14 }]}>{activeCard.tag.toUpperCase()}</Text>
             {renderBody(activeCard.body, activeCard.tagColor || colors.primary)}
+            <ArticleSources references={activeCard.references} />
           </View>
         )}
       </BottomSheet>

@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import * as devicesApi from '../api/devices.js';
 import { getDeviceId, isDeviceRegistered, clearDeviceRegistration } from './device.js';
+import { deviceTimeZone } from './timeZone.js';
 const PUSH_TOKEN_KEY = 'spotit_push_token';
 const PROMPT_SEEN_KEY = 'spotit_push_prompt_seen';
 export const REMINDER_CHANNEL = 'reminders';
@@ -44,13 +45,7 @@ export async function requestPermission() {
     return 'unsupported';
   }
 }
-export function deviceTimeZone() {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
-  } catch {
-    return null;
-  }
-}
+export { deviceTimeZone };
 async function fetchPushToken() {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) return null;

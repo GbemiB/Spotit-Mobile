@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config.js';
+import { deviceTimeZone } from '../utils/timeZone.js';
 export class ApiError extends Error {
   constructor(message, status, errorCode, otpId, expiresInSeconds) {
     super(message);
@@ -24,6 +25,8 @@ export function configureAuthClient(bridge) {
 }
 async function rawRequest(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' };
+  const timeZone = deviceTimeZone();
+  if (timeZone) headers['X-Time-Zone'] = timeZone;
   if (token) headers.Authorization = `Bearer ${token}`;
   if (__DEV__) console.log(`[api] -> ${method} ${path}`, body !== undefined ? redact(body) : '');
   let response;

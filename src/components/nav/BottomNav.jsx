@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Platform } from 'react-native';
 import { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -16,7 +16,11 @@ export default function BottomNav({ screen, dispatch }) {
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   return (
-    <BlurView intensity={70} tint={isDark ? 'dark' : 'light'} style={[s.nav, { paddingBottom: insets.bottom || 10 }]}>
+    <BlurView
+      intensity={70}
+      tint={isDark ? 'dark' : 'light'}
+      style={[s.nav, { paddingBottom: insets.bottom || 10 }, Platform.OS === 'android' && { backgroundColor: colors.surface }]}
+    >
       {TABS.map(tab => {
         const active = screen === tab.key;
         const iconColor = active ? colors.primaryDark : colors.textDisabled;

@@ -3,7 +3,7 @@ import { useMemo, useEffect, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { addDays, cycleDayOf, phaseFor, todayISO } from '../../shared/utils/cycle.js';
+import { addDays, cycleDayOf, calendarDay, todayISO } from '../../shared/utils/cycle.js';
 import { useTheme, phases, Text } from '../../shared/styles/index.js';
 import * as logsApi from '../../shared/api/logs.js';
 import { useAnimatedValue, useReduceMotion } from './HeroCardFx.jsx';
@@ -111,7 +111,7 @@ function DayCell({ day, index, selected, onPress, colors, s, reduceMotion }) {
 
 export default function WeekStrip() {
   const { state, dispatch } = useApp();
-  const { logs, lastPeriodDate, cycleLength, periodLength, calendarPhases, accessToken, viewMonth, viewYear } = state;
+  const { logs, lastPeriodDate, trackingStartDate, cycleLength, periodLength, calendarPhases, accessToken, viewMonth, viewYear } = state;
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const reduceMotion = useReduceMotion();
@@ -120,9 +120,11 @@ export default function WeekStrip() {
   const detail = useAnimatedValue(1);
 
   useEffect(() => {
+    const from = addDays(today, -3);
+    const to = addDays(today, 3);
     logsApi
-      .getLogsInRange({ from: addDays(today, -3), to: addDays(today, 3) }, accessToken)
-      .then(data => dispatch({ type: A.LOGS_HYDRATED, logs: data.logs || {} }))
+      .getLogsInRange({ from, to }, accessToken)
+      .then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} }))
       .catch(() => {});
   }, [today, accessToken, dispatch]);
 
@@ -132,7 +134,10 @@ export default function WeekStrip() {
         const iso = addDays(today, offset);
         const date = parseISO(iso);
         const cycleDay = cycleDayOf(iso, lastPeriodDate, cycleLength);
-        const phaseKey = calendarPhases?.[iso] ?? phaseFor(cycleDay, periodLength, cycleLength).key;
+        const phaseKey = (
+          calendarPhases?.[iso] ??
+          calendarDay(iso, { lastPeriodDate, cycleLength, periodLength, trackingStart: trackingStartDate, logs, todayIso: today })
+        ).phase;
         return {
           iso,
           date,
@@ -145,7 +150,7 @@ export default function WeekStrip() {
           logged: hasContent(logs?.[iso]),
         };
       }),
-    [today, logs, lastPeriodDate, cycleLength, periodLength, calendarPhases],
+    [today, logs, lastPeriodDate, trackingStartDate, cycleLength, periodLength, calendarPhases],
   );
   const loggedCount = days.filter(d => d.logged).length;
   const sel = days[selIndex];

@@ -66,7 +66,6 @@ export function nextPeriodDate(lastPeriodDate, cycleLength) {
   next.setDate(next.getDate() + daysLeft);
   return next;
 }
-export const LATE_GRACE_DAYS = 7;
 function daysBetween(fromIso, toIso) {
   const from = new Date(fromIso);
   const to = new Date(toIso);
@@ -74,15 +73,52 @@ function daysBetween(fromIso, toIso) {
   to.setHours(12, 0, 0, 0);
   return Math.round((to - from) / 86400000);
 }
-export function periodStatus(todayIso, lastPeriodDate, cycleLength, graceDays = LATE_GRACE_DAYS) {
+export function periodStatus(todayIso, lastPeriodDate, cycleLength) {
   if (!lastPeriodDate || !cycleLength) return null;
   const diff = daysBetween(lastPeriodDate, todayIso);
-  if (diff < cycleLength) return { state: 'tracking', cyclesMissed: 0 };
-  const cyclesMissed = Math.floor(diff / cycleLength);
-  const daysLate = diff % cycleLength;
-  const expectedDate = addDays(lastPeriodDate, cyclesMissed * cycleLength);
-  if (daysLate > graceDays) return { state: 'unconfirmed', cyclesMissed, daysLate, expectedDate };
-  return { state: daysLate === 0 ? 'due' : 'late', cyclesMissed, daysLate, expectedDate };
+  if (diff < cycleLength) {
+    return {
+      state: 'tracking',
+      cycleDay: cycleDayOf(todayIso, lastPeriodDate, cycleLength),
+      daysLate: 0,
+      expectedDate: addDays(lastPeriodDate, cycleLength),
+      missedCycles: 0,
+    };
+  }
+  const cycles = Math.floor(diff / cycleLength);
+  const daysLate = diff - cycles * cycleLength;
+  return {
+    state: daysLate === 0 ? 'due' : 'late',
+    cycleDay: cycleLength,
+    daysLate,
+    expectedDate: addDays(lastPeriodDate, cycles * cycleLength),
+    missedCycles: cycles - 1,
+  };
+}
+export function trackingStartOf(storedStart, lastPeriodDate) {
+  if (storedStart) return storedStart;
+  return lastPeriodDate ? `${lastPeriodDate.slice(0, 7)}-01` : null;
+}
+export function calendarDay(iso, { lastPeriodDate, cycleLength, periodLength, trackingStart, logs = {}, todayIso }) {
+  const none = { phase: null, predicted: false, marker: null };
+  const start = trackingStartOf(trackingStart, lastPeriodDate);
+  if (start && iso < start) return none;
+  if (logs[iso]?.flow) return { phase: 'period', predicted: false, marker: null };
+  if (!lastPeriodDate || !cycleLength || iso < lastPeriodDate) return none;
+  const diff = daysBetween(lastPeriodDate, iso);
+  if (diff < cycleLength) {
+    const key = phaseFor(diff + 1, periodLength, cycleLength).key;
+    const cycleEnd = addDays(lastPeriodDate, cycleLength);
+    const loggedThisCycle = Object.keys(logs).some(d => logs[d]?.flow && d >= lastPeriodDate && d < cycleEnd);
+    return { phase: loggedThisCycle && key === 'period' ? null : key, predicted: false, marker: null };
+  }
+  const expectedStart = diff % cycleLength === 0;
+  if (iso < todayIso) {
+    const marker = expectedStart ? (addDays(iso, cycleLength) > todayIso ? 'expected' : 'missed') : null;
+    return { phase: null, predicted: false, marker };
+  }
+  const key = phaseFor(cycleDayOf(iso, lastPeriodDate, cycleLength), periodLength, cycleLength).key;
+  return { phase: key, predicted: true, marker: expectedStart && iso === todayIso ? 'expected' : null };
 }
 export function formatDisplayDate(isoOrDate) {
   if (!isoOrDate) return null;
@@ -94,4 +130,9 @@ export function formatDisplayDate(isoOrDate) {
     d = new Date(isoOrDate);
   }
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+}
+export function periodLogStartForMonth(year, month, todayIso) {
+  const first = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  if (first.slice(0, 7) === todayIso.slice(0, 7)) return todayIso;
+  return first < todayIso ? first : null;
 }

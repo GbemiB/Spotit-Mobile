@@ -10,6 +10,9 @@ import {
   addDays,
   datesBetween,
   periodStatus,
+  trackingStartOf,
+  calendarDay,
+  periodLogStartForMonth,
 } from './cycle.js';
 function iso(year, month, day) {
   return toISO(new Date(year, month - 1, day));
@@ -132,32 +135,85 @@ describe('periodStatus', () => {
   test('returns null without a logged period', () => {
     expect(periodStatus('2026-10-15', null, 28)).toBeNull();
   });
-  test('tracks normally inside the logged cycle', () => {
-    expect(periodStatus('2026-09-28', '2026-09-01', 28)).toEqual({ state: 'tracking', cyclesMissed: 0 });
+  test('tracks normally inside the confirmed cycle', () => {
+    expect(periodStatus('2026-09-28', '2026-09-01', 28)).toEqual({
+      state: 'tracking',
+      cycleDay: 28,
+      daysLate: 0,
+      expectedDate: '2026-09-29',
+      missedCycles: 0,
+    });
   });
   test('is due on the predicted start day', () => {
     expect(periodStatus('2026-09-29', '2026-09-01', 28)).toEqual({
       state: 'due',
-      cyclesMissed: 1,
+      cycleDay: 28,
       daysLate: 0,
       expectedDate: '2026-09-29',
+      missedCycles: 0,
     });
   });
-  test('counts days late up to the grace period', () => {
-    expect(periodStatus('2026-10-01', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 2 });
-    expect(periodStatus('2026-10-06', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 7 });
+  test('counts days late until a full cycle has passed, keeping the cycle at its last day', () => {
+    expect(periodStatus('2026-10-01', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 2, cycleDay: 28 });
+    expect(periodStatus('2026-10-26', '2026-09-01', 28)).toMatchObject({ state: 'late', daysLate: 27, expectedDate: '2026-09-29' });
   });
-  test('moves on to the next cycle after the grace period', () => {
-    expect(periodStatus('2026-10-07', '2026-09-01', 28)).toMatchObject({ state: 'unconfirmed', daysLate: 8, cyclesMissed: 1 });
-  });
-  test('asks again when the following predicted period is due', () => {
-    expect(periodStatus('2026-10-27', '2026-09-01', 28)).toMatchObject({
+  test('rolls over to the next predicted start once a full cycle has passed', () => {
+    expect(periodStatus('2026-10-27', '2026-09-01', 28)).toEqual({
       state: 'due',
-      cyclesMissed: 2,
+      cycleDay: 28,
+      daysLate: 0,
       expectedDate: '2026-10-27',
+      missedCycles: 1,
     });
   });
-  test('uses a custom grace period', () => {
-    expect(periodStatus('2026-10-02', '2026-09-01', 28, 2)).toMatchObject({ state: 'unconfirmed', daysLate: 3 });
+});
+describe('trackingStartOf', () => {
+  test('uses the stored start, or the first of the month of the last period', () => {
+    expect(trackingStartOf('2026-06-01', '2026-09-28')).toBe('2026-06-01');
+    expect(trackingStartOf(null, '2026-09-28')).toBe('2026-09-01');
+    expect(trackingStartOf(null, null)).toBeNull();
+  });
+});
+describe('calendarDay', () => {
+  const base = { lastPeriodDate: '2026-07-01', cycleLength: 28, periodLength: 5, trackingStart: null, logs: {} };
+  test('shows nothing before the month of the last period', () => {
+    expect(calendarDay('2026-06-30', { ...base, todayIso: '2026-07-10' })).toEqual({ phase: null, predicted: false, marker: null });
+  });
+  test('shows the confirmed cycle without the predicted flag', () => {
+    expect(calendarDay('2026-07-01', { ...base, todayIso: '2026-07-10' })).toEqual({ phase: 'period', predicted: false, marker: null });
+    expect(calendarDay('2026-07-14', { ...base, todayIso: '2026-07-10' }).phase).toBe('ovulation');
+  });
+  test('predicts from today on', () => {
+    expect(calendarDay('2026-07-29', { ...base, todayIso: '2026-07-10' })).toEqual({ phase: 'period', predicted: true, marker: null });
+  });
+  test('leaves past unconfirmed predictions blank and marks the expected start', () => {
+    expect(calendarDay('2026-07-29', { ...base, todayIso: '2026-08-03' })).toEqual({ phase: null, predicted: false, marker: 'expected' });
+    expect(calendarDay('2026-07-30', { ...base, todayIso: '2026-08-03' }).phase).toBeNull();
+  });
+  test('marks a predicted start as missed once a full cycle has passed', () => {
+    expect(calendarDay('2026-07-29', { ...base, todayIso: '2026-08-27' }).marker).toBe('missed');
+  });
+  test('marks the due day as an expected predicted period', () => {
+    expect(calendarDay('2026-07-29', { ...base, todayIso: '2026-07-29' })).toEqual({
+      phase: 'period',
+      predicted: true,
+      marker: 'expected',
+    });
+  });
+  test('uses logged period days instead of the estimate for the confirmed cycle', () => {
+    const logs = { '2026-07-01': { flow: 'medium' }, '2026-07-02': { flow: 'light' } };
+    expect(calendarDay('2026-07-02', { ...base, logs, todayIso: '2026-07-10' }).phase).toBe('period');
+    expect(calendarDay('2026-07-03', { ...base, logs, todayIso: '2026-07-10' }).phase).toBeNull();
+  });
+});
+describe('periodLogStartForMonth', () => {
+  test('starts today in the current month', () => {
+    expect(periodLogStartForMonth(2026, 9, '2026-10-18')).toBe('2026-10-18');
+  });
+  test('starts on the 1st of a past month', () => {
+    expect(periodLogStartForMonth(2025, 11, '2026-10-18')).toBe('2025-12-01');
+  });
+  test('cannot log in a future month', () => {
+    expect(periodLogStartForMonth(2026, 11, '2026-10-18')).toBeNull();
   });
 });

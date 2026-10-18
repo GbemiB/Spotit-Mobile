@@ -217,6 +217,14 @@ describe('profile and notifications', () => {
     expect(next.cycleLength).toBe(30);
     expect(next.themePref).toBe('dark');
     expect(next.isPremium).toBe(true);
+    expect(next.trackingStartDate).toBeNull();
+  });
+  test('PROFILE_HYDRATED takes the tracking start, or falls back to the month of the last period', () => {
+    const profile = { type: A.PROFILE_HYDRATED, firstName: 'Ada', lastName: 'L', cycleLength: 28, periodLength: 5, themePref: 'system' };
+    expect(reducer(INIT, { ...profile, lastPeriodDate: '2026-09-28', trackingStartDate: '2026-07-01' }).trackingStartDate).toBe(
+      '2026-07-01',
+    );
+    expect(reducer(INIT, { ...profile, lastPeriodDate: '2026-09-28' }).trackingStartDate).toBe('2026-09-01');
   });
   test('PROFILE_HYDRATED keeps the existing name when first/last are both blank', () => {
     const state = { ...INIT, userName: 'Existing Name' };
@@ -343,6 +351,29 @@ describe('LOGOUT and RESET_DATA', () => {
     expect(next.onboardStep).toBe(0);
     expect(next.onboardDraft.name).toBe('');
   });
+  test("LOGOUT removes the account's data from the phone but keeps the theme", () => {
+    const state = {
+      ...INIT,
+      authDone: true,
+      accessToken: 'token',
+      userId: 'user-1',
+      dataOwnerId: 'user-1',
+      themePref: 'light',
+      lastPeriodDate: '2026-10-05',
+      femPoints: 300,
+      logs: { '2026-10-14': { mood: 'happy' } },
+      history: [{ label: 'Logged', delta: 10 }],
+      calendarPhases: { '2026-10-05': { phase: 'period', predicted: false, marker: null } },
+    };
+    const next = reducer(state, { type: A.LOGOUT });
+    expect(next.logs).toEqual({});
+    expect(next.lastPeriodDate).toBeNull();
+    expect(next.femPoints).toBe(0);
+    expect(next.history).toEqual([]);
+    expect(next.calendarPhases).toEqual({});
+    expect(next.dataOwnerId).toBeNull();
+    expect(next.themePref).toBe('light');
+  });
   test('RESET_DATA wipes points, streaks, and logs back to zero', () => {
     const state = { ...INIT, femPoints: 5000, streak: 10, longestStreak: 20, logs: { '2026-07-28': {} } };
     const next = reducer(state, { type: A.RESET_DATA });
@@ -365,5 +396,82 @@ describe('COMPLETE_ONBOARD', () => {
     expect(next.userName).toBe('Ada Lovelace');
     expect(next.lastPeriodDate).toBe('2026-06-01');
     expect(next.screen).toBe('home');
+  });
+});
+describe('switching accounts', () => {
+  const signIn = userId => ({ type: A.AUTH_SUCCESS, accessToken: 't', refreshToken: 'r', userId, onboarded: true });
+  test('signing in as a different account starts with no data from the previous one', () => {
+    const state = {
+      ...INIT,
+      dataOwnerId: 'user-1',
+      logs: { '2026-10-14': { mood: 'happy' } },
+      femPoints: 300,
+      lastPeriodDate: '2026-09-01',
+    };
+    const next = reducer(state, signIn('user-2'));
+    expect(next.logs).toEqual({});
+    expect(next.femPoints).toBe(0);
+    expect(next.lastPeriodDate).toBeNull();
+    expect(next.dataOwnerId).toBe('user-2');
+  });
+  test('signing in again as the same account keeps its data', () => {
+    const state = { ...INIT, dataOwnerId: 'user-1', logs: { '2026-10-14': { mood: 'happy' } } };
+    expect(reducer(state, signIn('user-1')).logs).toEqual({ '2026-10-14': { mood: 'happy' } });
+  });
+  test('data stored without a known owner is cleared on sign-in', () => {
+    const state = { ...INIT, dataOwnerId: null, logs: { '2026-10-14': { mood: 'happy' } } };
+    expect(reducer(state, signIn('user-1')).logs).toEqual({});
+  });
+  test('data saved before this version is owned by the signed-in account', () => {
+    const next = reducer(INIT, { type: A.HYDRATE, payload: { userId: 'user-1', authDone: true, accessToken: 't' } });
+    expect(next.dataOwnerId).toBe('user-1');
+  });
+});
+describe('LOGS_HYDRATED', () => {
+  test('replaces the fetched range with what the server returned', () => {
+    const state = {
+      ...INIT,
+      logs: { '2026-09-30': { mood: 'calm' }, '2026-10-14': { mood: 'happy' }, '2026-10-19': { mood: 'sad' } },
+    };
+    const next = reducer(state, {
+      type: A.LOGS_HYDRATED,
+      from: '2026-10-01',
+      to: '2026-10-31',
+      logs: { '2026-10-05': { flow: 'medium' } },
+    });
+    expect(next.logs).toEqual({ '2026-09-30': { mood: 'calm' }, '2026-10-05': { flow: 'medium' } });
+  });
+  test('merges when no range is given', () => {
+    const state = { ...INIT, logs: { '2026-10-14': { mood: 'happy' } } };
+    const next = reducer(state, { type: A.LOGS_HYDRATED, logs: { '2026-10-15': { mood: 'calm' } } });
+    expect(Object.keys(next.logs)).toEqual(['2026-10-14', '2026-10-15']);
+  });
+});
+describe('changing month', () => {
+  test('no day is selected after moving to another month', () => {
+    const next = reducer({ ...INIT, viewYear: 2030, viewMonth: 0, selDate: '2030-01-15' }, { type: A.NEXT_MONTH });
+    expect(next.viewMonth).toBe(1);
+    expect(next.selDate).toBeNull();
+  });
+  test('the selected day moves to today when returning to the current month', () => {
+    const now = new Date();
+    const previous = { ...INIT, viewYear: now.getFullYear(), viewMonth: now.getMonth() + 1, selDate: '2000-01-01' };
+    const next = reducer(previous.viewMonth > 11 ? { ...previous, viewYear: now.getFullYear() + 1, viewMonth: 0 } : previous, {
+      type: A.PREV_MONTH,
+    });
+    expect(next.selDate).toBe(todayISO());
+  });
+});
+describe('period sheet', () => {
+  test('opens with the chosen start day and forgets it when closed', () => {
+    const open = reducer(INIT, { type: A.OPEN_PERIOD_PICKER, startDate: '2026-10-05' });
+    expect(open.periodPickerOpen).toBe(true);
+    expect(open.periodPickerStart).toBe('2026-10-05');
+    const closed = reducer(open, { type: A.CLOSE_PERIOD_PICKER });
+    expect(closed.periodPickerOpen).toBe(false);
+    expect(closed.periodPickerStart).toBeNull();
+  });
+  test('opens without a start day from Home', () => {
+    expect(reducer(INIT, { type: A.OPEN_PERIOD_PICKER }).periodPickerStart).toBeNull();
   });
 });
