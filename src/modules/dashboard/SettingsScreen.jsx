@@ -14,11 +14,13 @@ import Toggle from '../../components/ui/Toggle.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
+import PartnerSection from '../partner/PartnerSection.jsx';
+import PartnerSelfSection from '../partner/PartnerSelfSection.jsx';
 import appConfig from '../../../app.json';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
 import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
-import { DAY_OPTIONS, toggleDay, timeLabel } from '../../shared/utils/reminders.js';
+import { DAY_OPTIONS, toggleDay } from '../../shared/utils/reminders.js';
 import { canRateApp, openStoreListing } from '../../shared/utils/rateApp.js';
 function splitName(fullName) {
   const parts = fullName.trim().split(/\s+/);
@@ -88,6 +90,7 @@ export default function SettingsScreen() {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels } = state;
+  const isPartner = state.accountType === 'partner';
   const insets = useSafeAreaInsets();
   const level = levelInfo(femPoints, levels);
   const [confirming, setConfirming] = useState(null);
@@ -249,69 +252,73 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Cycle" />
-          <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
-            <Stepper label="Cycle length" value={cycleLength} min={21} max={45} onChange={handleCycleLengthChange} s={s} />
-            <Stepper label="Period length" value={periodLength} min={2} max={10} onChange={handlePeriodLengthChange} last s={s} />
-          </Card>
-        </View>
+        {!isPartner && (
+          <>
+            <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+              <SectionHeader title="Cycle" />
+              <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
+                <Stepper label="Cycle length" value={cycleLength} min={21} max={45} onChange={handleCycleLengthChange} s={s} />
+                <Stepper label="Period length" value={periodLength} min={2} max={10} onChange={handlePeriodLengthChange} last s={s} />
+              </Card>
+            </View>
 
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Reminders" />
-          <Text style={s.notifNote}>
-            {`Choose each reminder separately. Period and ovulation reminders arrive at ${timeLabel(notifs.morningTime)}, the log nudge at ${timeLabel(notifs.eveningTime)}, in your phone's time zone.`}
-          </Text>
-          {permission === 'denied' && (
-            <Card style={s.permCard}>
-              <Text style={s.permTx}>{"Notifications are turned off for Spot it, so reminders can't reach this phone."}</Text>
-              <Button variant="secondary" onPress={() => Linking.openSettings()}>
-                Open settings
-              </Button>
-            </Card>
-          )}
-          {permission === 'undetermined' && (
-            <Card style={s.permCard}>
-              <Text style={s.permTx}>Allow notifications so your reminders can reach this phone.</Text>
-              <Button onPress={allowNotifications}>Allow notifications</Button>
-            </Card>
-          )}
-          <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
-            {NOTIF_ROWS.map((n, i) => {
-              const on = notifs[n.key];
-              const last = i === NOTIF_ROWS.length - 1;
-              const daysKey = REMINDER_DAYS_KEY[n.key];
-              const hasDetail = on && daysKey;
-              return (
-                <View key={n.key} style={!last && s.notifGroup}>
-                  <Row
-                    icon={n.icon}
-                    iconBg={colors[`${n.colorKey}Soft`]}
-                    label={n.label}
-                    sub={n.sub}
-                    right={<Toggle value={on} onChange={() => handleToggleNotif(n.key)} />}
-                    last
-                    compact
-                    s={s}
-                  />
-                  {hasDetail && (
-                    <View style={s.notifDetail}>
-                      {daysKey && (
-                        <DayChips
-                          selected={notifs[daysKey]}
-                          max={notifs.maxDaysBefore}
-                          onToggle={day => handleToggleDay(n.key, daysKey, day)}
-                          colors={colors}
-                          s={s}
-                        />
+            <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+              <SectionHeader title="Reminders" />
+              <Text style={s.notifNote}>Choose each reminder separately.</Text>
+              {permission === 'denied' && (
+                <Card style={s.permCard}>
+                  <Text style={s.permTx}>{"Notifications are turned off for Spot it, so reminders can't reach this phone."}</Text>
+                  <Button variant="secondary" onPress={() => Linking.openSettings()}>
+                    Open settings
+                  </Button>
+                </Card>
+              )}
+              {permission === 'undetermined' && (
+                <Card style={s.permCard}>
+                  <Text style={s.permTx}>Allow notifications so your reminders can reach this phone.</Text>
+                  <Button onPress={allowNotifications}>Allow notifications</Button>
+                </Card>
+              )}
+              <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
+                {NOTIF_ROWS.map((n, i) => {
+                  const on = notifs[n.key];
+                  const last = i === NOTIF_ROWS.length - 1;
+                  const daysKey = REMINDER_DAYS_KEY[n.key];
+                  const hasDetail = on && daysKey;
+                  return (
+                    <View key={n.key} style={!last && s.notifGroup}>
+                      <Row
+                        icon={n.icon}
+                        iconBg={colors[`${n.colorKey}Soft`]}
+                        label={n.label}
+                        sub={n.sub}
+                        right={<Toggle value={on} onChange={() => handleToggleNotif(n.key)} />}
+                        last
+                        compact
+                        s={s}
+                      />
+                      {hasDetail && (
+                        <View style={s.notifDetail}>
+                          {daysKey && (
+                            <DayChips
+                              selected={notifs[daysKey]}
+                              max={notifs.maxDaysBefore}
+                              onToggle={day => handleToggleDay(n.key, daysKey, day)}
+                              colors={colors}
+                              s={s}
+                            />
+                          )}
+                        </View>
                       )}
                     </View>
-                  )}
-                </View>
-              );
-            })}
-          </Card>
-        </View>
+                  );
+                })}
+              </Card>
+            </View>
+          </>
+        )}
+
+        {isPartner ? <PartnerSelfSection /> : <PartnerSection />}
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <SectionHeader title="Appearance" />
@@ -365,15 +372,17 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <SectionHeader title="Data" />
-          <Card style={{ padding: 18, marginTop: 10 }}>
-            <Text style={s.dangerNote}>Resetting will permanently delete all your logs, SpotPoints, and settings.</Text>
-            <Button variant="danger" onPress={() => setConfirming('reset')}>
-              Reset all data
-            </Button>
-          </Card>
-        </View>
+        {!isPartner && (
+          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+            <SectionHeader title="Data" />
+            <Card style={{ padding: 18, marginTop: 10 }}>
+              <Text style={s.dangerNote}>Resetting will permanently delete all your logs, SpotPoints, and settings.</Text>
+              <Button variant="danger" onPress={() => setConfirming('reset')}>
+                Reset all data
+              </Button>
+            </Card>
+          </View>
+        )}
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={{ padding: 18 }}>

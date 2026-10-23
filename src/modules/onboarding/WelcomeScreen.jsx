@@ -394,6 +394,11 @@ export default function WelcomeScreen() {
     setPage(next);
   }
   function goToSignup() {
+    dispatch({ type: A.SET_PARTNER_INTENT, value: false });
+    dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
+  }
+  function goToPartnerSignup() {
+    dispatch({ type: A.SET_PARTNER_INTENT, value: true });
     dispatch({ type: A.SET_AUTH_SCREEN, screen: 'signup' });
   }
   return (
@@ -438,13 +443,13 @@ export default function WelcomeScreen() {
         </Pressable>
       )}
 
-      <Pressable
-        onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' })}
-        style={[s.loginLink, { paddingBottom: insets.bottom + 14 }]}
-      >
+      <Pressable onPress={() => dispatch({ type: A.SET_AUTH_SCREEN, screen: 'login' })} style={s.loginLink}>
         <Text style={s.loginLinkTx}>
           Already have an account? <Text style={{ color: colors.authAccent, fontWeight: '700' }}>Login</Text>
         </Text>
+      </Pressable>
+      <Pressable onPress={goToPartnerSignup} style={[s.partnerLink, { marginBottom: insets.bottom + 14 }]}>
+        <Text style={s.partnerLinkTx}>I have a partner invite</Text>
       </Pressable>
     </LinearGradient>
   );
@@ -480,5 +485,14 @@ function createStyles(c) {
     ctaFullTx: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: '#fff' },
     loginLink: { alignItems: 'center', paddingTop: 4 },
     loginLinkTx: { fontSize: 12, color: c.authBody },
+    partnerLink: {
+      alignSelf: 'center',
+      marginTop: 10,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 99,
+      backgroundColor: 'rgba(255,255,255,0.55)',
+    },
+    partnerLinkTx: { fontSize: 12, fontWeight: '700', color: c.authAccent },
   });
 }

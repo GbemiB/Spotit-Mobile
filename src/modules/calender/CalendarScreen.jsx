@@ -18,6 +18,8 @@ import { MOODS, SYMPTOMS, SYMPTOM_CATEGORIES } from '../../shared/constants/opti
 import { useTheme, calendarPalette, Text, TextInput, FONT } from '../../shared/styles/index.js';
 import CalendarGrid from '../../components/calendar/CalendarGrid.jsx';
 import CalendarGuideSheet from './CalendarGuideSheet.jsx';
+import PartnerDayLog from '../partner/PartnerDayLog.jsx';
+import { viewerOf, calendarNote } from '../../shared/utils/viewer.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
@@ -110,6 +112,7 @@ function draftFrom(date, log) {
 }
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
+  const viewer = viewerOf(state);
   const { colors, isDark } = useTheme();
   const cal = calendarPalette[isDark ? 'dark' : 'light'];
   const s = useMemo(() => createStyles(colors), [colors]);
@@ -270,7 +273,7 @@ export default function CalendarScreen() {
         </View>
         <View style={s.subRow}>
           <Text style={[s.screenSub, s.subText]}>Tap any day to see it, or swipe to change month.</Text>
-          {!selDate && logStart && (
+          {!selDate && logStart && !viewer.isPartner && (
             <Pressable
               onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER, startDate: logStart })}
               style={s.logPeriodPill}
@@ -349,12 +352,12 @@ export default function CalendarScreen() {
                 {selPhase.key
                   ? PHASE_NOTES[selPhase.key]
                   : beforeTracking
-                    ? 'Your calendar starts in the month of your first period with Spot it.'
+                    ? calendarNote('before-tracking', viewer)
                     : lastPeriodDate
                       ? 'This day falls outside the period, fertile, and ovulation windows we track.'
-                      : 'Log your last period to see cycle phases here.'}
+                      : calendarNote('no-period', viewer)}
               </Text>
-              {selDate <= todayISO() && (
+              {selDate <= todayISO() && !viewer.isPartner && (
                 <View style={{ marginTop: 14 }}>
                   <Button
                     size="sm"
@@ -368,7 +371,9 @@ export default function CalendarScreen() {
             </Card>
           )}
 
-          {isPeriodDay ? (
+          {viewer.isPartner ? (
+            <PartnerDayLog log={selDate ? selLog : null} name={viewer.name} />
+          ) : isPeriodDay ? (
             <Card style={{ padding: 18, marginBottom: 14 }}>
               <Text style={s.logHeading}>{selLog ? 'Your log' : 'Log this day'}</Text>
               {selLog?.flow && (

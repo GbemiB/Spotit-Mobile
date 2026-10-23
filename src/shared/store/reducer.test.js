@@ -475,3 +475,111 @@ describe('period sheet', () => {
     expect(reducer(INIT, { type: A.OPEN_PERIOD_PICKER }).periodPickerStart).toBeNull();
   });
 });
+describe('welcome tour', () => {
+  test('finishing onboarding queues the tour', () => {
+    expect(INIT.tourPending).toBe(false);
+    expect(reducer(INIT, { type: A.COMPLETE_ONBOARD, goal: 'track' }).tourPending).toBe(true);
+  });
+  test('joining as a partner queues the partner tour', () => {
+    expect(reducer(INIT, { type: A.PARTNER_JOINED, accessToken: 't' }).tourPending).toBe(true);
+  });
+  test('skipping or finishing clears it', () => {
+    const pending = reducer(INIT, { type: A.COMPLETE_ONBOARD, goal: 'track' });
+    expect(reducer(pending, { type: A.TOUR_DONE }).tourPending).toBe(false);
+  });
+  test('an existing user signing in does not get it', () => {
+    const signedIn = reducer(INIT, { type: A.AUTH_SUCCESS, accessToken: 't', refreshToken: 'r', userId: 'u1', onboarded: true });
+    expect(signedIn.tourPending).toBe(false);
+  });
+  test('logging out forgets a tour that was not shown', () => {
+    const pending = reducer(INIT, { type: A.COMPLETE_ONBOARD, goal: 'track' });
+    expect(reducer(pending, { type: A.LOGOUT }).tourPending).toBe(false);
+  });
+});
+describe('partner accounts', () => {
+  test('signing in keeps the account type, and an older server without it means owner', () => {
+    const partner = reducer(INIT, {
+      type: A.AUTH_SUCCESS,
+      accessToken: 't',
+      refreshToken: 'r',
+      userId: 'u1',
+      onboarded: true,
+      accountType: 'partner',
+    });
+    expect(partner.accountType).toBe('partner');
+    const owner = reducer(INIT, { type: A.AUTH_SUCCESS, accessToken: 't', refreshToken: 'r', userId: 'u2', onboarded: true });
+    expect(owner.accountType).toBe('owner');
+  });
+  test('the partner link on Welcome is remembered until sign-in', () => {
+    const intent = reducer(INIT, { type: A.SET_PARTNER_INTENT, value: true });
+    expect(intent.partnerInviteIntent).toBe(true);
+    const signedIn = reducer(intent, { type: A.AUTH_SUCCESS, accessToken: 't', refreshToken: 'r', userId: 'u1', onboarded: false });
+    expect(signedIn.partnerInviteIntent).toBe(false);
+  });
+  test('joining makes the account a partner, skips onboarding and keeps the new token', () => {
+    const signedIn = reducer(INIT, { type: A.AUTH_SUCCESS, accessToken: 'old', refreshToken: 'r', userId: 'u1', onboarded: false });
+    const joined = reducer(signedIn, { type: A.PARTNER_JOINED, accessToken: 'partner-token' });
+    expect(joined.accountType).toBe('partner');
+    expect(joined.onboarded).toBe(true);
+    expect(joined.accessToken).toBe('partner-token');
+    expect(joined.refreshToken).toBe('r');
+  });
+  test('logging out forgets the partner account type', () => {
+    const joined = reducer(INIT, {
+      type: A.AUTH_SUCCESS,
+      accessToken: 't',
+      refreshToken: 'r',
+      userId: 'u1',
+      onboarded: true,
+      accountType: 'partner',
+    });
+    expect(reducer(joined, { type: A.LOGOUT }).accountType).toBe('owner');
+  });
+});
+describe('partner view', () => {
+  test('her profile fills the cycle settings his screens use', () => {
+    const next = reducer(INIT, {
+      type: A.PARTNER_OWNER_HYDRATED,
+      firstName: 'Amaka',
+      nickname: 'Babe',
+      cycleLength: 30,
+      periodLength: 4,
+      lastPeriodDate: '2026-10-06',
+      trackingStartDate: '2026-10-01',
+    });
+    expect(next.partnerName).toBe('Babe');
+    expect(next.cycleLength).toBe(30);
+    expect(next.periodLength).toBe(4);
+    expect(next.lastPeriodDate).toBe('2026-10-06');
+    expect(next.trackingStartDate).toBe('2026-10-01');
+  });
+  test('his own profile only sets his name, theme and premium, never cycle settings', () => {
+    const withHers = reducer(INIT, {
+      type: A.PARTNER_OWNER_HYDRATED,
+      firstName: 'Amaka',
+      cycleLength: 30,
+      periodLength: 4,
+      lastPeriodDate: '2026-10-06',
+    });
+    const next = reducer(withHers, {
+      type: A.PARTNER_SELF_HYDRATED,
+      firstName: 'Tunde',
+      lastName: 'Bello',
+      themePref: 'dark',
+      isPremium: false,
+      cycleLength: 28,
+    });
+    expect(next.userName).toBe('Tunde Bello');
+    expect(next.cycleLength).toBe(30);
+    expect(next.lastPeriodDate).toBe('2026-10-06');
+  });
+  test('joining clears any data cached from before', () => {
+    const before = { ...INIT, logs: { '2026-10-01': { mood: 'happy' } } };
+    expect(reducer(before, { type: A.PARTNER_JOINED, accessToken: 't' }).logs).toEqual({});
+  });
+  test('sharing ending is remembered until log-out', () => {
+    const ended = reducer(INIT, { type: A.PARTNER_STATE, state: 'ended' });
+    expect(ended.partnerState).toBe('ended');
+    expect(reducer(ended, { type: A.LOGOUT }).partnerState).toBeNull();
+  });
+});

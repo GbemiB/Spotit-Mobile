@@ -36,6 +36,7 @@ export default function LoginScreen() {
         refreshToken: data.refreshToken,
         userId: data.user.userId,
         onboarded: data.user.onboarded,
+        accountType: data.user.accountType,
       });
     }
 

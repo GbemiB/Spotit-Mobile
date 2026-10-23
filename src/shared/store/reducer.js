@@ -17,6 +17,11 @@ export const INIT = {
   otpExpiresAt: null,
   resetEmail: null,
   userName: 'Friend',
+  accountType: 'owner',
+  partnerInviteIntent: false,
+  partnerName: '',
+  partnerState: null,
+  tourPending: false,
   goal: 'track',
   dob: '',
   onboardStep: 0,
@@ -75,6 +80,10 @@ export const INIT = {
 };
 const USER_DATA_KEYS = [
   'userName',
+  'accountType',
+  'partnerName',
+  'partnerState',
+  'tourPending',
   'goal',
   'dob',
   'cycleLength',
@@ -218,6 +227,7 @@ export function reducer(state, action) {
       return {
         ...state,
         onboarded: true,
+        tourPending: true,
         authDone: true,
         authScreen: null,
         userName: state.onboardDraft.name || 'Friend',
@@ -385,6 +395,8 @@ export function reducer(state, action) {
         refreshToken: action.refreshToken,
         userId: action.userId,
         onboarded: action.onboarded ?? state.onboarded,
+        accountType: action.accountType || 'owner',
+        partnerInviteIntent: false,
         authDone: true,
         authScreen: null,
         screen: 'home',
@@ -393,6 +405,44 @@ export function reducer(state, action) {
         otpPurpose: null,
         otpExpiresAt: null,
       };
+    case A.SET_PARTNER_INTENT:
+      return { ...state, partnerInviteIntent: action.value };
+    case A.PARTNER_JOINED:
+      return {
+        ...state,
+        accessToken: action.accessToken,
+        accountType: 'partner',
+        onboarded: true,
+        tourPending: true,
+        partnerState: 'active',
+        screen: 'home',
+        logs: INIT.logs,
+        cycleStatus: INIT.cycleStatus,
+        calendarPhases: INIT.calendarPhases,
+        insights: INIT.insights,
+      };
+    case A.PARTNER_OWNER_HYDRATED:
+      return {
+        ...state,
+        partnerName: (action.nickname || action.firstName || '').trim(),
+        cycleLength: action.cycleLength ?? state.cycleLength,
+        periodLength: action.periodLength ?? state.periodLength,
+        lastPeriodDate: action.lastPeriodDate ?? null,
+        trackingStartDate: action.trackingStartDate ?? trackingStartOf(null, action.lastPeriodDate),
+      };
+    case A.PARTNER_SELF_HYDRATED: {
+      const userName = [action.firstName, action.lastName].filter(Boolean).join(' ').trim();
+      return {
+        ...state,
+        userName: userName || state.userName,
+        themePref: action.themePref ?? state.themePref,
+        isPremium: !!action.isPremium,
+      };
+    }
+    case A.TOUR_DONE:
+      return { ...state, tourPending: false };
+    case A.PARTNER_STATE:
+      return { ...state, partnerState: action.state };
     case A.TOKENS_REFRESHED:
       return { ...state, accessToken: action.accessToken };
     case A.LOGOUT:
@@ -403,6 +453,7 @@ export function reducer(state, action) {
         accessToken: null,
         refreshToken: null,
         userId: null,
+        partnerInviteIntent: false,
         onboardStep: INIT.onboardStep,
         onboardDraft: { ...INIT.onboardDraft },
         inbox: INIT.inbox,

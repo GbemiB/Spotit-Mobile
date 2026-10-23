@@ -3,6 +3,7 @@ import { useMemo, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
+import { viewerOf, regularityTitle } from '../../shared/utils/viewer.js';
 import { A } from '../../shared/store/actions.js';
 import { nextPeriodDate, formatDisplayDate, toISO } from '../../shared/utils/cycle.js';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
@@ -24,19 +25,23 @@ function localDigest(logs) {
   const topMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
   return { loggedCount: entries.length, topMood };
 }
-function regularityCopy(regularity) {
+function regularityCopy(regularity, viewer) {
   if (!regularity || regularity.status === 'insufficient_data') {
-    return { title: 'Not enough data yet', sub: 'Log at least three periods to see your regularity check here.', ok: null };
+    const sub = viewer.isPartner
+      ? `Once ${viewer.name} has logged three periods, her regularity check shows here.`
+      : 'Log at least three periods to see your regularity check here.';
+    return { title: 'Not enough data yet', sub, ok: null };
   }
   if (regularity.status === 'regular') {
-    return { title: 'Your cycles look regular', sub: 'No anomalies detected · not medical advice', ok: true };
+    return { title: regularityTitle('regular', viewer), sub: 'No anomalies detected · not medical advice', ok: true };
   }
-  const title = regularity.status === 'unusual_period_length' ? 'Unusual period length detected' : 'Your cycle length has varied';
+  const title = regularityTitle(regularity.status, viewer);
   const sub = (regularity.flags?.join(' ') || '') + (regularity.disclaimer ? ` ${regularity.disclaimer}` : '');
   return { title, sub, ok: false };
 }
 export default function InsightsScreen() {
   const { state, dispatch } = useApp();
+  const viewer = viewerOf(state);
   const { colors, isDark } = useTheme();
   const digestBg = isDark ? '#2A1810' : '#FBF2EC';
   const digestBody = isDark ? 'rgba(255,255,255,0.65)' : '#8A6E5E';
@@ -64,7 +69,7 @@ export default function InsightsScreen() {
   const hasChartData = trendData.length >= 2;
   const nextP = nextPeriodDate(lastPeriodDate, cycleLength);
   const digest = insights.digest ?? localDigest(logs);
-  const regularity = regularityCopy(insights.regularity);
+  const regularity = regularityCopy(insights.regularity, viewer);
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
@@ -85,7 +90,9 @@ export default function InsightsScreen() {
                 <Text style={s.heroDate}>{formatDisplayDate(nextP)}</Text>
               </>
             ) : (
-              <Text style={s.heroLabel}>Log your last period to see a prediction here</Text>
+              <Text style={s.heroLabel}>
+                {viewer.isPartner ? `${viewer.name} hasn't logged a period yet` : 'Log your last period to see a prediction here'}
+              </Text>
             )}
           </LinearGradient>
         </View>
@@ -124,10 +131,20 @@ export default function InsightsScreen() {
                     </View>
                   )}
                 </View>
-                {!hasChartData && <Text style={s.trendEmptyTx}>Log one more period to see the trend chart and variation here.</Text>}
+                {!hasChartData && (
+                  <Text style={s.trendEmptyTx}>
+                    {viewer.isPartner
+                      ? 'One more period and the trend chart and variation show here.'
+                      : 'Log one more period to see the trend chart and variation here.'}
+                  </Text>
+                )}
               </>
             ) : (
-              <Text style={s.trendEmptyTx}>Log at least two periods to see your cycle length here.</Text>
+              <Text style={s.trendEmptyTx}>
+                {viewer.isPartner
+                  ? `Once ${viewer.name} has logged two periods, her cycle length shows here.`
+                  : 'Log at least two periods to see your cycle length here.'}
+              </Text>
             )}
           </View>
         </View>
@@ -136,11 +153,19 @@ export default function InsightsScreen() {
           <View style={[s.digestCard, { backgroundColor: digestBg }]}>
             <Text style={s.digestTitle}>This week&apos;s digest</Text>
             <Text style={[s.digestBody, { color: digestBody }]}>
-              {digest.topMood ? (
+              {digest.topMood && viewer.isPartner ? (
+                <>
+                  {`${viewer.name}'s most common mood was `}
+                  <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>
+                  {`. She logged ${digest.loggedCount} of 7 days.`}
+                </>
+              ) : digest.topMood ? (
                 <>
                   Your most common mood was <Text style={{ fontWeight: '700' }}>{digest.topMood}</Text>. You logged {digest.loggedCount} of
                   7 days.
                 </>
+              ) : viewer.isPartner ? (
+                `When ${viewer.name} logs her mood and symptoms, her weekly digest shows here.`
               ) : (
                 'Log your mood and symptoms daily to see a personalized digest here.'
               )}

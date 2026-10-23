@@ -1,12 +1,12 @@
-import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
 import { useMemo } from 'react';
 import { useTheme, Text } from '../../shared/styles/index.js';
-export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel', children }) {
+export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel', avoidKeyboard = false, children }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={s.container}>
+      <KeyboardAvoidingView style={s.container} enabled={avoidKeyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={s.overlay} />
         </TouchableWithoutFeedback>
@@ -20,9 +20,11 @@ export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel
               </Pressable>
             </View>
           )}
-          <ScrollView showsVerticalScrollIndicator={false}>{children}</ScrollView>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps={avoidKeyboard ? 'handled' : undefined}>
+            {children}
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

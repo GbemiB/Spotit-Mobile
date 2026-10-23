@@ -11,7 +11,7 @@ import * as authApi from '../../shared/api/auth.js';
 import { isValidEmail } from '../../shared/utils/validation.js';
 import { PRIVACY_POLICY_URL, TERMS_URL } from '../../shared/constants/legal.js';
 export default function SignupScreen() {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
@@ -67,6 +67,11 @@ export default function SignupScreen() {
 
           <View style={s.body}>
             <Text style={s.title}>Create your account</Text>
+            {state.partnerInviteIntent ? (
+              <View style={s.partnerNote}>
+                <Text style={s.partnerNoteTx}>Joining your partner? Sign up with the email address the invite was sent to.</Text>
+              </View>
+            ) : null}
 
             <View style={s.form}>
               <View style={s.field}>
@@ -148,6 +153,8 @@ function createStyles(c) {
       marginTop: 20,
     },
     form: { marginTop: 30 },
+    partnerNote: { marginTop: 18, marginBottom: -12, backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 12 },
+    partnerNoteTx: { fontSize: 11.5, color: c.authBody, lineHeight: 17 },
     field: { marginBottom: 15 },
     label: { fontSize: 10, letterSpacing: 1, color: c.authLabel, textTransform: 'uppercase', fontWeight: '600' },
     input: {

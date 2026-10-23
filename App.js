@@ -17,11 +17,14 @@ import {
 } from '@expo-google-fonts/manrope';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
 import { A } from './src/shared/store/actions.js';
 import { ThemeProvider, useTheme, OnboardingFontScope } from './src/shared/styles/index.js';
-import { AUTH_SCREENS, OnboardingScreen, TAB_SCREENS, DEFAULT_TAB_SCREEN } from './src/shared/navigation/screens.js';
+import { AUTH_SCREENS, TAB_SCREENS, DEFAULT_TAB_SCREEN } from './src/shared/navigation/screens.js';
+import OnboardingGate from './src/modules/partner/OnboardingGate.jsx';
+import PartnerEndedScreen from './src/modules/partner/PartnerEndedScreen.jsx';
+import * as partnerApi from './src/shared/api/partner.js';
 import PeriodPickerSheet from './src/modules/tracker/PeriodPickerSheet.jsx';
 import BottomNav from './src/components/nav/BottomNav.jsx';
 import Toast from './src/components/ui/Toast.jsx';
@@ -35,6 +38,8 @@ import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
 import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx';
+import WelcomeTour from './src/modules/tour/WelcomeTour.jsx';
+import { tourCards, wasTourSeen, markTourSeen } from './src/shared/utils/tour.js';
 import * as appApi from './src/shared/api/app.js';
 import { currentBuild, requiredUpdate } from './src/shared/utils/appVersion.js';
 import { levelInfo } from './src/shared/utils/levels.js';
@@ -72,7 +77,17 @@ function AppContent() {
     today,
     femPoints,
     levels,
+    accountType,
+    partnerState,
+    tourPending,
+    userId,
+    userName,
+    partnerName,
   } = state;
+  const isPartner = accountType === 'partner';
+  const partnerEnded = isPartner && partnerState === 'ended';
+  const appReady = authDone && onboarded;
+  const dataReady = appReady && !partnerEnded;
   const levelIdx = levels.length ? levelInfo(femPoints, levels).idx : null;
   const prevLevelIdx = useRef(null);
   useEffect(() => {
@@ -96,7 +111,7 @@ function AppContent() {
     return () => clearInterval(id);
   }, []);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!dataReady) return;
     const now = new Date();
     const from = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
     const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
@@ -104,15 +119,26 @@ function AppContent() {
       .getLogsInRange({ from, to }, accessToken)
       .then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} }))
       .catch(() => {});
-  }, [authDone, onboarded, today]);
+  }, [authDone, onboarded, today, accountType, partnerState]);
   const [askReminders, setAskReminders] = useState(false);
   useEffect(() => {
     if (!authDone || !accessToken) return;
     (async () => {
       const permission = await syncPushRegistration(accessToken);
-      if (permission === 'undetermined' && onboarded && !(await wasPromptSeen())) setAskReminders(true);
+      if (permission === 'undetermined' && onboarded && !tourPending && !(await wasPromptSeen())) setAskReminders(true);
     })();
-  }, [authDone, onboarded, accessToken, resumedAt]);
+  }, [authDone, onboarded, accessToken, resumedAt, tourPending]);
+  const [showTour, setShowTour] = useState(false);
+  useEffect(() => {
+    if (!dataReady || !tourPending) return;
+    wasTourSeen(userId).then(seen => (seen ? dispatch({ type: A.TOUR_DONE }) : setShowTour(true)));
+  }, [dataReady, tourPending, userId, dispatch]);
+  const cards = useMemo(() => tourCards({ accountType, userName, partnerName }), [accountType, userName, partnerName]);
+  function finishTour() {
+    setShowTour(false);
+    markTourSeen(userId);
+    dispatch({ type: A.TOUR_DONE });
+  }
   async function answerReminderPrompt(accepted) {
     setAskReminders(false);
     await markPromptSeen();
@@ -131,17 +157,17 @@ function AppContent() {
   }, [authDone, onboarded, accessToken, resumedAt]);
   useEffect(() => {
     if (!authDone || !onboarded) return;
-    return listenForReminderTaps(tab => dispatch({ type: A.GO, screen: tab }));
+    return listenForReminderTaps(tab => dispatch({ type: A.GO, screen: tab === 'partner' ? 'home' : tab }));
   }, [authDone, onboarded]);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!dataReady) return;
     cycleApi
       .getCurrent(accessToken)
       .then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status }))
       .catch(() => {});
-  }, [authDone, onboarded, lastPeriodDate, cycleLength, periodLength, today]);
+  }, [authDone, onboarded, lastPeriodDate, cycleLength, periodLength, today, accountType, partnerState]);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!appReady) return;
     billingApi
       .getStatus(accessToken)
       .then(data =>
@@ -154,9 +180,24 @@ function AppContent() {
         }),
       )
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, accountType]);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!appReady) return;
+    if (isPartner) {
+      usersApi
+        .getProfile(accessToken)
+        .then(data => dispatch({ type: A.PARTNER_SELF_HYDRATED, ...data }))
+        .catch(() => {});
+      partnerApi
+        .getPartnerStatus(accessToken)
+        .then(data => dispatch({ type: A.PARTNER_STATE, state: data.state }))
+        .catch(() => {});
+      partnerApi
+        .getPartnerProfile(accessToken)
+        .then(data => dispatch({ type: A.PARTNER_OWNER_HYDRATED, ...data }))
+        .catch(() => {});
+      return;
+    }
     usersApi
       .getProfile(accessToken)
       .then(data => dispatch({ type: A.PROFILE_HYDRATED, ...data }))
@@ -165,9 +206,9 @@ function AppContent() {
       .getNotifications(accessToken)
       .then(data => dispatch({ type: A.NOTIFICATIONS_HYDRATED, ...data }))
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, accountType, accessToken, resumedAt]);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!appReady) return;
     rewardsApi
       .getSummary(accessToken)
       .then(data => dispatch({ type: A.REWARDS_HYDRATED, ...data }))
@@ -192,14 +233,14 @@ function AppContent() {
       .getProducts(accessToken)
       .then(products => dispatch({ type: A.SHOP_PRODUCTS_HYDRATED, products }))
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, accountType]);
   useEffect(() => {
-    if (!authDone || !onboarded) return;
+    if (!appReady) return;
     contentApi
       .getFeed(10, accessToken)
       .then(data => dispatch({ type: A.CONTENT_HYDRATED, items: data.items || [] }))
       .catch(() => {});
-  }, [authDone, onboarded]);
+  }, [authDone, onboarded, accountType]);
   if (!authDone) {
     const AuthScreen = AUTH_SCREENS[authScreen];
     if (AuthScreen)
@@ -209,10 +250,17 @@ function AppContent() {
         </OnboardingFontScope>
       );
   }
+  if (partnerEnded)
+    return (
+      <View style={[s.root, { backgroundColor: colors.background }]}>
+        <PartnerEndedScreen />
+        {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
+      </View>
+    );
   if (!onboarded)
     return (
       <OnboardingFontScope>
-        <OnboardingScreen />
+        <OnboardingGate />
       </OnboardingFontScope>
     );
   const Screen = TAB_SCREENS[screen] || DEFAULT_TAB_SCREEN;
@@ -222,10 +270,15 @@ function AppContent() {
       <BottomNav screen={screen} dispatch={dispatch} />
       {periodPickerOpen && <PeriodPickerSheet />}
       {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
+      <WelcomeTour visible={showTour} cards={cards} partnerName={partnerName} onDone={finishTour} />
       <ConfirmModal
-        visible={askReminders}
+        visible={askReminders && !showTour}
         title="Turn on reminders?"
-        message="Get a heads-up before your period and ovulation, with the days counted down for you. You choose which reminders you get in Profile."
+        message={
+          isPartner
+            ? 'Get a reminder 5 days before her period. You can turn it off in Profile.'
+            : 'Get a heads-up before your period and ovulation, with the days counted down for you. You choose which reminders you get in Profile.'
+        }
         confirmLabel="Turn on"
         cancelLabel="Not now"
         onConfirm={() => answerReminderPrompt(true)}

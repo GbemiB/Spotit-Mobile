@@ -94,6 +94,7 @@ export default function OtpVerifyScreen() {
           refreshToken: data.refreshToken,
           userId: data.user.userId,
           onboarded: data.user.onboarded,
+          accountType: data.user.accountType,
         });
       } else {
         await authApi.verifyOtp({ otpId: state.pendingOtpId, code: enteredCode });

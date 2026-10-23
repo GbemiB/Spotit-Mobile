@@ -34,6 +34,16 @@ import WeekStrip from './WeekStrip.jsx';
 import ArticleSources from './ArticleSources.jsx';
 import ForYouCarousel from './ForYouCarousel.jsx';
 import OvulationCard from './OvulationCard.jsx';
+import PartnerCheckInCard from '../partner/PartnerCheckInCard.jsx';
+import * as partnerApi from '../../shared/api/partner.js';
+import {
+  viewerOf,
+  heroParts as heroCopy,
+  lateParts as lateCopy,
+  milestoneLead,
+  ovulationInsight,
+  noPeriodCopy,
+} from '../../shared/utils/viewer.js';
 import { RiseIn, GreetingLine, AvatarRing, ShakeEvery } from './HomeFx.jsx';
 import {
   HeroFrame,
@@ -63,19 +73,6 @@ const TAG_COLORS = {
 };
 const IMAGE_KEYS = ['lifestyle', 'food', 'product'];
 const MAX_FEED_ITEMS = 3;
-function insightFor(phase, cycleLength) {
-  const ovDay = cycleLength - 14;
-  if (phase.key === 'ovulation') {
-    return {
-      title: 'Your fertile window is open',
-      body: 'Today is your predicted ovulation day. You may notice a small temperature rise tomorrow.',
-    };
-  }
-  if (phase.key === 'fertile') {
-    return { title: 'Your fertile window is open', body: 'You’re in your fertile window — a good time to track symptoms closely.' };
-  }
-  return { title: 'Track your ovulation', body: `Ovulation is predicted around day ${ovDay} of your cycle.` };
-}
 function shortDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -113,6 +110,7 @@ function GlowBlob({ size, color, duration, delay = 0, style }) {
 }
 export default function HomeScreen() {
   const { state, dispatch } = useApp();
+  const isPartner = state.accountType === 'partner';
   const { colors, isDark } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const {
@@ -150,22 +148,23 @@ export default function HomeScreen() {
     await Promise.allSettled([
       cycleApi.getCurrent(accessToken).then(status => dispatch({ type: A.CYCLE_STATUS_HYDRATED, status })),
       logsApi.getLogsInRange({ from, to }, accessToken).then(data => dispatch({ type: A.LOGS_HYDRATED, from, to, logs: data.logs || {} })),
-      billingApi
-        .getStatus(accessToken)
-        .then(data =>
-          dispatch({
-            type: A.SUBSCRIPTION_UPDATED,
-            isPremium: data.isPremium,
-            plan: data.plan,
-            renewsAt: data.renewsAt,
-            autoRenew: data.autoRenew,
-          }),
-        ),
+      billingApi.getStatus(accessToken).then(data =>
+        dispatch({
+          type: A.SUBSCRIPTION_UPDATED,
+          isPremium: data.isPremium,
+          plan: data.plan,
+          renewsAt: data.renewsAt,
+          autoRenew: data.autoRenew,
+        }),
+      ),
       rewardsApi.getSummary(accessToken).then(data => dispatch({ type: A.REWARDS_HYDRATED, ...data })),
+      isPartner
+        ? partnerApi.getPartnerProfile(accessToken).then(data => dispatch({ type: A.PARTNER_OWNER_HYDRATED, ...data }))
+        : Promise.resolve(),
     ]);
     dispatch({ type: A.TODAY_CHANGED, today: todayISO() });
     setRefreshing(false);
-  }, [accessToken, dispatch]);
+  }, [accessToken, dispatch, isPartner]);
   const today = todayISO();
   const status = periodStatus(today, lastPeriodDate, cycleLength);
   const unconfirmed = !!status && status.state !== 'tracking';
@@ -184,26 +183,15 @@ export default function HomeScreen() {
   const ovDay = cycleLength - 14;
   const daysToOv = hasCycleData ? (ovDay - cycleDay + cycleLength) % cycleLength : null;
   const ovDateLabel = daysToOv === 0 ? 'Ovulation today' : daysToOv != null ? `Ovulation ${shortDate(addDays(today, daysToOv))}` : null;
-  const heroParts =
-    phaseKey === 'period'
-      ? [{ text: 'You’re on' }, { text: `day ${cycleDay}`, highlight: true }, { text: 'of your period' }]
-      : phaseKey === 'fertile'
-        ? [{ text: 'You’re in your' }, { text: 'fertile window', highlight: true }]
-        : phaseKey === 'ovulation'
-          ? [{ text: 'Today is your predicted' }, { text: 'ovulation day', highlight: true }]
-          : null;
-  const lateParts =
-    status?.state === 'due'
-      ? [{ text: 'Your period is' }, { text: 'due today', highlight: true }]
-      : [
-          { text: 'Your period is predicted to be' },
-          { text: `${status?.daysLate} ${status?.daysLate === 1 ? 'day' : 'days'} late`, highlight: true },
-        ];
+  const viewer = viewerOf(state);
+  const heroParts = heroCopy(phaseKey, cycleDay, viewer);
+  const lateParts = lateCopy(status, viewer);
+  const noPeriod = noPeriodCopy(viewer);
   function dismissPeriodPrompt() {
     dispatch({ type: A.UPDATE_SETTINGS, patch: { periodPromptDismissedOn: today } });
   }
   const daysUntilShown = useCountTo(milestone?.daysUntil, cycleLength, reduceMotion);
-  const insight = insightFor(phase, cycleLength);
+  const insight = ovulationInsight(phase.key, cycleLength, viewer);
   const feedItems = (Array.isArray(content) ? content : [])
     .filter(c => c && c.title && c.enabled !== false && c.active !== false && !c.hidden)
     .slice(0, MAX_FEED_ITEMS)
@@ -297,9 +285,15 @@ export default function HomeScreen() {
                   </FadeIn>
                 )}
                 <FadeIn delay={1000} reduceMotion={reduceMotion}>
-                  <Text style={s.predictedTx}>{promptDismissed ? 'We’ll ask again tomorrow.' : 'Has your period started?'}</Text>
+                  <Text style={s.predictedTx}>
+                    {viewer.isPartner
+                      ? `This updates when ${viewer.name} logs her period.`
+                      : promptDismissed
+                        ? 'We’ll ask again tomorrow.'
+                        : 'Has your period started?'}
+                  </Text>
                 </FadeIn>
-                {!promptDismissed && (
+                {!promptDismissed && !viewer.isPartner && (
                   <FadeIn delay={1100} reduceMotion={reduceMotion}>
                     <View style={s.confirmRow}>
                       <Button size="sm" onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}>
@@ -322,11 +316,7 @@ export default function HomeScreen() {
                 ) : (
                   <View style={s.heroRow}>
                     <RiseText style={s.heroSerifSm} delay={350} reduceMotion={reduceMotion}>
-                      {milestone?.key === 'fertile'
-                        ? 'Your fertile window starts in'
-                        : milestone?.key === 'ovulation'
-                          ? 'Ovulation in'
-                          : 'Your period starts in'}
+                      {milestoneLead(milestone?.key, viewer)}
                     </RiseText>
                     <RiseText style={[s.heroSerifBig, { color: colors.primary }]} delay={450} pop reduceMotion={reduceMotion}>
                       {daysUntilShown}
@@ -369,8 +359,8 @@ export default function HomeScreen() {
             ) : (
               <>
                 <Text style={s.phaseLabel}>No period logged yet</Text>
-                <Text style={s.heroSerif}>Log a period to see your predictions</Text>
-                <Text style={s.predictedTx}>Track today&apos;s flow and we&apos;ll start predicting your next cycle.</Text>
+                <Text style={s.heroSerif}>{noPeriod.headline}</Text>
+                <Text style={s.predictedTx}>{noPeriod.sub}</Text>
               </>
             )}
           </Card>
@@ -378,22 +368,24 @@ export default function HomeScreen() {
       </RiseIn>
 
       <RiseIn index={2} style={s.section} reduceMotion={reduceMotion}>
-        <MoodCheckIn />
+        {viewer.isPartner ? <PartnerCheckInCard name={viewer.name} /> : <MoodCheckIn />}
       </RiseIn>
 
-      <RiseIn index={3} style={s.section} reduceMotion={reduceMotion}>
-        <LogPeriodCta
-          title={askStarted ? 'Has your period started?' : phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}
-          subtitle={
-            askStarted
-              ? 'Tap to log it and earn points'
-              : phaseKey === 'period'
-                ? 'Tap to confirm or adjust the end date'
-                : `Mark when your next period starts and earn points as you do!`
-          }
-          onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}
-        />
-      </RiseIn>
+      {!viewer.isPartner && (
+        <RiseIn index={3} style={s.section} reduceMotion={reduceMotion}>
+          <LogPeriodCta
+            title={askStarted ? 'Has your period started?' : phaseKey === 'period' ? `Period day ${cycleDay}` : 'Log period'}
+            subtitle={
+              askStarted
+                ? 'Tap to log it and earn points'
+                : phaseKey === 'period'
+                  ? 'Tap to confirm or adjust the end date'
+                  : `Mark when your next period starts and earn points as you do!`
+            }
+            onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER })}
+          />
+        </RiseIn>
+      )}
 
       <RiseIn index={4} style={s.section} reduceMotion={reduceMotion}>
         <WeekStrip />

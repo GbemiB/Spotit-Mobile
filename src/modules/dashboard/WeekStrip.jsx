@@ -154,7 +154,8 @@ export default function WeekStrip() {
   );
   const loggedCount = days.filter(d => d.logged).length;
   const sel = days[selIndex];
-  const canLog = !sel.logged && sel.offset <= 0 && sel.phaseKey === 'period';
+  const isPartner = state.accountType === 'partner';
+  const canLog = isPartner ? sel.logged : !sel.logged && sel.offset <= 0 && sel.phaseKey === 'period';
   const detailText = sel.logged
     ? `Logged${sel.cycleDay ? ` · cycle day ${sel.cycleDay}` : ''}`
     : sel.offset > 0
@@ -217,8 +218,13 @@ export default function WeekStrip() {
           <Text style={s.detailText}>· {detailText}</Text>
         </View>
         {canLog && (
-          <Pressable onPress={openInCalendar} hitSlop={10} accessibilityRole="button" accessibilityLabel="Log this day in the calendar">
-            <Text style={s.logLink}>Log</Text>
+          <Pressable
+            onPress={openInCalendar}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={isPartner ? 'View this day in the calendar' : 'Log this day in the calendar'}
+          >
+            <Text style={s.logLink}>{isPartner ? 'View' : 'Log'}</Text>
           </Pressable>
         )}
       </Animated.View>

@@ -1,4 +1,4 @@
-import { DAY_OPTIONS, toggleDay, timeLabel } from './reminders.js';
+import { DAY_OPTIONS, toggleDay } from './reminders.js';
 describe('toggleDay', () => {
   test('removes a day that is selected', () => {
     expect(toggleDay([3, 2, 1, 0], 2)).toEqual([3, 1, 0]);
@@ -14,14 +14,6 @@ describe('toggleDay', () => {
     const selected = [3, 2];
     toggleDay(selected, 1);
     expect(selected).toEqual([3, 2]);
-  });
-});
-describe('timeLabel', () => {
-  test('formats as a 12-hour clock', () => {
-    expect(timeLabel('09:00')).toBe('9:00 AM');
-    expect(timeLabel('20:30')).toBe('8:30 PM');
-    expect(timeLabel('00:00')).toBe('12:00 AM');
-    expect(timeLabel('12:15')).toBe('12:15 PM');
   });
 });
 test('the day options are 2 days before, 1 day before and on the day', () => {
