@@ -1,92 +1,28 @@
-import { View, Pressable, StyleSheet, AppState } from 'react-native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useApp } from '../../shared/store/AppContext.jsx';
-import { A } from '../../shared/store/actions.js';
-import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import { useTheme, Text } from '../../shared/styles/index.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import SectionHeader from '../../components/ui/SectionHeader.jsx';
-import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
-import * as partnerApi from '../../shared/api/partner.js';
 import { ownerCard, expiryLabel } from '../../shared/utils/partner.js';
-import { isValidEmail } from '../../shared/utils/validation.js';
+import usePartnerSharing from './usePartnerSharing.js';
+import InviteSheet from './InviteSheet.jsx';
 export default function PartnerSection() {
-  const { state, dispatch } = useApp();
-  const { accessToken } = state;
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const [status, setStatus] = useState(null);
+  const { status, busy, invite, resend, cancel, stop } = usePartnerSharing();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [busy, setBusy] = useState(false);
   const [confirmStop, setConfirmStop] = useState(false);
-  const toast = useCallback((icon, text) => dispatch({ type: A.SHOW_TOAST, icon, text }), [dispatch]);
-  const load = useCallback(() => {
-    partnerApi
-      .getPartnerStatus(accessToken)
-      .then(setStatus)
-      .catch(() => {});
-  }, [accessToken]);
-  useEffect(() => {
-    load();
-    const sub = AppState.addEventListener('change', next => {
-      if (next === 'active') load();
-    });
-    return () => sub.remove();
-  }, [load]);
-  async function run(task) {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await task();
-    } catch (e) {
-      toast('🌸', e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
   function openSheet() {
-    setEmail('');
-    setEmailError('');
     setSheetOpen(true);
   }
-  function sendInvite() {
-    const trimmed = email.trim();
-    if (!isValidEmail(trimmed)) {
-      setEmailError('Please enter a valid email address.');
-      return;
-    }
-    run(async () => {
-      const next = await partnerApi.invitePartner(trimmed, accessToken);
-      setStatus(next);
-      setSheetOpen(false);
-      toast('💌', `Invite sent to ${next.inviteEmail}`);
-    });
-  }
-  function resend() {
-    run(async () => {
-      const next = await partnerApi.resendPartnerInvite(accessToken);
-      setStatus(next);
-      toast('💌', `A new code is on its way to ${next.inviteEmail}`);
-    });
-  }
   function cancelInvite() {
-    run(async () => {
-      await partnerApi.cancelPartnerInvite(accessToken);
-      load();
-      toast('🌸', 'Invite cancelled.');
-    });
+    cancel();
   }
-  function stopSharing() {
-    run(async () => {
-      await partnerApi.stopPartnerSharing(accessToken);
-      setConfirmStop(false);
-      load();
-      toast('🌸', 'Sharing stopped.');
-    });
+  async function stopSharing() {
+    if (await stop()) setConfirmStop(false);
   }
   const card = ownerCard(status);
   if (card === 'loading' || card === 'hidden') return null;
@@ -170,37 +106,7 @@ export default function PartnerSection() {
           </Text>
         </>
       )}
-      <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Invite your partner" avoidKeyboard>
-        <View style={s.sheetBody}>
-          <Text style={s.label}>{"Partner's email"}</Text>
-          <TextInput
-            value={email}
-            onChangeText={text => {
-              setEmail(text);
-              if (emailError) setEmailError('');
-            }}
-            placeholder="name@email.com"
-            placeholderTextColor={colors.textFaint}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            returnKeyType="send"
-            onSubmitEditing={sendInvite}
-            style={[s.input, emailError ? { borderColor: colors.error } : null]}
-          />
-          {emailError ? <Text style={s.errorTx}>{emailError}</Text> : null}
-          <View style={s.hint}>
-            <Text style={s.body}>
-              We&apos;ll email them a 6-character code. It only works for this email address and expires in 48 hours. Once they join, they
-              see everything you track, read-only.
-            </Text>
-          </View>
-          <Button onPress={sendInvite} disabled={busy}>
-            {busy ? 'Sending…' : 'Send invite'}
-          </Button>
-        </View>
-      </BottomSheet>
+      <InviteSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onSend={invite} busy={busy} />
       <ConfirmModal
         visible={confirmStop}
         title={`Stop sharing with ${partnerName}?`}
@@ -219,9 +125,9 @@ function createStyles(c) {
     listCard: { marginTop: 10, padding: 0, overflow: 'hidden' },
     intro: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
     iconTile: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    iconTx: { fontSize: 14 },
+    iconTx: { fontSize: 12 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    title: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
+    title: { fontSize: 10, fontWeight: '700', color: c.textPrimary },
     email: { fontSize: 10.5, fontWeight: '600', color: c.textPrimary, marginTop: 4 },
     body: { fontSize: 10.5, color: c.textSecondary, lineHeight: 17, marginTop: 4 },
     pill: { borderRadius: 99, paddingVertical: 3, paddingHorizontal: 9 },
@@ -239,19 +145,5 @@ function createStyles(c) {
     rowLabel: { fontSize: 11, color: c.textPrimary, fontWeight: '600' },
     rowSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2, lineHeight: 14 },
     footNote: { fontSize: 10.5, color: c.textMuted, marginTop: 10, paddingHorizontal: 4, lineHeight: 15 },
-    sheetBody: { gap: 12 },
-    label: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
-    input: {
-      borderWidth: 1.5,
-      borderColor: c.border,
-      borderRadius: 14,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      fontSize: 12.5,
-      color: c.textPrimary,
-      backgroundColor: c.surface,
-    },
-    errorTx: { fontSize: 10, color: c.error, fontWeight: '600' },
-    hint: { backgroundColor: c.surface, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
   });
 }

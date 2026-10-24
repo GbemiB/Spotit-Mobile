@@ -35,6 +35,7 @@ import ArticleSources from './ArticleSources.jsx';
 import ForYouCarousel from './ForYouCarousel.jsx';
 import OvulationCard from './OvulationCard.jsx';
 import PartnerCheckInCard from '../partner/PartnerCheckInCard.jsx';
+import HomePartnerCard from '../partner/HomePartnerCard.jsx';
 import * as partnerApi from '../../shared/api/partner.js';
 import {
   viewerOf,
@@ -108,6 +109,12 @@ function GlowBlob({ size, color, duration, delay = 0, style }) {
     />
   );
 }
+function daysFromToday(todayIso, date) {
+  const [y, m, d] = todayIso.split('-').map(Number);
+  const start = new Date(y, m - 1, d, 12);
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+  return Math.round((end - start) / 86400000);
+}
 export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const isPartner = state.accountType === 'partner';
@@ -178,6 +185,7 @@ export default function HomeScreen() {
   const nextP = cycleStatus?.nextPeriodDate ? new Date(cycleStatus.nextPeriodDate) : nextPeriodDate(lastPeriodDate, cycleLength);
   const milestone = hasCycleData && !unconfirmed ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
+  const daysToPeriod = !unconfirmed && nextP ? daysFromToday(today, nextP) : null;
   const level = levelInfo(femPoints, levels);
   const reduceMotion = useReduceMotion();
   const ovDay = cycleLength - 14;
@@ -368,6 +376,16 @@ export default function HomeScreen() {
       </RiseIn>
 
       <RiseIn index={2} style={s.section} reduceMotion={reduceMotion}>
+        <PointsCard
+          levelName={level.name}
+          points={femPoints.toLocaleString()}
+          pct={level.pct}
+          toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+          onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}
+        />
+      </RiseIn>
+
+      <RiseIn index={2} style={s.section} reduceMotion={reduceMotion}>
         {viewer.isPartner ? <PartnerCheckInCard name={viewer.name} /> : <MoodCheckIn />}
       </RiseIn>
 
@@ -387,18 +405,19 @@ export default function HomeScreen() {
         </RiseIn>
       )}
 
-      <RiseIn index={4} style={s.section} reduceMotion={reduceMotion}>
-        <WeekStrip />
-      </RiseIn>
+      {!viewer.isPartner && (
+        <RiseIn index={4} style={s.section} reduceMotion={reduceMotion}>
+          <HomePartnerCard
+            firstName={firstName === 'Friend' ? '' : firstName}
+            phaseKey={phaseKey}
+            cycleDay={cycleDay}
+            daysToPeriod={daysToPeriod}
+          />
+        </RiseIn>
+      )}
 
       <RiseIn index={5} style={s.section} reduceMotion={reduceMotion}>
-        <PointsCard
-          levelName={level.name}
-          points={femPoints.toLocaleString()}
-          pct={level.pct}
-          toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
-          onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}
-        />
+        <WeekStrip />
       </RiseIn>
 
       <RiseIn index={6} style={s.section} reduceMotion={reduceMotion}>
@@ -433,7 +452,7 @@ export default function HomeScreen() {
 }
 function createStyles(c) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1, backgroundColor: 'transparent' },
     section: { paddingHorizontal: 24, marginBottom: 14 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 20 },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },

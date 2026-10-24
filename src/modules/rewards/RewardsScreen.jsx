@@ -353,7 +353,7 @@ export default function RewardsScreen() {
 }
 function createStyles(c) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1, backgroundColor: 'transparent' },
     header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
     headerTitle: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     sectionTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary, marginBottom: 4 },

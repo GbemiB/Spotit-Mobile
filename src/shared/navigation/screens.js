@@ -10,6 +10,7 @@ import CalendarScreen from '../../modules/calender/CalendarScreen.jsx';
 import InsightsScreen from '../../modules/insights/InsightsScreen.jsx';
 import RewardsScreen from '../../modules/rewards/RewardsScreen.jsx';
 import SettingsScreen from '../../modules/dashboard/SettingsScreen.jsx';
+import SpotlightScreen from '../../modules/spotlight/SpotlightScreen.jsx';
 export const AUTH_SCREENS = {
   splash: SplashScreen,
   welcome: WelcomeScreen,
@@ -22,6 +23,7 @@ export { OnboardingScreen };
 export const TAB_SCREENS = {
   home: HomeScreen,
   cal: CalendarScreen,
+  spotlight: SpotlightScreen,
   insights: InsightsScreen,
   rewards: RewardsScreen,
   settings: SettingsScreen,

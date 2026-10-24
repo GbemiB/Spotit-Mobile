@@ -39,6 +39,7 @@ import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
 import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx';
 import WelcomeTour from './src/modules/tour/WelcomeTour.jsx';
+import LivingBackground from './src/components/ui/LivingBackground.jsx';
 import { tourCards, wasTourSeen, markTourSeen } from './src/shared/utils/tour.js';
 import * as appApi from './src/shared/api/app.js';
 import { currentBuild, requiredUpdate } from './src/shared/utils/appVersion.js';
@@ -266,6 +267,7 @@ function AppContent() {
   const Screen = TAB_SCREENS[screen] || DEFAULT_TAB_SCREEN;
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
+      <LivingBackground />
       <Screen />
       <BottomNav screen={screen} dispatch={dispatch} />
       {periodPickerOpen && <PeriodPickerSheet />}

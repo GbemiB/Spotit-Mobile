@@ -97,3 +97,16 @@ export function WarningIcon({ size = 26 }) {
     </Svg>
   );
 }
+export function SparkleIcon({ size = 24, color = '#C04E68' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 3c.5 4.2 2.2 6.5 7 7.5-4.8 1-6.5 3.3-7 7.5-.5-4.2-2.2-6.5-7-7.5 4.8-1 6.5-3.3 7-7.5z"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <Path d="M19 16.5v3M17.5 18h3" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+    </Svg>
+  );
+}

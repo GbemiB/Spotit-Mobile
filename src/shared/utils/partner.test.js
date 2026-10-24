@@ -1,4 +1,18 @@
-import { ownerCard, expiryLabel, normalizeInviteCode, signedInRoute, setupRoute, dayLogRows, supportLabels } from './partner.js';
+import {
+  ownerCard,
+  expiryLabel,
+  normalizeInviteCode,
+  signedInRoute,
+  setupRoute,
+  dayLogRows,
+  supportLabels,
+  homeInviteCopy,
+  connectedLine,
+  connectedTitle,
+  inviteExpiryText,
+  sharedSinceLabel,
+  headsUpChip,
+} from './partner.js';
 describe('ownerCard', () => {
   test('nothing shows until the status has loaded', () => {
     expect(ownerCard(null)).toBe('loading');
@@ -73,4 +87,66 @@ describe('dayLogRows', () => {
 test('support labels come from the server options', () => {
   const options = [{ id: 'snacks', label: 'Brought her snacks' }];
   expect(supportLabels(options, ['snacks', 'unknown'])).toEqual(['Brought her snacks', 'unknown']);
+});
+describe('homeInviteCopy', () => {
+  test('on her period it names the day', () => {
+    const copy = homeInviteCopy({ firstName: 'Amaka', phaseKey: 'period', cycleDay: 2, daysToPeriod: 26 });
+    expect(copy.title).toBe('Day 2. Let them show up.');
+    expect(copy.body).toBe('Your partner sees where you are and what you need.');
+  });
+  test('a week or less before her period it counts down', () => {
+    expect(homeInviteCopy({ firstName: 'Amaka', phaseKey: 'luteal', cycleDay: 23, daysToPeriod: 5 }).title).toBe('5 days to go, Amaka.');
+    expect(homeInviteCopy({ firstName: 'Amaka', phaseKey: 'luteal', cycleDay: 27, daysToPeriod: 1 }).title).toBe('1 day to go, Amaka.');
+  });
+  test('in the fertile window it talks about planning together', () => {
+    expect(homeInviteCopy({ firstName: 'Amaka', phaseKey: 'fertile', cycleDay: 11, daysToPeriod: 17 }).title).toBe(
+      'Planning together, Amaka?',
+    );
+    expect(homeInviteCopy({ firstName: 'Amaka', phaseKey: 'ovulation', cycleDay: 14, daysToPeriod: 14 }).body).toBe(
+      'Share your fertile window with your partner.',
+    );
+  });
+  test('other days, or no name or prediction, say better together', () => {
+    expect(homeInviteCopy({ firstName: 'Amaka', phaseKey: 'follicular', cycleDay: 8, daysToPeriod: 20 }).title).toBe(
+      'Better together, Amaka.',
+    );
+    const plain = homeInviteCopy({ firstName: '', phaseKey: null, cycleDay: null, daysToPeriod: null });
+    expect(plain.title).toBe('Better together.');
+    expect(plain.body).toBe('Let your partner see your cycle and show up on purpose.');
+    expect(homeInviteCopy({ firstName: '', phaseKey: 'period', cycleDay: null }).title).toBe('Let them show up.');
+  });
+});
+describe('connected card', () => {
+  test('is short and names him', () => {
+    expect(connectedTitle('Tunde')).toBe('You and Tunde, in sync');
+    expect(connectedTitle('')).toBe('You and your partner, in sync');
+    expect(connectedLine({ partnerName: 'Tunde' })).toBe('Tunde sees your cycle, read-only.');
+    expect(connectedLine({ partnerName: null })).toBe('Your partner sees your cycle, read-only.');
+  });
+});
+describe('inviteExpiryText', () => {
+  const now = new Date('2026-10-24T09:00:00Z');
+  test('counts down the days left', () => {
+    expect(inviteExpiryText('2026-10-26T10:00:00Z', now)).toBe('code expires in 2 days');
+    expect(inviteExpiryText('2026-10-25T10:00:00Z', now)).toBe('code expires tomorrow');
+    expect(inviteExpiryText('2026-10-24T20:00:00Z', now)).toBe('code expires today');
+    expect(inviteExpiryText('2026-10-24T08:00:00Z', now)).toBe('code expired');
+  });
+});
+describe('sharedSinceLabel', () => {
+  test('shows the day sharing started', () => {
+    expect(sharedSinceLabel('2026-10-23T12:00:00Z')).toBe('Sharing since 23 October');
+    expect(sharedSinceLabel(null)).toBeNull();
+  });
+});
+describe('headsUpChip', () => {
+  test('counts down to his reminder, then to her period', () => {
+    expect(headsUpChip(15)).toBe('Heads-up in 10 days');
+    expect(headsUpChip(6)).toBe('Heads-up tomorrow');
+    expect(headsUpChip(5)).toBe('Heads-up today');
+    expect(headsUpChip(3)).toBe('Period in 3 days');
+    expect(headsUpChip(1)).toBe('Period tomorrow');
+    expect(headsUpChip(null)).toBeNull();
+    expect(headsUpChip(0)).toBeNull();
+  });
 });

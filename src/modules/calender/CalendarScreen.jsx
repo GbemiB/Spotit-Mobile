@@ -455,7 +455,7 @@ export default function CalendarScreen() {
 }
 function createStyles(c) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1, backgroundColor: 'transparent' },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',

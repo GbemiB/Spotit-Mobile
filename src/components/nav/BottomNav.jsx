@@ -4,10 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
-import { HomeIcon, CalendarIcon, InsightsIcon, RewardsIcon } from '../ui/icons.jsx';
+import { HomeIcon, CalendarIcon, InsightsIcon, RewardsIcon, SparkleIcon } from '../ui/icons.jsx';
 const TABS = [
   { key: 'home', label: 'Home', Icon: HomeIcon },
   { key: 'cal', label: 'Calendar', Icon: CalendarIcon },
+  { key: 'spotlight', label: 'Spotlight', Icon: SparkleIcon },
   { key: 'insights', label: 'Insights', Icon: InsightsIcon },
   { key: 'rewards', label: 'Rewards', Icon: RewardsIcon },
 ];
