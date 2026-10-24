@@ -39,9 +39,9 @@ export default function WelcomeTour({ visible, cards, partnerName, onDone }) {
               onMomentumScrollEnd={onSwipeEnd}
               scrollEnabled={width > 0}
             >
-              {cards.map(item => (
+              {cards.map((item, i) => (
                 <View key={item.key} style={[s.page, { width }]}>
-                  <TourPreview kind={item.key} partnerName={partnerName} />
+                  <TourPreview key={i === index ? 'shown' : 'waiting'} kind={item.key} partnerName={partnerName} />
                   <Text style={s.title}>{item.title}</Text>
                   <Text style={s.body}>{item.body}</Text>
                 </View>
@@ -93,7 +93,7 @@ function createStyles(c) {
     skip: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
     page: { gap: 8 },
     title: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 32, color: c.textPrimary, marginTop: 8 },
-    body: { fontSize: 11.5, lineHeight: 19, color: c.textSecondary, minHeight: 76 },
+    body: { fontSize: 12, lineHeight: 18, color: c.textSecondary, minHeight: 36 },
     dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 14 },
     dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.border },
     dotDone: { backgroundColor: c.primaryLight },

@@ -9,14 +9,17 @@ describe('firstNameOf', () => {
 });
 describe('tourCards for her', () => {
   const cards = tourCards({ accountType: 'owner', userName: 'Amaka Obi' });
-  test('has the nine agreed cards in order', () => {
-    expect(cards.map(c => c.key)).toEqual(['welcome', 'cycle', 'log', 'mood', 'calendar', 'insights', 'points', 'reminders', 'share']);
+  test('has the five agreed cards in order', () => {
+    expect(cards.map(c => c.key)).toEqual(['welcome', 'calendar', 'log', 'points', 'control']);
   });
-  test('welcomes her by first name', () => expect(cards[0].title).toBe('Welcome, Amaka'));
+  test('greets her by first name', () => expect(cards[0].title).toBe('Hi, Amaka'));
+  test('keeps every line short', () => {
+    cards.forEach(c => expect(c.body.split(' ').length).toBeLessThanOrEqual(8));
+  });
   test('first and last buttons', () => {
-    expect(cards[0].next).toBe('Start the tour');
-    expect(cards[4].next).toBe('Next');
-    expect(cards[8].next).toBe('Start tracking');
+    expect(cards[0].next).toBe('Show me');
+    expect(cards[2].next).toBe('Next');
+    expect(cards[4].next).toBe('Start tracking');
   });
   test('falls back when no name is known yet', () => {
     expect(tourCards({ accountType: 'owner', userName: 'Friend' })[0].title).toBe('Welcome to Spot it');
@@ -24,21 +27,21 @@ describe('tourCards for her', () => {
 });
 describe('tourCards for a partner', () => {
   const cards = tourCards({ accountType: 'partner', userName: 'Tunde Bello', partnerName: 'Amaka' });
-  test('has the four agreed cards', () => {
-    expect(cards.map(c => c.key)).toEqual(['partnerWelcome', 'partnerLogs', 'partnerCheckIn', 'partnerReminder']);
+  test('has the three agreed cards', () => {
+    expect(cards.map(c => c.key)).toEqual(['partnerWelcome', 'partnerCheckIn', 'partnerReminder']);
   });
   test('uses the name he saved for her', () => {
-    expect(cards[0].title).toBe('Welcome, Tunde');
-    expect(cards[0].body).toContain("You're seeing Amaka's app");
-    expect(cards[2].body).toContain('how you supported Amaka today');
-    expect(cards[3].body).toContain("5 days before Amaka's period");
-    expect(cards[3].next).toBe('Get started');
+    expect(cards[0].title).toBe('Hi, Tunde');
+    expect(cards[0].body).toBe('See Amaka’s app. You can look, not change.');
+    expect(cards[1].body).toBe('Show up for Amaka, earn SpotPoints.');
+    expect(cards[2].body).toBe('A heads-up 5 days before Amaka’s period.');
+    expect(cards[2].next).toBe('Get started');
   });
   test('reads naturally before her name has loaded', () => {
     const early = tourCards({ accountType: 'partner', userName: 'Tunde', partnerName: '' });
-    expect(early[0].body).toContain("You're seeing her app");
-    expect(early[1].body).toContain('see what she logged');
-    expect(early[3].body).toContain('5 days before her period');
+    expect(early[0].body).toBe('See her app. You can look, not change.');
+    expect(early[1].body).toBe('Show up for her, earn SpotPoints.');
+    expect(early[2].body).toBe('A heads-up 5 days before her period.');
   });
 });
 describe('seen flag', () => {

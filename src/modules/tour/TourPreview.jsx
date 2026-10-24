@@ -1,97 +1,153 @@
 import { View, StyleSheet } from 'react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useTheme, Text } from '../../shared/styles/index.js';
+import { useTheme, phases, Text } from '../../shared/styles/index.js';
 import { FONT } from '../../shared/styles/typography.js';
 import { calendarPalette } from '../../shared/styles/colors.js';
-import { CalendarIcon, InsightsIcon, RewardsIcon, BellIcon } from '../../components/ui/icons.jsx';
-function DropIcon({ color }) {
+import { BellIcon, LockIcon } from '../../components/ui/icons.jsx';
+import Button from '../../components/ui/Button.jsx';
+import PointsCard from '../dashboard/PointsCard.jsx';
+import { useReduceMotion, FadeIn, RiseText, AnimatedCycleBar } from '../dashboard/HeroCardFx.jsx';
+const CYCLE = 28;
+const DAY = 20;
+const OV_DAY = CYCLE - 14;
+const MOODS = [
+  ['😊', 'Happy'],
+  ['😌', 'Calm'],
+  ['😐', 'Okay'],
+  ['😔', 'Low'],
+  ['🥺', 'Tender'],
+];
+const SUPPORT = ['Checked in on her', 'Brought her snacks', 'Listened to her'];
+function PeopleIcon({ color, size = 16 }) {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function PeopleIcon({ color }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx={9} cy={8} r={3.5} stroke={color} strokeWidth={1.8} />
       <Circle cx={16.5} cy={9.5} r={2.5} stroke={color} strokeWidth={1.8} />
       <Path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   );
 }
-function Chip({ label, s, tone }) {
+function EyeIcon({ color }) {
   return (
-    <View style={[s.chip, tone === 'peach' ? s.chipPeach : s.chipPink]}>
-      <Text style={s.chipText}>{label}</Text>
+    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <Circle cx={12} cy={12} r={3} />
+    </Svg>
+  );
+}
+function useLater(delay, reduceMotion) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (reduceMotion) return undefined;
+    const id = setTimeout(() => setOn(true), delay);
+    return () => clearTimeout(id);
+  }, [delay, reduceMotion]);
+  return reduceMotion || on;
+}
+function Hero({ s, c, isDark, lead, viewOnly, reduceMotion }) {
+  return (
+    <View style={s.card}>
+      <View style={[s.glow, { top: -50, right: -40, backgroundColor: isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC' }]} />
+      <View style={[s.glow, { bottom: -60, left: -50, backgroundColor: isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC' }]} />
+      <View style={s.labelRow}>
+        <Text style={s.phaseLabel}>{`Day ${DAY} of ${CYCLE}`}</Text>
+        {viewOnly && (
+          <FadeIn delay={700} reduceMotion={reduceMotion}>
+            <View style={s.viewOnly}>
+              <EyeIcon color={c.primaryDark} />
+              <Text style={s.viewOnlyTx}>View only</Text>
+            </View>
+          </FadeIn>
+        )}
+      </View>
+      <View style={s.heroRow}>
+        <RiseText style={s.heroSm} delay={250} reduceMotion={reduceMotion}>
+          {lead}
+        </RiseText>
+        <RiseText style={[s.heroBig, { color: c.primary }]} delay={350} pop reduceMotion={reduceMotion}>
+          {CYCLE - DAY + 1}
+        </RiseText>
+        <RiseText style={s.heroSm} delay={450} reduceMotion={reduceMotion}>
+          days
+        </RiseText>
+      </View>
+      <View style={{ marginTop: 12 }}>
+        <AnimatedCycleBar
+          value={DAY / CYCLE}
+          colors={c.gradient.primaryAccent}
+          trackColor={c.border}
+          accent={c.primary}
+          surface={c.surface}
+          height={8}
+          fertile={{ start: (OV_DAY - 6) / CYCLE, end: OV_DAY / CYCLE }}
+          fertileColor={isDark ? 'rgba(95,169,140,0.85)' : 'rgba(95,169,140,0.8)'}
+          ovulation={(OV_DAY - 0.5) / CYCLE}
+          ovulationColor={phases.ovulation}
+          reduceMotion={reduceMotion}
+        />
+      </View>
+      <View style={s.dayRow}>
+        <Text style={s.dayLbl}>Day 1</Text>
+        <Text style={s.dayLbl}>{`Day ${CYCLE}`}</Text>
+      </View>
     </View>
   );
 }
-function Features({ s, c }) {
-  const items = [
-    ['Cycle', <DropIcon key="i" color={c.primary} />],
-    ['Calendar', <CalendarIcon key="i" size={22} color={c.primary} />],
-    ['Insights', <InsightsIcon key="i" size={22} color={c.primary} />],
-    ['SpotPoints', <RewardsIcon key="i" size={22} color={c.tertiaryDeep} />],
-    ['Reminders', <BellIcon key="i" size={22} color={c.primary} />],
-    ['Partner', <PeopleIcon key="i" color={c.primary} />],
+function Month({ s, c, cal, reduceMotion }) {
+  const tones = [
+    null,
+    'period',
+    'period',
+    'period',
+    'period',
+    'period',
+    null,
+    null,
+    'fertile',
+    'fertile',
+    'fertile',
+    'fertile',
+    'fertile',
+    'fertile',
+    'ovulation',
   ];
+  const delays = { period: 150, fertile: 550, ovulation: 950 };
   return (
-    <View style={s.grid}>
-      {items.map(([label, icon]) => (
-        <View key={label} style={s.tile}>
-          {icon}
-          <Text style={s.tileText}>{label}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-function Countdown({ s, label, lead, value }) {
-  return (
-    <View style={s.center}>
-      <Text style={s.eyebrow}>{label}</Text>
-      <Text style={s.serif}>
-        {lead}
-        <Text style={s.serifAccent}>{value}</Text>
-      </Text>
-    </View>
-  );
-}
-function PeriodRange({ s, c, cal }) {
-  const days = [4, 5, 6, 7, 8, 9, 10];
-  return (
-    <View style={{ gap: 10 }}>
-      <Text style={s.small}>October</Text>
-      <View style={s.week}>
-        {days.map(d => {
-          const edge = d === 6 || d === 10;
-          const inside = d > 6 && d < 10;
+    <View style={s.card}>
+      <View style={s.weekRow}>
+        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+          <Text key={i} style={s.dow}>
+            {d}
+          </Text>
+        ))}
+      </View>
+      <View style={s.monthGrid}>
+        {tones.slice(1).map((t, i) => {
+          const day = (
+            <View
+              style={[
+                s.monthDay,
+                t === 'period' && { borderWidth: 1.5, borderStyle: 'dashed', borderColor: cal.period },
+                (t === 'fertile' || t === 'ovulation') && { backgroundColor: cal.tint[t] },
+              ]}
+            >
+              <Text style={[s.dayNum, t === 'period' && { color: c.primaryDark }]}>{i + 1}</Text>
+            </View>
+          );
           return (
-            <View key={d} style={[s.day, edge && { backgroundColor: cal.period }, inside && { backgroundColor: cal.tint.period }]}>
-              <Text style={[s.dayText, edge && { color: c.white }]}>{d}</Text>
+            <View key={i} style={s.monthCell}>
+              {t ? (
+                <FadeIn delay={delays[t]} reduceMotion={reduceMotion}>
+                  {day}
+                </FadeIn>
+              ) : (
+                day
+              )}
             </View>
           );
         })}
-      </View>
-      <View style={s.pill}>
-        <Text style={s.small}>6 – 10 October · 5 days</Text>
-      </View>
-    </View>
-  );
-}
-function Month({ s, cal }) {
-  const tones = ['', '', 'period', 'period', 'period', '', '', '', '', 'fertile', 'fertile', 'fertile', 'ovulation', ''];
-  return (
-    <View style={{ gap: 10 }}>
-      <View style={s.monthGrid}>
-        {tones.map((t, i) => (
-          <View key={i} style={[s.monthDay, t && { backgroundColor: cal.tint[t] }]}>
-            <View style={[s.dot, t && { backgroundColor: cal[t] }]} />
-          </View>
-        ))}
       </View>
       <View style={s.legend}>
         {[
@@ -101,122 +157,138 @@ function Month({ s, cal }) {
         ].map(([label, color]) => (
           <View key={label} style={s.legendItem}>
             <View style={[s.dot, { backgroundColor: color }]} />
-            <Text style={s.small}>{label}</Text>
+            <Text style={s.legendTx}>{label}</Text>
           </View>
         ))}
       </View>
     </View>
   );
 }
-function Bars({ s, c }) {
+function Mood({ s, c, reduceMotion }) {
+  const picked = useLater(900, reduceMotion);
   return (
-    <View style={s.bars}>
-      {[28, 30, 27, 29, 28, 31].map((v, i) => (
-        <View key={i} style={[s.bar, { height: (v - 22) * 9, backgroundColor: i === 5 ? c.primary : c.primaryLight }]} />
-      ))}
-    </View>
-  );
-}
-function Points({ s }) {
-  return (
-    <View style={s.row3}>
-      {[
-        ['120', 'SpotPoints'],
-        ['3 days', 'Streak'],
-        ['Blush', 'Level'],
-      ].map(([value, label]) => (
-        <View key={label} style={s.stat}>
-          <Text style={s.statValue}>{value}</Text>
-          <Text style={s.small}>{label}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-function Notification({ s, text }) {
-  return (
-    <View style={s.notice}>
-      <Text style={s.noticeApp}>Spot it</Text>
-      <Text style={s.noticeText}>{text}</Text>
-    </View>
-  );
-}
-function Share({ s, c }) {
-  return (
-    <View style={{ gap: 10 }}>
-      <View style={s.notice}>
-        <View style={s.shareRow}>
-          <PeopleIcon color={c.primary} />
-          <View>
-            <Text style={s.noticeText}>Shared with your partner</Text>
-            <Text style={s.small}>They can see, not change</Text>
+    <View style={s.card}>
+      <Text style={s.cardTitle}>How are you feeling today?</Text>
+      <View style={s.moodGrid}>
+        {MOODS.map(([emoji, label]) => {
+          const on = picked && label === 'Calm';
+          return (
+            <View key={label} style={[s.mood, on && { borderWidth: 2, borderColor: c.primary, backgroundColor: c.primarySoft }]}>
+              <Text style={s.emoji}>{emoji}</Text>
+              <Text style={s.moodTx}>{label}</Text>
+            </View>
+          );
+        })}
+      </View>
+      {picked && (
+        <FadeIn delay={200} reduceMotion={reduceMotion}>
+          <View style={s.reply}>
+            <Text style={s.replyTx}>A calm day, nice. Saved to today’s log.</Text>
           </View>
-        </View>
+        </FadeIn>
+      )}
+    </View>
+  );
+}
+function Row({ s, icon, iconBg, label, sub, right, last }) {
+  return (
+    <View style={[s.row, last && { borderBottomWidth: 0 }]}>
+      <View style={[s.rowIcon, { backgroundColor: iconBg }]}>{icon}</View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.rowLabel}>{label}</Text>
+        <Text style={s.rowSub}>{sub}</Text>
       </View>
-      <View style={s.row2}>
-        <View style={s.halfTile}>
-          <Text style={s.noticeText}>Export my data</Text>
-        </View>
-        <View style={s.halfTile}>
-          <Text style={s.noticeText}>Delete anytime</Text>
-        </View>
+      {right}
+    </View>
+  );
+}
+function Control({ s, c, reduceMotion }) {
+  const on = useLater(800, reduceMotion);
+  return (
+    <View style={[s.card, { padding: 0 }]}>
+      <Row
+        s={s}
+        icon={<BellIcon size={16} color={c.primaryDark} />}
+        iconBg={c.primarySoft}
+        label="Reminders"
+        sub="Before your period"
+        right={
+          <View style={[s.track, { backgroundColor: on ? c.primary : c.border }]}>
+            <View style={[s.thumb, on && { left: 22 }]} />
+          </View>
+        }
+      />
+      <Row
+        s={s}
+        icon={<PeopleIcon color={c.primaryDark} />}
+        iconBg={c.primarySoft}
+        label="Partner"
+        sub="Invite them to follow along"
+        right={<Text style={s.link}>Invite</Text>}
+      />
+      <Row
+        s={s}
+        icon={<LockIcon size={16} color={c.tertiaryDeep} />}
+        iconBg={c.tertiarySoft}
+        label="Your data"
+        sub="Export or delete any time"
+        last
+      />
+    </View>
+  );
+}
+function CheckIn({ s, c, name, reduceMotion }) {
+  const first = useLater(700, reduceMotion);
+  const second = useLater(1300, reduceMotion);
+  return (
+    <View style={s.card}>
+      <Text style={s.cardTitle}>{`How did you support ${name || 'her'} today?`}</Text>
+      <View style={s.chips}>
+        {SUPPORT.map((label, i) => {
+          const on = (i === 0 && first) || (i === 2 && second);
+          return (
+            <View key={label} style={[s.chip, on && { borderColor: c.primary, backgroundColor: c.primarySoft }]}>
+              <Text style={[s.chipTx, { color: on ? c.primaryDark : c.textSecondary }]}>{label}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <View style={{ marginTop: 12 }}>
+        <Button size="sm">Check in</Button>
       </View>
     </View>
   );
 }
-function DayLog({ s }) {
+function Notice({ s, c, text, reduceMotion }) {
   return (
-    <View style={s.notice}>
-      <Text style={s.noticeApp}>Tuesday 7 October</Text>
-      <View style={s.chips}>
-        <Chip s={s} label="Flow: Medium" />
-        <Chip s={s} label="Calm" tone="peach" />
-        <Chip s={s} label="Cramps" />
+    <FadeIn delay={200} from="top" reduceMotion={reduceMotion}>
+      <View style={[s.card, s.notice]}>
+        <View style={[s.rowIcon, { backgroundColor: c.primarySoft }]}>
+          <BellIcon size={16} color={c.primaryDark} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.noticeApp}>Spot it · now</Text>
+          <Text style={s.noticeTx}>{text}</Text>
+        </View>
       </View>
-    </View>
-  );
-}
-function CheckIn({ s, name }) {
-  return (
-    <View style={{ gap: 10 }}>
-      <Text style={s.noticeText}>How did you support {name || 'her'} today?</Text>
-      <View style={s.chips}>
-        <Chip s={s} label="Checked in on her" />
-        <Chip s={s} label="Brought her snacks" tone="peach" />
-        <Chip s={s} label="Listened to her" />
-      </View>
-    </View>
+    </FadeIn>
   );
 }
 export default function TourPreview({ kind, partnerName }) {
   const { colors: c, isDark } = useTheme();
   const s = useMemo(() => createStyles(c), [c]);
+  const reduceMotion = useReduceMotion();
   const cal = calendarPalette[isDark ? 'dark' : 'light'];
-  const hers = partnerName ? `${partnerName}'s` : 'Her';
+  const her = partnerName ? `${partnerName}’s` : 'Her';
   const body = {
-    welcome: <Features s={s} c={c} />,
-    cycle: <Countdown s={s} label="Next period" lead="Starts in " value="12 days" />,
-    log: <PeriodRange s={s} c={c} cal={cal} />,
-    mood: (
-      <View style={{ gap: 10 }}>
-        <Text style={s.noticeText}>How are you feeling today?</Text>
-        <View style={s.chips}>
-          <Chip s={s} label="Happy" tone="peach" />
-          <Chip s={s} label="Calm" tone="peach" />
-          <Chip s={s} label="Cramps" />
-          <Chip s={s} label="Headache" />
-        </View>
-      </View>
-    ),
-    calendar: <Month s={s} cal={cal} />,
-    insights: <Bars s={s} c={c} />,
-    points: <Points s={s} />,
-    reminders: <Notification s={s} text="Your period is predicted to start in 2 days." />,
-    share: <Share s={s} c={c} />,
-    partnerWelcome: <Countdown s={s} label={`${hers} cycle`} lead={`${hers} period starts in `} value="12 days" />,
-    partnerLogs: <DayLog s={s} />,
-    partnerCheckIn: <CheckIn s={s} name={partnerName} />,
-    partnerReminder: <Notification s={s} text={`${hers} period is expected to start in 5 days.`} />,
+    welcome: <Hero s={s} c={c} isDark={isDark} lead="Your period starts in" reduceMotion={reduceMotion} />,
+    calendar: <Month s={s} c={c} cal={cal} reduceMotion={reduceMotion} />,
+    log: <Mood s={s} c={c} reduceMotion={reduceMotion} />,
+    points: <PointsCard levelName="Blush" points={120} pct={0.6} toNextText="80 SP to Petal" onPress={() => {}} />,
+    control: <Control s={s} c={c} reduceMotion={reduceMotion} />,
+    partnerWelcome: <Hero s={s} c={c} isDark={isDark} lead={`${her} period starts in`} viewOnly reduceMotion={reduceMotion} />,
+    partnerCheckIn: <CheckIn s={s} c={c} name={partnerName} reduceMotion={reduceMotion} />,
+    partnerReminder: <Notice s={s} c={c} text={`${her} period is expected to start in 5 days.`} reduceMotion={reduceMotion} />,
   }[kind];
   return (
     <LinearGradient colors={[c.primarySoft, c.tertiarySoft]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.box}>
@@ -226,47 +298,80 @@ export default function TourPreview({ kind, partnerName }) {
 }
 function createStyles(c) {
   return StyleSheet.create({
-    box: { height: 168, borderRadius: 22, padding: 16, justifyContent: 'center' },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
-    tile: {
-      width: '31%',
-      height: 62,
-      borderRadius: 14,
-      backgroundColor: c.surface,
+    box: { height: 200, borderRadius: 22, padding: 16, justifyContent: 'center' },
+    card: { borderRadius: 22, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, padding: 14, overflow: 'hidden' },
+    glow: { position: 'absolute', width: 140, height: 140, borderRadius: 70 },
+    labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    phaseLabel: { fontSize: 9, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
+    viewOnly: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: c.primarySoft,
+      borderRadius: 99,
+      paddingVertical: 4,
+      paddingHorizontal: 9,
+    },
+    viewOnlyTx: { fontSize: 9, fontWeight: '700', color: c.primaryDark },
+    heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 8, flexWrap: 'wrap' },
+    heroSm: { fontFamily: FONT.serif, fontSize: 18, color: c.textPrimary },
+    heroBig: { fontFamily: FONT.serif, fontSize: 30 },
+    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+    dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
+    weekRow: { flexDirection: 'row' },
+    dow: { flex: 1, textAlign: 'center', fontSize: 9, fontWeight: '600', color: c.textSecondary },
+    monthGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+    monthCell: { width: `${100 / 7}%`, padding: 2.5 },
+    monthDay: { height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    dayNum: { fontSize: 10.5, fontWeight: '700', color: c.textSecondary },
+    legend: { flexDirection: 'row', gap: 12, marginTop: 10, paddingHorizontal: 2 },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    dot: { width: 7, height: 7, borderRadius: 4 },
+    legendTx: { fontSize: 9, fontWeight: '600', color: c.textSecondary },
+    cardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, paddingHorizontal: 2 },
+    moodGrid: { flexDirection: 'row', gap: 6, marginTop: 12 },
+    mood: {
+      flex: 1,
+      height: 60,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.background,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 4,
+      gap: 3,
     },
-    tileText: { fontSize: 8.5, fontWeight: '600', color: c.textSecondary },
-    center: { gap: 8 },
-    eyebrow: { fontSize: 8.5, fontWeight: '700', color: c.tertiaryDeep, textTransform: 'uppercase', letterSpacing: 1 },
-    serif: { fontFamily: FONT.serif, fontSize: 24, lineHeight: 30, color: c.textPrimary },
-    serifAccent: { fontFamily: FONT.serif, fontSize: 24, color: c.primaryDark },
-    small: { fontSize: 9, fontWeight: '600', color: c.textSecondary },
-    week: { flexDirection: 'row', gap: 5 },
-    day: { flex: 1, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-    dayText: { fontSize: 9.5, fontWeight: '600', color: c.textPrimary },
-    pill: { backgroundColor: c.surface, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
-    monthGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-    monthDay: { width: '12%', height: 28, borderRadius: 9, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' },
-    dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'transparent' },
-    legend: { flexDirection: 'row', gap: 12 },
-    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    bars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 12, height: 100 },
-    bar: { width: 22, borderRadius: 6 },
-    row3: { flexDirection: 'row', gap: 8 },
-    stat: { flex: 1, backgroundColor: c.surface, borderRadius: 14, paddingVertical: 14, alignItems: 'center', gap: 4 },
-    statValue: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
-    notice: { backgroundColor: c.surface, borderRadius: 14, padding: 14, gap: 6 },
+    emoji: { fontSize: 18, lineHeight: 26 },
+    moodTx: { fontSize: 9, fontWeight: '600', color: c.textSecondary },
+    reply: { marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 14, backgroundColor: c.primarySoft },
+    replyTx: { fontSize: 10, lineHeight: 16, color: c.textPrimary },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 11,
+      paddingHorizontal: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    rowIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    rowLabel: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
+    rowSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2 },
+    track: { width: 44, height: 24, borderRadius: 12 },
+    thumb: { position: 'absolute', top: 2, left: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: c.white },
+    link: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    chip: {
+      paddingVertical: 8,
+      paddingHorizontal: 11,
+      borderRadius: 99,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.background,
+    },
+    chipTx: { fontSize: 10.5, fontWeight: '600' },
+    notice: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     noticeApp: { fontSize: 8.5, fontWeight: '700', color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
-    noticeText: { fontSize: 10.5, fontWeight: '600', color: c.textPrimary, lineHeight: 16 },
-    shareRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    row2: { flexDirection: 'row', gap: 8 },
-    halfTile: { flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 12 },
-    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    chip: { borderRadius: 99, paddingVertical: 6, paddingHorizontal: 10 },
-    chipPink: { backgroundColor: c.surface },
-    chipPeach: { backgroundColor: c.tertiarySoft, borderWidth: 1, borderColor: c.border },
-    chipText: { fontSize: 9, fontWeight: '600', color: c.textPrimary },
+    noticeTx: { fontSize: 11, fontWeight: '600', color: c.textPrimary, lineHeight: 16, marginTop: 3 },
   });
 }
