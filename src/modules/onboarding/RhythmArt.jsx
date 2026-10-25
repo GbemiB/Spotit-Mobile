@@ -64,7 +64,7 @@ export default function RhythmArt({ reduceMotion }) {
           <Stop offset="1" stopColor="#E06C86" stopOpacity="0" />
         </RadialGradient>
       </Defs>
-      <AnimatedCircle cx={350} cy={420} r={disc.interpolate({ inputRange: [0, 1], outputRange: [330, 345] })} fill="url(#rh-disc)" />
+      <AnimatedCircle cx={350} cy={330} r={disc.interpolate({ inputRange: [0, 1], outputRange: [235, 248] })} fill="url(#rh-disc)" />
 
       <AnimatedG translateY={bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] })}>
         <G transform="rotate(-18 115 90)">
