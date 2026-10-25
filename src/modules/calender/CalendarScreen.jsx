@@ -28,7 +28,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
 import * as partnerApi from '../../shared/api/partner.js';
-import { loveLine } from '../../shared/utils/partnerLove.js';
+import { loveLine, replyText } from '../../shared/utils/partnerLove.js';
 import { noteLogSaved } from '../../shared/utils/rateApp.js';
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
 const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
@@ -209,7 +209,7 @@ export default function CalendarScreen() {
     if (state.accountType !== 'partner') {
       partnerApi
         .getPartnerLove({ from, to }, accessToken)
-        .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items }))
+        .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items, quickReplies: data.quickReplies }))
         .catch(() => {});
     }
   }, [viewYear, viewMonth, lastPeriodDate, periodPickerOpen]);
@@ -448,6 +448,11 @@ export default function CalendarScreen() {
                   ) : null}
                   {item.kind === 'expression' ? <Text style={s.loveExpr}>{loveLine(item)}</Text> : null}
                   {item.note ? <Text style={s.loveNote}>{`“${item.note}”`}</Text> : null}
+                  {replyText(item) ? (
+                    <View style={s.loveReply}>
+                      <Text style={s.loveReplyTx}>{item.replyNote ? `“${item.replyNote}”` : replyText(item)}</Text>
+                    </View>
+                  ) : null}
                 </View>
               ))}
               {partnerLove[selDate].length > LOVE_PREVIEW ? (
@@ -581,6 +586,19 @@ function createStyles(c) {
     loveTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
     loveItem: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border },
     loveExpr: { fontSize: 13, fontWeight: '700', color: c.primaryDark },
+    loveReply: {
+      alignSelf: 'flex-end',
+      maxWidth: '82%',
+      marginTop: 8,
+      backgroundColor: c.primary,
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+      borderBottomLeftRadius: 14,
+      borderBottomRightRadius: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    loveReplyTx: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12.5, color: c.white },
     loveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     loveChip: {
       backgroundColor: c.primarySoft,

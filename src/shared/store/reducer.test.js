@@ -609,4 +609,38 @@ describe('partner love', () => {
     expect(next.partnerLove['2026-10-24'].map(i => i.kind)).toEqual(['promise', 'expression']);
     expect(next.partnerLove['2026-10-24'][1].expressionEmoji).toBe('🤗');
   });
+  test('keeps the quick replies and her reply on each send', () => {
+    const next = reducer(INIT, {
+      type: A.PARTNER_LOVE_HYDRATED,
+      from: '2026-10-24',
+      to: '2026-10-24',
+      quickReplies: ['Thank you, love ♡'],
+      items: [
+        { id: 7, date: '2026-10-24', kind: 'text', partnerName: 'Tunde', labels: [], note: 'Rest', replyHeart: true, replyNote: null },
+      ],
+    });
+    expect(next.partnerQuickReplies).toEqual(['Thank you, love ♡']);
+    expect(next.partnerLove['2026-10-24'][0]).toMatchObject({ id: 7, replyHeart: true, replyNote: null });
+  });
+  test('a reply updates only the matching send', () => {
+    const start = {
+      ...INIT,
+      partnerLove: {
+        '2026-10-24': [
+          { id: 7, replyHeart: false },
+          { id: 8, replyHeart: false },
+        ],
+      },
+    };
+    const next = reducer(start, {
+      type: A.PARTNER_LOVE_REPLIED,
+      date: '2026-10-24',
+      id: 8,
+      replyHeart: true,
+      replyNote: 'That made my day 🌸',
+    });
+    expect(next.partnerLove['2026-10-24'][0].replyHeart).toBe(false);
+    expect(next.partnerLove['2026-10-24'][1]).toMatchObject({ replyHeart: true, replyNote: 'That made my day 🌸' });
+    expect(reducer(INIT, { type: A.PARTNER_LOVE_REPLIED, date: '2026-01-01', id: 1 })).toBe(INIT);
+  });
 });

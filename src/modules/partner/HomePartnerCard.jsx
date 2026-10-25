@@ -7,7 +7,8 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import * as partnerApi from '../../shared/api/partner.js';
 import { addDays, todayISO } from '../../shared/utils/cycle.js';
-import { loveLine, loveHeadline } from '../../shared/utils/partnerLove.js';
+import { loveLine, loveIcon } from '../../shared/utils/partnerLove.js';
+import LoveFromPartnerSheet from './LoveFromPartnerSheet.jsx';
 import { FONT } from '../../shared/styles/typography.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
@@ -134,6 +135,7 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
   const { status, busy, invite, resend, cancel, stop } = usePartnerSharing();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [loveOpen, setLoveOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const reduceMotion = useReduceMotion();
   const float = useAnimatedValue(0);
@@ -148,7 +150,7 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
     const from = addDays(to, -60);
     partnerApi
       .getPartnerLove({ from, to }, accessToken)
-      .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items }))
+      .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items, quickReplies: data.quickReplies }))
       .catch(() => {});
   }, [card, accessToken, today, dispatch]);
   const loveToday = partnerLove?.[todayISO()];
@@ -314,19 +316,39 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
             </View>
             <Text style={s.body}>{connectedLine({ partnerName: status.partnerFirstName })}</Text>
             {loveToday && loveToday.length ? (
-              <View style={s.lovePanel}>
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill={colors.primary}>
-                  <Path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z" />
-                </Svg>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.loveTitle}>{loveHeadline(loveToday, Partner)}</Text>
-                  {loveToday.slice(-3).map((item, i) => (
-                    <Text key={i} style={item.kind === 'text' ? s.loveNote : s.loveLine} numberOfLines={2}>
-                      {loveLine(item)}
-                    </Text>
-                  ))}
+              <Pressable
+                style={s.lovePanel}
+                onPress={() => setLoveOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`${loveToday[0]?.partnerName || Partner} showed up for you. See and reply`}
+              >
+                <View style={s.loveTop}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill={colors.primary}>
+                    <Path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z" />
+                  </Svg>
+                  <Text style={s.loveTitle} numberOfLines={1}>{`${loveToday[0]?.partnerName || Partner} showed up for you ♡`}</Text>
                 </View>
-              </View>
+                <Text style={loveToday[loveToday.length - 1].kind === 'text' ? s.loveNote : s.loveLine} numberOfLines={1}>
+                  {loveLine(loveToday[loveToday.length - 1])}
+                </Text>
+                <View style={s.loveFoot}>
+                  <View style={s.loveChips}>
+                    {loveToday.slice(-4).map((item, i) => (
+                      <View key={item.id || i} style={s.loveChip}>
+                        <Text style={s.loveChipTx}>{loveIcon(item)}</Text>
+                        {item.replyHeart || item.replyNote ? (
+                          <View style={s.loveBadge}>
+                            <Svg width={8} height={8} viewBox="0 0 24 24" fill={colors.white}>
+                              <Path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z" />
+                            </Svg>
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={s.loveCta}>See & reply ›</Text>
+                </View>
+              </Pressable>
             ) : null}
             <View style={s.syncFoot}>
               <Pressable
@@ -340,6 +362,13 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
           </LinearGradient>
         </HeroFrame>
       )}
+      <LoveFromPartnerSheet
+        open={loveOpen}
+        onClose={() => setLoveOpen(false)}
+        items={loveToday || []}
+        date={todayISO()}
+        partnerName={loveToday?.[0]?.partnerName || status?.partnerFirstName}
+      />
       <BottomSheet open={manageOpen} onClose={() => setManageOpen(false)} title="Your partner">
         {card === 'active' ? (
           <View style={s.sheet}>
@@ -447,9 +476,6 @@ function createStyles(c, isDark) {
     serif: { fontFamily: FONT.serif, fontSize: 20, lineHeight: 26, color: c.textPrimary },
     body: { fontSize: 11, lineHeight: 18, color: c.textSecondary },
     lovePanel: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 8,
       marginTop: 6,
       marginBottom: 2,
       padding: 8,
@@ -458,7 +484,24 @@ function createStyles(c, isDark) {
       borderWidth: 1,
       borderColor: c.primarySoftBorder,
     },
-    loveTitle: { fontSize: 10.5, fontWeight: '700', color: c.textPrimary, lineHeight: 15 },
+    loveTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    loveTitle: { flex: 1, fontSize: 10.5, fontWeight: '700', color: c.textPrimary, lineHeight: 15 },
+    loveFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+    loveChips: { flexDirection: 'row', gap: 4 },
+    loveChip: { width: 24, height: 24, borderRadius: 12, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+    loveChipTx: { fontSize: 12, lineHeight: 16 },
+    loveBadge: {
+      position: 'absolute',
+      right: -3,
+      bottom: -3,
+      width: 13,
+      height: 13,
+      borderRadius: 7,
+      backgroundColor: c.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loveCta: { fontSize: 10.5, fontWeight: '700', color: c.primaryDark },
     loveLine: { fontSize: 10.5, color: c.textSecondary, lineHeight: 16, marginTop: 3 },
     loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: c.textSecondary, marginTop: 3 },
     rowCard: {

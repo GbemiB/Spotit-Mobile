@@ -10,6 +10,7 @@ import {
   getPartnerCheckIn,
   partnerCheckIn,
   getPartnerLove,
+  replyToLove,
   stopPartnerSharing,
 } from './partner.js';
 jest.mock('./client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
@@ -57,4 +58,8 @@ test('his app reads her profile and his check-in', () => {
     token: 'access',
   });
   expect(apiRequest).toHaveBeenNthCalledWith(4, '/partner/love?from=2026-10-01&to=2026-10-31', { token: 'access' });
+});
+test('a reply puts her heart and note on the send', () => {
+  replyToLove(7, { heart: true }, 'access');
+  expect(apiRequest).toHaveBeenCalledWith('/partner/love/7/reply', { method: 'PUT', body: { heart: true, note: null }, token: 'access' });
 });

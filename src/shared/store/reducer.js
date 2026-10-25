@@ -78,6 +78,7 @@ export const INIT = {
   cycleStatus: null,
   calendarPhases: {},
   partnerLove: {},
+  partnerQuickReplies: [],
   insights: { trends: null, digest: null, regularity: null },
 };
 const USER_DATA_KEYS = [
@@ -257,6 +258,10 @@ export function reducer(state, action) {
       (action.from && action.to ? datesBetween(action.from, action.to) : []).forEach(d => delete partnerLove[d]);
       (action.items || []).forEach(item => {
         const entry = {
+          id: item.id || null,
+          sentAt: item.sentAt || null,
+          replyHeart: !!item.replyHeart,
+          replyNote: item.replyNote || null,
           kind: item.kind || (item.labels && item.labels.length ? 'promise' : 'text'),
           partnerName: item.partnerName,
           labels: item.labels || [],
@@ -267,7 +272,20 @@ export function reducer(state, action) {
         };
         partnerLove[item.date] = [...(partnerLove[item.date] || []), entry];
       });
-      return { ...state, partnerLove };
+      return { ...state, partnerLove, partnerQuickReplies: action.quickReplies || state.partnerQuickReplies };
+    }
+    case A.PARTNER_LOVE_REPLIED: {
+      const day = state.partnerLove[action.date];
+      if (!day) return state;
+      return {
+        ...state,
+        partnerLove: {
+          ...state.partnerLove,
+          [action.date]: day.map(entry =>
+            entry.id === action.id ? { ...entry, replyHeart: !!action.replyHeart, replyNote: action.replyNote || null } : entry,
+          ),
+        },
+      };
     }
     case A.PERIOD_REMOVED:
       return {

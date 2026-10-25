@@ -29,7 +29,7 @@ const BURST = [
   [34, 28, 200],
   [0, -44, 100],
 ];
-function Heart({ size, color }) {
+export function Heart({ size, color }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <Path d={HEART} />
@@ -54,7 +54,7 @@ export function OptionIcon({ id, color, size = 22 }) {
     </Svg>
   );
 }
-function Beating({ reduceMotion, children }) {
+export function Beating({ reduceMotion, children }) {
   const beat = useAnimatedValue(0);
   useEffect(() => {
     if (reduceMotion) return undefined;
@@ -127,7 +127,7 @@ function Tile({ option, on, onPress, reduceMotion, c, s }) {
     </Pressable>
   );
 }
-function BurstHeart({ x, y, delay, color }) {
+export function BurstHeart({ x, y, delay, color }) {
   const v = useAnimatedValue(0);
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: 1100, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
@@ -157,7 +157,7 @@ const KIND_ICONS = {
   expression: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01'],
 };
 const FALLBACK_ICON = [HEART, 'M12 8v0'];
-function Appear({ delay = 0, reduceMotion, children, style }) {
+export function Appear({ delay = 0, reduceMotion, children, style }) {
   const v = useAnimatedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
     if (reduceMotion) return;
@@ -171,7 +171,7 @@ function Appear({ delay = 0, reduceMotion, children, style }) {
     </Animated.View>
   );
 }
-function PressScale({ onPress, disabled, style, children, accessibilityLabel, accessibilityRole = 'button', accessibilityState }) {
+export function PressScale({ onPress, disabled, style, children, accessibilityLabel, accessibilityRole = 'button', accessibilityState }) {
   const v = useAnimatedValue(1);
   const to = value => Animated.spring(v, { toValue: value, speed: 40, bounciness: 8, useNativeDriver: true }).start();
   return (
@@ -346,6 +346,14 @@ export default function PartnerCheckInCard({ name }) {
             {teaserTitle}
           </Text>
           <Text style={s.sub}>{teaserSub}</Text>
+          {checkIn.herReply ? (
+            <Appear reduceMotion={reduceMotion} style={s.replyRow}>
+              <Text style={s.replyLine} numberOfLines={1}>
+                <Text style={s.replyName}>{`${checkIn.herReply.name || her} felt your love ♡ `}</Text>
+                {checkIn.herReply.note ? <Text style={s.replyNote}>{`“${checkIn.herReply.note}”`}</Text> : null}
+              </Text>
+            </Appear>
+          ) : null}
         </View>
         {sentToday === 0 && (
           <View style={s.spPill}>
@@ -545,6 +553,10 @@ function createStyles(c) {
     headHeart: { width: 32, height: 32, borderRadius: 16, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
     teaserTitle: { fontFamily: FONT.serif, fontSize: 17, lineHeight: 22, color: c.textPrimary },
     sub: { fontSize: 10, color: c.textSecondary, marginTop: 2 },
+    replyRow: { marginTop: 6, backgroundColor: c.surface, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 8 },
+    replyLine: { fontSize: 10.5 },
+    replyName: { fontSize: 10.5, fontWeight: '700', color: c.primaryDark },
+    replyNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12.5, color: c.textPrimary },
     spPill: { backgroundColor: c.tertiarySoft, borderRadius: 99, paddingVertical: 4, paddingHorizontal: 8 },
     spTx: { fontSize: 10, fontWeight: '800', color: c.tertiaryDeep },
     backBtn: { alignSelf: 'flex-start', paddingVertical: 6, marginTop: -6, marginBottom: 4 },

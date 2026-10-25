@@ -9,7 +9,7 @@ export const NOTIF_ROWS = [
     key: 'partnerLove',
     icon: '💞',
     colorKey: 'primary',
-    label: 'Promises from your partner',
-    sub: 'When your partner makes you a promise',
+    label: 'Love from your partner',
+    sub: 'Promises, notes and hugs from your partner',
   },
 ];
