@@ -5,6 +5,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput, FONT } from '../../shared/styles/index.js';
 import Button from '../../components/ui/Button.jsx';
+import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import * as partnerApi from '../../shared/api/partner.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
 import { supportLabels } from '../../shared/utils/partner.js';
@@ -192,6 +193,7 @@ export default function PartnerCheckInCard({ name }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [justSent, setJustSent] = useState(false);
+  const [open, setOpen] = useState(false);
   useEffect(() => {
     partnerApi
       .getPartnerCheckIn(accessToken)
@@ -227,54 +229,78 @@ export default function PartnerCheckInCard({ name }) {
     }
   }
   if (!checkIn) return null;
-  if (checkIn.checkedInToday) {
-    return <LoveSent checkIn={checkIn} name={name} justSent={justSent} reduceMotion={reduceMotion} c={colors} s={s} />;
-  }
+  const sent = checkIn.checkedInToday;
+  const her = name || 'her';
   return (
-    <View style={s.card}>
-      <View style={s.blush} />
-      <View style={s.headRow}>
-        <Beating reduceMotion={reduceMotion}>
-          <View style={s.headHeart}>
-            <Heart size={16} color={colors.primary} />
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={sent ? 'See the love you sent today' : `Show ${her} some love today`}
+      >
+        <View style={[s.card, s.teaser, sent && { backgroundColor: colors.primarySoft, borderColor: colors.primarySoftBorder }]}>
+          {!sent && <View style={s.blush} />}
+          <Beating reduceMotion={reduceMotion}>
+            <View style={[s.headHeart, sent && { backgroundColor: colors.surface }]}>
+              <Heart size={16} color={colors.primary} />
+            </View>
+          </Beating>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={s.teaserTitle} numberOfLines={1}>
+              {sent ? 'Love sent ♡' : `Show ${her} some love today ♡`}
+            </Text>
+            <Text style={s.sub}>{sent ? `${checkIn.streak}-day streak · tap to see what you sent` : 'Tap to send'}</Text>
           </View>
-        </Beating>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={s.title}>{`Love for ${name || 'her'} today`}</Text>
-          <Text style={s.sub}>Little things, big love. Tap what you did.</Text>
+          {!sent && (
+            <View style={s.spPill}>
+              <Text style={s.spTx}>{`+${checkIn.reward} SP`}</Text>
+            </View>
+          )}
         </View>
-        <View style={s.spPill}>
-          <Text style={s.spTx}>{`+${checkIn.reward} SP`}</Text>
-        </View>
-      </View>
-      <View style={s.grid}>
-        {checkIn.options.map(option => (
-          <Tile
-            key={option.id}
-            option={option}
-            on={picked.includes(option.id)}
-            onPress={() => toggle(option.id)}
-            reduceMotion={reduceMotion}
-            c={colors}
-            s={s}
-          />
-        ))}
-      </View>
-      <TextInput
-        value={note}
-        onChangeText={v => setNote(v.slice(0, NOTE_MAX))}
-        placeholder={`Add a sweet note for ${name || 'her'} (optional)`}
-        placeholderTextColor={colors.textFaint}
-        maxLength={NOTE_MAX}
-        multiline
-        style={s.noteInput}
-      />
-      <View style={{ marginTop: 12, opacity: ready ? 1 : 0.6 }}>
-        <Button onPress={submit} disabled={busy || !ready}>
-          {busy ? 'Sending…' : ready ? 'Send love ♡' : 'Pick something or write a note'}
-        </Button>
-      </View>
-    </View>
+      </Pressable>
+      <BottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`Love for ${her} today`}
+        closeLabel={sent ? 'Done' : 'Cancel'}
+        avoidKeyboard
+      >
+        {sent ? (
+          <LoveSent checkIn={checkIn} name={name} justSent={justSent} reduceMotion={reduceMotion} c={colors} s={s} />
+        ) : (
+          <View>
+            <Text style={s.sheetSub}>Little things, big love. Tap what you did.</Text>
+            <View style={s.grid}>
+              {checkIn.options.map(option => (
+                <Tile
+                  key={option.id}
+                  option={option}
+                  on={picked.includes(option.id)}
+                  onPress={() => toggle(option.id)}
+                  reduceMotion={reduceMotion}
+                  c={colors}
+                  s={s}
+                />
+              ))}
+            </View>
+            <TextInput
+              value={note}
+              onChangeText={v => setNote(v.slice(0, NOTE_MAX))}
+              placeholder={`Add a sweet note for ${her} (optional)`}
+              placeholderTextColor={colors.textFaint}
+              maxLength={NOTE_MAX}
+              multiline
+              style={s.noteInput}
+            />
+            <View style={{ marginTop: 12, marginBottom: 8, opacity: ready ? 1 : 0.6 }}>
+              <Button onPress={submit} disabled={busy || !ready}>
+                {busy ? 'Sending…' : ready ? 'Send love ♡' : 'Pick something or write a note'}
+              </Button>
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+    </>
   );
 }
 function createStyles(c) {
@@ -291,6 +317,9 @@ function createStyles(c) {
     },
     blush: { position: 'absolute', width: 160, height: 160, borderRadius: 80, backgroundColor: c.primarySoft, top: -70, right: -50 },
     headRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 },
+    teaser: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 14, paddingBottom: 14, borderRadius: 22 },
+    teaserTitle: { fontFamily: FONT.serif, fontSize: 17, lineHeight: 22, color: c.textPrimary },
+    sheetSub: { fontSize: 11, color: c.textSecondary, marginTop: -4 },
     headHeart: { width: 30, height: 30, borderRadius: 15, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
     title: { fontFamily: FONT.serif, fontSize: 19, lineHeight: 24, color: c.textPrimary },
     sub: { fontSize: 10, color: c.textSecondary, marginTop: 2 },
