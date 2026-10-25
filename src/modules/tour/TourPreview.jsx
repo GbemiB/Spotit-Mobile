@@ -6,7 +6,6 @@ import { useTheme, phases, Text } from '../../shared/styles/index.js';
 import { FONT } from '../../shared/styles/typography.js';
 import { calendarPalette } from '../../shared/styles/colors.js';
 import { BellIcon, LockIcon } from '../../components/ui/icons.jsx';
-import Button from '../../components/ui/Button.jsx';
 import PointsCard from '../dashboard/PointsCard.jsx';
 import { useReduceMotion, FadeIn, RiseText, AnimatedCycleBar } from '../dashboard/HeroCardFx.jsx';
 const CYCLE = 28;
@@ -65,7 +64,7 @@ function Hero({ s, c, isDark, headline, viewOnly, reduceMotion }) {
       <RiseText style={s.heroLine} delay={250} reduceMotion={reduceMotion}>
         {headline}
       </RiseText>
-      <View style={{ marginTop: 12 }}>
+      <View style={{ marginTop: 10 }}>
         <AnimatedCycleBar
           value={DAY / CYCLE}
           colors={c.gradient.primaryAccent}
@@ -253,9 +252,6 @@ function CheckIn({ s, c, name, reduceMotion }) {
           );
         })}
       </View>
-      <View style={{ marginTop: 12 }}>
-        <Button size="sm">Check in</Button>
-      </View>
     </View>
   );
 }
@@ -308,8 +304,8 @@ export default function TourPreview({ kind, partnerName }) {
 }
 function createStyles(c) {
   return StyleSheet.create({
-    box: { height: 200, borderRadius: 22, padding: 16, justifyContent: 'center' },
-    card: { borderRadius: 22, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, padding: 14, overflow: 'hidden' },
+    box: { height: 150, borderRadius: 20, padding: 8, justifyContent: 'center' },
+    card: { borderRadius: 18, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, padding: 10, overflow: 'hidden' },
     glow: { position: 'absolute', width: 140, height: 140, borderRadius: 70 },
     labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     phaseLabel: { fontSize: 9, fontWeight: '700', color: c.tertiary, textTransform: 'uppercase', letterSpacing: 1 },
@@ -323,23 +319,23 @@ function createStyles(c) {
       paddingHorizontal: 9,
     },
     viewOnlyTx: { fontSize: 9, fontWeight: '700', color: c.primaryDark },
-    heroLine: { fontFamily: FONT.serif, fontSize: 18, lineHeight: 25, color: c.textPrimary, marginTop: 8 },
-    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+    heroLine: { fontFamily: FONT.serif, fontSize: 16, lineHeight: 21, color: c.textPrimary, marginTop: 5 },
+    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
     weekRow: { flexDirection: 'row' },
     dow: { flex: 1, textAlign: 'center', fontSize: 9, fontWeight: '600', color: c.textSecondary },
     monthGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
     monthCell: { width: `${100 / 7}%`, padding: 2.5 },
-    monthDay: { height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    monthDay: { height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
     dayNum: { fontSize: 10.5, fontWeight: '700', color: c.textSecondary },
-    legend: { flexDirection: 'row', gap: 12, marginTop: 10, paddingHorizontal: 2 },
+    legend: { flexDirection: 'row', gap: 12, marginTop: 8, paddingHorizontal: 2 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     dot: { width: 7, height: 7, borderRadius: 4 },
     legendTx: { fontSize: 9, fontWeight: '600', color: c.textSecondary },
     cardTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary, paddingHorizontal: 2 },
-    moodGrid: { flexDirection: 'row', gap: 6, marginTop: 12 },
+    moodGrid: { flexDirection: 'row', gap: 5, marginTop: 8 },
     mood: {
       flex: 1,
-      height: 60,
+      height: 50,
       borderRadius: 16,
       borderWidth: 1.5,
       borderColor: c.border,
@@ -348,28 +344,28 @@ function createStyles(c) {
       justifyContent: 'center',
       gap: 3,
     },
-    emoji: { fontSize: 18, lineHeight: 26 },
+    emoji: { fontSize: 16, lineHeight: 22 },
     moodTx: { fontSize: 9, fontWeight: '600', color: c.textSecondary },
-    reply: { marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 14, backgroundColor: c.primarySoft },
+    reply: { marginTop: 8, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 14, backgroundColor: c.primarySoft },
     replyTx: { fontSize: 10, lineHeight: 16, color: c.textPrimary },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      paddingVertical: 11,
+      paddingVertical: 7,
       paddingHorizontal: 14,
       borderBottomWidth: 1,
       borderBottomColor: c.border,
     },
-    rowIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    rowIcon: { width: 26, height: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
     rowLabel: { fontSize: 11, fontWeight: '600', color: c.textPrimary },
     rowSub: { fontSize: 9.5, color: c.textMuted, marginTop: 2 },
     track: { width: 44, height: 24, borderRadius: 12 },
     thumb: { position: 'absolute', top: 2, left: 2, width: 20, height: 20, borderRadius: 10, backgroundColor: c.white },
     link: { fontSize: 10, fontWeight: '700', color: c.primaryDark },
-    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
     chip: {
-      paddingVertical: 8,
+      paddingVertical: 6,
       paddingHorizontal: 11,
       borderRadius: 99,
       borderWidth: 1.5,
