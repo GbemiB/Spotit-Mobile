@@ -8,12 +8,13 @@ import { A } from '../../shared/store/actions.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import { ChevronRightIcon } from '../../components/ui/icons.jsx';
 import { useAnimatedValue, useReduceMotion } from '../dashboard/HeroCardFx.jsx';
+import PartnerArt from './PartnerArt.jsx';
 const { width: W } = Dimensions.get('window');
 const SLIDES = [
   {
     image: require('../../../assets/illus-rhythm.png'),
     title: "Know your body's rhythm",
-    body: 'A few taps a day builds a picture only you have — no guesswork, just patterns.',
+    body: 'A few taps a day builds a picture only you have, and gentle reminders let you know before your period and ovulation.',
   },
   {
     image: require('../../../assets/illus-fertility.png'),
@@ -21,9 +22,9 @@ const SLIDES = [
     body: 'We track ovulation and your fertile days so you always know where you stand.',
   },
   {
-    image: require('../../../assets/illus-reminder.png'),
-    title: "See what's coming",
-    body: 'Your next period and ovulation day are predicted on your home screen and calendar, so you can plan ahead.',
+    art: 'partner',
+    title: 'Love that shows up ♡',
+    body: 'Invite your partner. They’ll know where you are in your cycle, and send promises, hugs and sweet notes right when it matters.',
   },
 ];
 const PETALS = Array.from({ length: 9 }, (_, i) => ({
@@ -157,7 +158,13 @@ function Slide({ slide, index, scrollX, enter, reduceMotion, s, children }) {
             },
           ]}
         >
-          <Image source={slide.image} style={s.photo} resizeMode="cover" />
+          {slide.art === 'partner' ? (
+            <View style={[s.photo, s.artBg]}>
+              <PartnerArt reduceMotion={reduceMotion} />
+            </View>
+          ) : (
+            <Image source={slide.image} style={s.photo} resizeMode="cover" />
+          )}
         </Animated.View>
         {!reduceMotion && photoH > 0 && (
           <>
@@ -459,6 +466,7 @@ function createStyles(c) {
     screen: { flex: 1 },
     photoWrap: { height: '75%', position: 'relative', overflow: 'hidden' },
     photo: { width: '100%', height: '100%' },
+    artBg: { backgroundColor: '#FFF4F1' },
     dots: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', gap: 6, justifyContent: 'center' },
     dot: { height: 5, borderRadius: 99 },
     skip: {
