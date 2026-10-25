@@ -44,6 +44,14 @@ function Flower({ x, y, rx, ry, color, center }) {
     </G>
   );
 }
+function Person({ cx, cy, color }) {
+  return (
+    <G>
+      <Circle cx={cx} cy={cy - 5} r={6.5} fill={color} />
+      <Path d={`M${cx - 11} ${cy + 12}c0-6.5 5-10.5 11-10.5s11 4 11 10.5`} fill={color} />
+    </G>
+  );
+}
 function Card({ x, y, w, h, r }) {
   return (
     <>
@@ -98,11 +106,6 @@ export default function PartnerArt({ reduceMotion }) {
       accessibilityLabel="His phone sends hearts to her phone. Her phone shows a promise of tea and a back rub, and a hug."
     >
       <Defs>
-        <LinearGradient id="pa-bg" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#FFE9EC" />
-          <Stop offset="0.55" stopColor="#FFF4EF" />
-          <Stop offset="1" stopColor="#FFF8F0" />
-        </LinearGradient>
         <RadialGradient id="pa-halo" cx="50%" cy="50%" r="50%">
           <Stop offset="0" stopColor="#F7B7C3" stopOpacity="0.9" />
           <Stop offset="1" stopColor="#F7B7C3" stopOpacity="0" />
@@ -117,7 +120,6 @@ export default function PartnerArt({ reduceMotion }) {
           <Stop offset="1" stopColor="#C04E68" />
         </LinearGradient>
       </Defs>
-      <Rect width={700} height={700} fill="url(#pa-bg)" />
       <AnimatedCircle
         cx={400}
         cy={190}
@@ -142,9 +144,7 @@ export default function PartnerArt({ reduceMotion }) {
         <Rect x={480} y={230} width={130} height={230} rx={24} fill="#FFFFFF" stroke="#F2E6E1" strokeWidth={3} />
         <Rect x={525} y={242} width={40} height={7} rx={3.5} fill="#F2E6E1" />
         <Circle cx={545} cy={290} r={20} fill="#F6E6CC" />
-        <SvgText x={545} y={297} textAnchor="middle" fontSize={18} fontFamily={BOLD} fill="#A9663D">
-          T
-        </SvgText>
+        <Person cx={545} cy={290} color="#A9663D" />
         <Rect x={500} y={325} width={40} height={38} rx={10} fill="#FFF0F2" stroke="#DC5A74" strokeWidth={2} />
         <Rect x={550} y={325} width={40} height={38} rx={10} fill="#FBF6F4" stroke="#F2E6E1" strokeWidth={2} />
         <Rect x={500} y={370} width={40} height={38} rx={10} fill="#FBF6F4" stroke="#F2E6E1" strokeWidth={2} />
@@ -174,9 +174,7 @@ export default function PartnerArt({ reduceMotion }) {
         <Rect x={110} y={200} width={200} height={350} rx={32} fill="#FFFFFF" stroke="#F2D0D8" strokeWidth={3} />
         <Rect x={180} y={215} width={60} height={9} rx={4.5} fill="#F2E6E1" />
         <Circle cx={210} cy={262} r={20} fill="#FCE0DE" />
-        <SvgText x={210} y={269} textAnchor="middle" fontSize={18} fontFamily={BOLD} fill="#C04E68">
-          A
-        </SvgText>
+        <Person cx={210} cy={262} color="#C04E68" />
         <Circle cx={210} cy={360} r={52} fill="none" stroke="#F2E6E1" strokeWidth={13} />
         <Circle
           cx={210}
@@ -198,26 +196,26 @@ export default function PartnerArt({ reduceMotion }) {
       </G>
 
       <AnimatedG translateY={bob1.interpolate({ inputRange: [0, 1], outputRange: [6, -4] })}>
-        <Card x={180} y={490} w={350} h={86} r={24} />
-        <Circle cx={226} cy={533} r={25} fill="#FFF0F2" />
-        <Heart x={214} y={521} fill="#DC5A74" />
-        <SvgText x={264} y={526} fontSize={18} fontFamily={BOLD} fill="#2E2429">
-          A promise from Tunde ♡
+        <Card x={170} y={490} w={390} h={86} r={24} />
+        <Circle cx={216} cy={533} r={25} fill="#FFF0F2" />
+        <Heart x={204} y={521} fill="#DC5A74" />
+        <SvgText x={254} y={526} fontSize={17} fontFamily={BOLD} fill="#2E2429">
+          A promise from your partner ♡
         </SvgText>
-        <SvgText x={264} y={552} fontSize={14.5} fontFamily={MEDIUM} fill="#6E6066">
+        <SvgText x={254} y={552} fontSize={14.5} fontFamily={MEDIUM} fill="#6E6066">
           {'Tea & treats · Back rub'}
         </SvgText>
       </AnimatedG>
       <AnimatedG translateY={bob2.interpolate({ inputRange: [0, 1], outputRange: [-4, 6] })}>
-        <Card x={240} y={592} w={320} h={74} r={22} />
-        <Circle cx={280} cy={629} r={22} fill="#FFF6E5" />
-        <SvgText x={280} y={637} textAnchor="middle" fontSize={22}>
+        <Card x={220} y={592} w={360} h={74} r={22} />
+        <Circle cx={260} cy={629} r={22} fill="#FFF6E5" />
+        <SvgText x={260} y={637} textAnchor="middle" fontSize={22}>
           🤗
         </SvgText>
-        <SvgText x={314} y={623} fontSize={16} fontFamily={BOLD} fill="#2E2429">
-          Tunde sent you a hug
+        <SvgText x={294} y={623} fontSize={16} fontFamily={BOLD} fill="#2E2429">
+          Your partner sent you a hug
         </SvgText>
-        <SvgText x={314} y={647} fontSize={13.5} fontFamily={MEDIUM} fill="#6E6066">
+        <SvgText x={294} y={647} fontSize={13.5} fontFamily={MEDIUM} fill="#6E6066">
           Just because ♡
         </SvgText>
       </AnimatedG>

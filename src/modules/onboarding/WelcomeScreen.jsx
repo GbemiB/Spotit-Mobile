@@ -159,7 +159,7 @@ function Slide({ slide, index, scrollX, enter, reduceMotion, s, children }) {
           ]}
         >
           {slide.art === 'partner' ? (
-            <View style={[s.photo, s.artBg]}>
+            <View style={s.photo}>
               <PartnerArt reduceMotion={reduceMotion} />
             </View>
           ) : (
@@ -466,7 +466,6 @@ function createStyles(c) {
     screen: { flex: 1 },
     photoWrap: { height: '75%', position: 'relative', overflow: 'hidden' },
     photo: { width: '100%', height: '100%' },
-    artBg: { backgroundColor: '#FFF4F1' },
     dots: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', gap: 6, justifyContent: 'center' },
     dot: { height: 5, borderRadius: 99 },
     skip: {
