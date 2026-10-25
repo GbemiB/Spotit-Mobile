@@ -38,13 +38,11 @@ export default function RhythmArt({ reduceMotion }) {
   const hour = useAnimatedValue(0);
   const spin = useAnimatedValue(0);
   const bob = useAnimatedValue(0);
-  const bob2 = useAnimatedValue(0);
   const disc = useAnimatedValue(0);
   useCycle(cycle, { duration: 6000, reduceMotion });
   useCycle(hour, { duration: 72000, reduceMotion });
   useCycle(spin, { duration: 18000, reduceMotion });
   useLoop(bob, { duration: 2000, reduceMotion });
-  useLoop(bob2, { duration: 2200, delay: 600, reduceMotion });
   useLoop(disc, { duration: 2500, reduceMotion });
   useEffect(() => {
     if (reduceMotion) cycle.setValue(REST);
@@ -130,22 +128,6 @@ export default function RhythmArt({ reduceMotion }) {
         </AnimatedG>
         <Circle r={7} fill="#C0264E" />
       </G>
-
-      <AnimatedG translateY={bob2.interpolate({ inputRange: [0, 1], outputRange: [0, -12] })}>
-        <G transform="rotate(-8 470 690)">
-          <Rect x={430} y={610} width={80} height={160} rx={40} fill="#FFFFFF" stroke="#F2C9D2" strokeWidth={3} />
-          <Rect x={388} y={650} width={46} height={70} rx={20} fill="#FFFFFF" stroke="#F2C9D2" strokeWidth={3} />
-          <Rect x={506} y={650} width={46} height={70} rx={20} fill="#FFFFFF" stroke="#F2C9D2" strokeWidth={3} />
-          <Rect x={455} y={640} width={30} height={100} rx={15} fill="#FCE0E5" />
-          <G transform="translate(470 690)">
-            <Circle cx={0} cy={-8} r={7} fill="#F29BAE" />
-            <Circle cx={8} cy={0} r={7} fill="#F29BAE" />
-            <Circle cx={0} cy={8} r={7} fill="#F29BAE" />
-            <Circle cx={-8} cy={0} r={7} fill="#F29BAE" />
-            <Circle r={5} fill="#D6A24E" />
-          </G>
-        </G>
-      </AnimatedG>
 
       <G transform="translate(470 92)">
         <AnimatedG rotation={spin.interpolate({ inputRange: [0, 1], outputRange: [0, 360] })}>
