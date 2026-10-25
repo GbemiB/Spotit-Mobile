@@ -46,13 +46,13 @@ function useLater(delay, reduceMotion) {
   }, [delay, reduceMotion]);
   return reduceMotion || on;
 }
-function Hero({ s, c, isDark, lead, viewOnly, reduceMotion }) {
+function Hero({ s, c, isDark, headline, viewOnly, reduceMotion }) {
   return (
     <View style={s.card}>
       <View style={[s.glow, { top: -50, right: -40, backgroundColor: isDark ? 'rgba(220,90,116,0.30)' : '#FCE3DC' }]} />
       <View style={[s.glow, { bottom: -60, left: -50, backgroundColor: isDark ? 'rgba(214,162,78,0.24)' : '#F6E6CC' }]} />
       <View style={s.labelRow}>
-        <Text style={s.phaseLabel}>{`Day ${DAY} of ${CYCLE}`}</Text>
+        <Text style={s.phaseLabel}>Every day on Home</Text>
         {viewOnly && (
           <FadeIn delay={700} reduceMotion={reduceMotion}>
             <View style={s.viewOnly}>
@@ -62,17 +62,9 @@ function Hero({ s, c, isDark, lead, viewOnly, reduceMotion }) {
           </FadeIn>
         )}
       </View>
-      <View style={s.heroRow}>
-        <RiseText style={s.heroSm} delay={250} reduceMotion={reduceMotion}>
-          {lead}
-        </RiseText>
-        <RiseText style={[s.heroBig, { color: c.primary }]} delay={350} pop reduceMotion={reduceMotion}>
-          {CYCLE - DAY + 1}
-        </RiseText>
-        <RiseText style={s.heroSm} delay={450} reduceMotion={reduceMotion}>
-          days
-        </RiseText>
-      </View>
+      <RiseText style={s.heroLine} delay={250} reduceMotion={reduceMotion}>
+        {headline}
+      </RiseText>
       <View style={{ marginTop: 12 }}>
         <AnimatedCycleBar
           value={DAY / CYCLE}
@@ -89,8 +81,16 @@ function Hero({ s, c, isDark, lead, viewOnly, reduceMotion }) {
         />
       </View>
       <View style={s.dayRow}>
-        <Text style={s.dayLbl}>Day 1</Text>
-        <Text style={s.dayLbl}>{`Day ${CYCLE}`}</Text>
+        {[
+          ['Period', c.primary],
+          ['Fertile', phases.fertile],
+          ['Ovulation', phases.ovulation],
+        ].map(([label, color]) => (
+          <View key={label} style={s.legendItem}>
+            <View style={[s.dot, { backgroundColor: color }]} />
+            <Text style={s.legendTx}>{label}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -281,12 +281,22 @@ export default function TourPreview({ kind, partnerName }) {
   const cal = calendarPalette[isDark ? 'dark' : 'light'];
   const her = partnerName ? `${partnerName}’s` : 'Her';
   const body = {
-    welcome: <Hero s={s} c={c} isDark={isDark} lead="Your period starts in" reduceMotion={reduceMotion} />,
+    welcome: (
+      <Hero
+        s={s}
+        c={c}
+        isDark={isDark}
+        headline="Your period, fertile days and ovulation, counted down for you"
+        reduceMotion={reduceMotion}
+      />
+    ),
     calendar: <Month s={s} c={c} cal={cal} reduceMotion={reduceMotion} />,
     log: <Mood s={s} c={c} reduceMotion={reduceMotion} />,
     points: <PointsCard levelName="Blush" points={120} pct={0.6} toNextText="80 SP to Petal" onPress={() => {}} />,
     control: <Control s={s} c={c} reduceMotion={reduceMotion} />,
-    partnerWelcome: <Hero s={s} c={c} isDark={isDark} lead={`${her} period starts in`} viewOnly reduceMotion={reduceMotion} />,
+    partnerWelcome: (
+      <Hero s={s} c={c} isDark={isDark} headline={`${her} cycle, counted down for you`} viewOnly reduceMotion={reduceMotion} />
+    ),
     partnerCheckIn: <CheckIn s={s} c={c} name={partnerName} reduceMotion={reduceMotion} />,
     partnerReminder: <Notice s={s} c={c} text={`${her} period is expected to start in 5 days.`} reduceMotion={reduceMotion} />,
   }[kind];
@@ -313,11 +323,8 @@ function createStyles(c) {
       paddingHorizontal: 9,
     },
     viewOnlyTx: { fontSize: 9, fontWeight: '700', color: c.primaryDark },
-    heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 8, flexWrap: 'wrap' },
-    heroSm: { fontFamily: FONT.serif, fontSize: 18, color: c.textPrimary },
-    heroBig: { fontFamily: FONT.serif, fontSize: 30 },
-    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-    dayLbl: { fontSize: 8.5, color: c.textDisabled, fontWeight: '600' },
+    heroLine: { fontFamily: FONT.serif, fontSize: 18, lineHeight: 25, color: c.textPrimary, marginTop: 8 },
+    dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
     weekRow: { flexDirection: 'row' },
     dow: { flex: 1, textAlign: 'center', fontSize: 9, fontWeight: '600', color: c.textSecondary },
     monthGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
