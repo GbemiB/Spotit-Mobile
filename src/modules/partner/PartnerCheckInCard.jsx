@@ -9,7 +9,7 @@ import * as partnerApi from '../../shared/api/partner.js';
 import * as rewardsApi from '../../shared/api/rewards.js';
 import { supportLabels } from '../../shared/utils/partner.js';
 import { useReduceMotion, useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
-const HEART = 'M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z';
+export const HEART = 'M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z';
 const NOTE_MAX = 200;
 const ICONS = {
   checked_in: ['M4 5h16v11H9l-5 4V5z', 'M12 13.5s-2.6-1.6-2.6-3.3a1.4 1.4 0 0 1 2.6-.7 1.4 1.4 0 0 1 2.6.7c0 1.7-2.6 3.3-2.6 3.3z'],
@@ -36,12 +36,12 @@ function Heart({ size, color }) {
     </Svg>
   );
 }
-function OptionIcon({ id, color }) {
+export function OptionIcon({ id, color, size = 22 }) {
   const [a, b] = ICONS[id] || ICONS.checked_in;
   return (
     <Svg
-      width={22}
-      height={22}
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke={color}

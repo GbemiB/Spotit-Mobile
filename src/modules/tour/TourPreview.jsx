@@ -7,6 +7,7 @@ import { FONT } from '../../shared/styles/typography.js';
 import { calendarPalette } from '../../shared/styles/colors.js';
 import { BellIcon, LockIcon } from '../../components/ui/icons.jsx';
 import PointsCard from '../dashboard/PointsCard.jsx';
+import { HEART, OptionIcon } from '../partner/PartnerCheckInCard.jsx';
 import { useReduceMotion, FadeIn, RiseText, AnimatedCycleBar } from '../dashboard/HeroCardFx.jsx';
 const CYCLE = 28;
 const DAY = 20;
@@ -18,7 +19,11 @@ const MOODS = [
   ['😔', 'Low'],
   ['🥺', 'Tender'],
 ];
-const SUPPORT = ['Checked in on her', 'Brought her snacks', 'Listened to her'];
+const SUPPORT = [
+  ['listened', 'Listened'],
+  ['snacks', 'Tea & treats'],
+  ['massage', 'Back rub'],
+];
 function PeopleIcon({ color, size = 16 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -239,20 +244,54 @@ function Control({ s, c, reduceMotion }) {
 function CheckIn({ s, c, name, reduceMotion }) {
   const first = useLater(700, reduceMotion);
   const second = useLater(1300, reduceMotion);
+  const typed = useLater(1900, reduceMotion);
   return (
     <View style={s.card}>
-      <Text style={s.cardTitle}>{`How did you support ${name || 'her'} today?`}</Text>
-      <View style={s.chips}>
-        {SUPPORT.map((label, i) => {
-          const on = (i === 0 && first) || (i === 2 && second);
+      <View style={s.loveHead}>
+        <Svg width={13} height={13} viewBox="0 0 24 24" fill={c.primary}>
+          <Path d={HEART} />
+        </Svg>
+        <Text style={s.cardTitle}>{`Love for ${name || 'her'} today`}</Text>
+      </View>
+      <View style={s.loveTiles}>
+        {SUPPORT.map(([id, label], i) => {
+          const on = (i === 0 && first) || (i === 1 && second);
           return (
-            <View key={label} style={[s.chip, on && { borderColor: c.primary, backgroundColor: c.primarySoft }]}>
-              <Text style={[s.chipTx, { color: on ? c.primaryDark : c.textSecondary }]}>{label}</Text>
+            <View key={id} style={[s.loveTile, on && { borderWidth: 2, borderColor: c.primary, backgroundColor: c.primarySoft }]}>
+              <OptionIcon id={id} size={18} color={on ? c.primaryDark : c.textMuted} />
+              <Text style={[s.loveTileTx, { color: on ? c.primaryDark : c.textSecondary }]}>{label}</Text>
             </View>
           );
         })}
       </View>
+      <View style={s.noteStub}>
+        {typed ? (
+          <FadeIn delay={0} reduceMotion={reduceMotion}>
+            <Text style={s.noteTyped}>Proud of you today ♡</Text>
+          </FadeIn>
+        ) : (
+          <Text style={s.notePlaceholder}>{`Add a sweet note for ${name || 'her'}`}</Text>
+        )}
+      </View>
     </View>
+  );
+}
+function LoveNotice({ s, c, reduceMotion }) {
+  return (
+    <FadeIn delay={250} from="top" reduceMotion={reduceMotion}>
+      <View style={[s.card, s.notice]}>
+        <View style={[s.rowIcon, { backgroundColor: c.primarySoft }]}>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill={c.primary}>
+            <Path d={HEART} />
+          </Svg>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.noticeApp}>Spot it · now</Text>
+          <Text style={s.noticeTx}>Love from your partner</Text>
+          <Text style={s.noticeSub}>Listened · Tea & treats — “Proud of you”</Text>
+        </View>
+      </View>
+    </FadeIn>
   );
 }
 function Notice({ s, c, text, reduceMotion }) {
@@ -289,6 +328,7 @@ export default function TourPreview({ kind, partnerName }) {
     calendar: <Month s={s} c={c} cal={cal} reduceMotion={reduceMotion} />,
     log: <Mood s={s} c={c} reduceMotion={reduceMotion} />,
     points: <PointsCard levelName="Blush" points={120} pct={0.6} toNextText="80 SP to Petal" onPress={() => {}} />,
+    partner: <LoveNotice s={s} c={c} reduceMotion={reduceMotion} />,
     control: <Control s={s} c={c} reduceMotion={reduceMotion} />,
     partnerWelcome: (
       <Hero s={s} c={c} isDark={isDark} headline={`${her} cycle, counted down for you`} viewOnly reduceMotion={reduceMotion} />
@@ -373,6 +413,33 @@ function createStyles(c) {
       backgroundColor: c.background,
     },
     chipTx: { fontSize: 10.5, fontWeight: '600' },
+    loveHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    loveTiles: { flexDirection: 'row', gap: 6, marginTop: 8 },
+    loveTile: {
+      flex: 1,
+      height: 50,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    loveTileTx: { fontSize: 9, fontWeight: '700' },
+    noteStub: {
+      marginTop: 8,
+      height: 30,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.background,
+      justifyContent: 'center',
+      paddingHorizontal: 10,
+    },
+    notePlaceholder: { fontSize: 10, color: c.textFaint },
+    noteTyped: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12, color: c.textPrimary },
+    noticeSub: { fontSize: 10, lineHeight: 15, color: c.textSecondary, marginTop: 2 },
     notice: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     noticeApp: { fontSize: 8.5, fontWeight: '700', color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
     noticeTx: { fontSize: 11, fontWeight: '600', color: c.textPrimary, lineHeight: 16, marginTop: 3 },

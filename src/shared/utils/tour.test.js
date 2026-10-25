@@ -9,8 +9,8 @@ describe('firstNameOf', () => {
 });
 describe('tourCards for her', () => {
   const cards = tourCards({ accountType: 'owner', userName: 'Amaka Obi' });
-  test('has the five agreed cards in order', () => {
-    expect(cards.map(c => c.key)).toEqual(['welcome', 'calendar', 'log', 'points', 'control']);
+  test('has the six agreed cards in order', () => {
+    expect(cards.map(c => c.key)).toEqual(['welcome', 'calendar', 'log', 'points', 'partner', 'control']);
   });
   test('greets her by first name', () => expect(cards[0].title).toBe('Hi, Amaka'));
   test('keeps every line short', () => {
@@ -19,7 +19,7 @@ describe('tourCards for her', () => {
   test('first and last buttons', () => {
     expect(cards[0].next).toBe('Show me');
     expect(cards[2].next).toBe('Next');
-    expect(cards[4].next).toBe('Start tracking');
+    expect(cards[5].next).toBe('Start tracking');
   });
   test('falls back when no name is known yet', () => {
     expect(tourCards({ accountType: 'owner', userName: 'Friend' })[0].title).toBe('Welcome to Spot it');
@@ -33,14 +33,14 @@ describe('tourCards for a partner', () => {
   test('uses the name he saved for her', () => {
     expect(cards[0].title).toBe('Hi, Tunde');
     expect(cards[0].body).toBe('See Amaka’s app. You can look, not change.');
-    expect(cards[1].body).toBe('Show up for Amaka, earn SpotPoints.');
+    expect(cards[1].title).toBe('Show her some love');
+    expect(cards[1].body).toBe('Tea, a back rub, a sweet note. She’ll see it.');
     expect(cards[2].body).toBe('A heads-up 5 days before Amaka’s period.');
     expect(cards[2].next).toBe('Get started');
   });
   test('reads naturally before her name has loaded', () => {
     const early = tourCards({ accountType: 'partner', userName: 'Tunde', partnerName: '' });
     expect(early[0].body).toBe('See her app. You can look, not change.');
-    expect(early[1].body).toBe('Show up for her, earn SpotPoints.');
     expect(early[2].body).toBe('A heads-up 5 days before her period.');
   });
 });
