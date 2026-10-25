@@ -96,11 +96,3 @@ export function dayLogRows(log) {
 export function supportLabels(options, ids) {
   return (ids || []).map(id => options.find(o => o.id === id)?.label || id);
 }
-export function headsUpChip(daysToPeriod) {
-  if (daysToPeriod == null || daysToPeriod < 1) return null;
-  const left = daysToPeriod - 5;
-  if (left > 1) return `Heads-up in ${left} days`;
-  if (left === 1) return 'Heads-up tomorrow';
-  if (left === 0) return 'Heads-up today';
-  return daysToPeriod === 1 ? 'Period tomorrow' : `Period in ${daysToPeriod} days`;
-}

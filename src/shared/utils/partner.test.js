@@ -11,7 +11,6 @@ import {
   connectedTitle,
   inviteExpiryText,
   sharedSinceLabel,
-  headsUpChip,
 } from './partner.js';
 describe('ownerCard', () => {
   test('nothing shows until the status has loaded', () => {
@@ -137,16 +136,5 @@ describe('sharedSinceLabel', () => {
   test('shows the day sharing started', () => {
     expect(sharedSinceLabel('2026-10-23T12:00:00Z')).toBe('Sharing since 23 October');
     expect(sharedSinceLabel(null)).toBeNull();
-  });
-});
-describe('headsUpChip', () => {
-  test('counts down to his reminder, then to her period', () => {
-    expect(headsUpChip(15)).toBe('Heads-up in 10 days');
-    expect(headsUpChip(6)).toBe('Heads-up tomorrow');
-    expect(headsUpChip(5)).toBe('Heads-up today');
-    expect(headsUpChip(3)).toBe('Period in 3 days');
-    expect(headsUpChip(1)).toBe('Period tomorrow');
-    expect(headsUpChip(null)).toBeNull();
-    expect(headsUpChip(0)).toBeNull();
   });
 });

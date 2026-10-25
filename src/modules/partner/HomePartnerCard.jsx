@@ -19,7 +19,6 @@ import {
   connectedTitle,
   inviteExpiryText,
   sharedSinceLabel,
-  headsUpChip,
 } from '../../shared/utils/partner.js';
 import { ChevronRightIcon } from '../../components/ui/icons.jsx';
 import usePartnerSharing from './usePartnerSharing.js';
@@ -330,13 +329,6 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
               </View>
             ) : null}
             <View style={s.syncFoot}>
-              {headsUpChip(daysToPeriod) ? (
-                <View style={[s.chip, { backgroundColor: colors.surface }]}>
-                  <Text style={s.chipTx}>{headsUpChip(daysToPeriod)}</Text>
-                </View>
-              ) : (
-                <View />
-              )}
               <Pressable
                 style={[s.manage, { borderColor: colors.primarySoftBorder }]}
                 onPress={() => setManageOpen(true)}
@@ -448,7 +440,7 @@ function createStyles(c, isDark) {
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     pill: { borderRadius: 99, paddingVertical: 3, paddingHorizontal: 9 },
     pillTx: { fontSize: 9, fontWeight: '700' },
-    syncFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    syncFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
     inviteHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     iconCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
     eyebrow: { fontSize: 9, fontWeight: '700', color: c.tertiaryDeep, textTransform: 'uppercase', letterSpacing: 1 },
@@ -458,9 +450,9 @@ function createStyles(c, isDark) {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: 8,
-      marginTop: 10,
+      marginTop: 6,
       marginBottom: 2,
-      padding: 10,
+      padding: 8,
       borderRadius: 14,
       backgroundColor: c.surface,
       borderWidth: 1,
@@ -491,7 +483,7 @@ function createStyles(c, isDark) {
       backgroundColor: c.surface,
     },
     manageTx: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
-    syncCard: { borderRadius: isDark ? 22.5 : 22, paddingVertical: 16, paddingHorizontal: 18, gap: 12, overflow: 'hidden' },
+    syncCard: { borderRadius: isDark ? 22.5 : 22, paddingVertical: 12, paddingHorizontal: 14, gap: 8, overflow: 'hidden' },
     syncHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     avatars: { flexDirection: 'row' },
     secondAvatar: { marginLeft: -10, borderRadius: 21, borderWidth: 2, borderColor: c.surface },
