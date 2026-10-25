@@ -114,6 +114,7 @@ function draftFrom(date, log) {
       }
     : blankDraft(date);
 }
+const LOVE_PREVIEW = 3;
 export default function CalendarScreen() {
   const { state, dispatch } = useApp();
   const viewer = viewerOf(state);
@@ -139,6 +140,7 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
   const [removeAsk, setRemoveAsk] = useState(null);
+  const [loveOpenFor, setLoveOpenFor] = useState(null);
   const [removing, setRemoving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -430,9 +432,10 @@ export default function CalendarScreen() {
             <Card style={{ padding: 16, marginBottom: 14, borderRadius: 22 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={s.loveHeart}>♥</Text>
-                <Text style={s.loveTitle}>{`Love from ${partnerLove[selDate][0].partnerName || 'your partner'}`}</Text>
+                <Text style={[s.loveTitle, { flex: 1 }]}>{`Love from ${partnerLove[selDate][0].partnerName || 'your partner'}`}</Text>
+                {partnerLove[selDate].length > 1 ? <Text style={s.loveCount}>{`${partnerLove[selDate].length} today`}</Text> : null}
               </View>
-              {partnerLove[selDate].map((item, i) => (
+              {(loveOpenFor === selDate ? partnerLove[selDate] : partnerLove[selDate].slice(-LOVE_PREVIEW)).map((item, i) => (
                 <View key={i} style={s.loveItem}>
                   {item.kind === 'promise' ? (
                     <View style={s.loveChips}>
@@ -447,6 +450,16 @@ export default function CalendarScreen() {
                   {item.note ? <Text style={s.loveNote}>{`“${item.note}”`}</Text> : null}
                 </View>
               ))}
+              {partnerLove[selDate].length > LOVE_PREVIEW ? (
+                <Pressable
+                  onPress={() => setLoveOpenFor(loveOpenFor === selDate ? null : selDate)}
+                  hitSlop={8}
+                  style={s.loveMore}
+                  accessibilityRole="button"
+                >
+                  <Text style={s.loveMoreTx}>{loveOpenFor === selDate ? 'Show less' : `Show all ${partnerLove[selDate].length}`}</Text>
+                </Pressable>
+              ) : null}
             </Card>
           ) : null}
 
@@ -562,6 +575,9 @@ function createStyles(c) {
       justifyContent: 'center',
     },
     loveHeart: { fontSize: 14, color: c.primary },
+    loveCount: { fontSize: 10, fontWeight: '700', color: c.textSecondary },
+    loveMore: { alignSelf: 'flex-start', marginTop: 10, paddingVertical: 6 },
+    loveMoreTx: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
     loveTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
     loveItem: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border },
     loveExpr: { fontSize: 13, fontWeight: '700', color: c.primaryDark },
