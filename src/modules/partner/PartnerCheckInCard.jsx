@@ -246,7 +246,7 @@ function previewOf(sent, partnerFirstName) {
   if (sent.kind === 'promise') return [`A promise from ${me} ♡`, sent.labels.join(' · ')];
   if (sent.kind === 'text') return [`${me} sent you a message`, `“${sent.note}”`];
   const phrase = sent.expressionPhrase || `“${sent.expressionLabel}”`;
-  return [`${me} sent you ${phrase}${sent.expressionEmoji ? ` ${sent.expressionEmoji}` : ''}`, 'Just because ♡'];
+  return [`${me} sent you ${phrase}${sent.expressionEmoji ? ` ${sent.expressionEmoji}` : ''}`, 'A little love for you ♡'];
 }
 export default function PartnerCheckInCard({ name }) {
   const { state, dispatch } = useApp();

@@ -181,7 +181,7 @@ export default function PartnerArt({ reduceMotion }) {
           Your partner sent you a hug
         </SvgText>
         <SvgText x={294} y={647} fontSize={13.5} fontFamily={MEDIUM} fill="#6E6066">
-          Just because ♡
+          A little love for you ♡
         </SvgText>
       </AnimatedG>
     </Svg>
