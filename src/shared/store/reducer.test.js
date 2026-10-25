@@ -249,6 +249,7 @@ describe('profile and notifications', () => {
       ovulation: true,
       dailyLog: false,
       digest: true,
+      partnerLove: false,
       morningTime: '07:30',
       eveningTime: '21:00',
       periodDaysBefore: [1, 0],
@@ -260,6 +261,7 @@ describe('profile and notifications', () => {
       ovulation: true,
       dailyLog: false,
       digest: true,
+      partnerLove: false,
       morningTime: '07:30',
       eveningTime: '21:00',
       periodDaysBefore: [1, 0],
@@ -581,5 +583,17 @@ describe('partner view', () => {
     const ended = reducer(INIT, { type: A.PARTNER_STATE, state: 'ended' });
     expect(ended.partnerState).toBe('ended');
     expect(reducer(ended, { type: A.LOGOUT }).partnerState).toBeNull();
+  });
+});
+describe('partner love', () => {
+  test('stores his check-ins by day and replaces the fetched range', () => {
+    const start = { ...INIT, partnerLove: { '2026-10-02': { partnerName: 'Tunde', labels: ['Chores'], note: null } } };
+    const next = reducer(start, {
+      type: A.PARTNER_LOVE_HYDRATED,
+      from: '2026-10-01',
+      to: '2026-10-31',
+      items: [{ date: '2026-10-24', partnerName: 'Tunde', labels: ['Listened'], note: 'Proud of you' }],
+    });
+    expect(next.partnerLove).toEqual({ '2026-10-24': { partnerName: 'Tunde', labels: ['Listened'], note: 'Proud of you' } });
   });
 });

@@ -1,5 +1,5 @@
 import { A } from './actions.js';
-import { todayISO, trackingStartOf } from '../utils/cycle.js';
+import { datesBetween, todayISO, trackingStartOf } from '../utils/cycle.js';
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../constants/cycle.js';
 import { toLevelList } from '../utils/levels.js';
 const MAX_HISTORY = 20;
@@ -49,6 +49,7 @@ export const INIT = {
     ovulation: true,
     dailyLog: true,
     digest: false,
+    partnerLove: true,
     morningTime: '06:00',
     eveningTime: '20:00',
     periodDaysBefore: [2, 1, 0],
@@ -76,6 +77,7 @@ export const INIT = {
   today: todayISO(),
   cycleStatus: null,
   calendarPhases: {},
+  partnerLove: {},
   insights: { trends: null, digest: null, regularity: null },
 };
 const USER_DATA_KEYS = [
@@ -109,6 +111,7 @@ const USER_DATA_KEYS = [
   'shopProducts',
   'cycleStatus',
   'calendarPhases',
+  'partnerLove',
   'insights',
 ];
 function withoutUserData(state) {
@@ -249,6 +252,14 @@ export function reducer(state, action) {
       return applySavedLog(state, action);
     case A.SAVE_LOG_PERIOD:
       return applySavedPeriod(state, action);
+    case A.PARTNER_LOVE_HYDRATED: {
+      const partnerLove = { ...state.partnerLove };
+      (action.from && action.to ? datesBetween(action.from, action.to) : []).forEach(d => delete partnerLove[d]);
+      (action.items || []).forEach(item => {
+        partnerLove[item.date] = { partnerName: item.partnerName, labels: item.labels || [], note: item.note || null };
+      });
+      return { ...state, partnerLove };
+    }
     case A.PERIOD_REMOVED:
       return {
         ...state,
@@ -314,7 +325,7 @@ export function reducer(state, action) {
       return { ...state, notifs: { ...state.notifs, ...action.prefs } };
     case A.NOTIFICATIONS_HYDRATED:
     case A.NOTIFICATIONS_UPDATED: {
-      const { period, ovulation, dailyLog, digest, morningTime, eveningTime, periodDaysBefore, maxDaysBefore } = action;
+      const { period, ovulation, dailyLog, digest, partnerLove, morningTime, eveningTime, periodDaysBefore, maxDaysBefore } = action;
       return {
         ...state,
         notifs: {
@@ -322,6 +333,7 @@ export function reducer(state, action) {
           ovulation,
           dailyLog,
           digest,
+          partnerLove: partnerLove ?? state.notifs.partnerLove ?? true,
           morningTime: morningTime ?? state.notifs.morningTime,
           eveningTime: eveningTime ?? state.notifs.eveningTime,
           periodDaysBefore: periodDaysBefore ?? state.notifs.periodDaysBefore,

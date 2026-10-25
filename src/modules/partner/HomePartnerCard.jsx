@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Ellipse, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme, Text } from '../../shared/styles/index.js';
+import { useApp } from '../../shared/store/AppContext.jsx';
+import { A } from '../../shared/store/actions.js';
+import * as partnerApi from '../../shared/api/partner.js';
+import { addDays, todayISO } from '../../shared/utils/cycle.js';
 import { FONT } from '../../shared/styles/typography.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
@@ -136,6 +140,18 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
   const halo = useAnimatedValue(0);
   const meet = useAnimatedValue(1);
   const card = ownerCard(status);
+  const { state: appState, dispatch } = useApp();
+  const { accessToken, today, partnerLove } = appState;
+  useEffect(() => {
+    if (card !== 'active' || !accessToken) return;
+    const to = todayISO();
+    const from = addDays(to, -60);
+    partnerApi
+      .getPartnerLove({ from, to }, accessToken)
+      .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items }))
+      .catch(() => {});
+  }, [card, accessToken, today, dispatch]);
+  const loveToday = partnerLove?.[todayISO()];
   useEffect(() => {
     if (reduceMotion || card !== 'none') return undefined;
     const anim = Animated.parallel([
@@ -297,6 +313,21 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
               <Text style={[s.serif, { flex: 1, fontSize: 19, lineHeight: 24 }]}>{connectedTitle(status.partnerFirstName)}</Text>
             </View>
             <Text style={s.body}>{connectedLine({ partnerName: status.partnerFirstName })}</Text>
+            {loveToday ? (
+              <View style={s.lovePanel}>
+                <Svg width={14} height={14} viewBox="0 0 24 24" fill={colors.primary}>
+                  <Path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z" />
+                </Svg>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.loveTitle}>
+                    {loveToday.labels.length
+                      ? `${loveToday.partnerName || Partner} today: ${loveToday.labels.join(' · ')}`
+                      : `${loveToday.partnerName || Partner} sent you love today`}
+                  </Text>
+                  {loveToday.note ? <Text style={s.loveNote}>{`“${loveToday.note}”`}</Text> : null}
+                </View>
+              </View>
+            ) : null}
             <View style={s.syncFoot}>
               {headsUpChip(daysToPeriod) ? (
                 <View style={[s.chip, { backgroundColor: colors.surface }]}>
@@ -422,6 +453,20 @@ function createStyles(c, isDark) {
     eyebrow: { fontSize: 9, fontWeight: '700', color: c.tertiaryDeep, textTransform: 'uppercase', letterSpacing: 1 },
     serif: { fontFamily: FONT.serif, fontSize: 20, lineHeight: 26, color: c.textPrimary },
     body: { fontSize: 11, lineHeight: 18, color: c.textSecondary },
+    lovePanel: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 8,
+      marginTop: 10,
+      marginBottom: 2,
+      padding: 10,
+      borderRadius: 14,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.primarySoftBorder,
+    },
+    loveTitle: { fontSize: 10.5, fontWeight: '700', color: c.textPrimary, lineHeight: 15 },
+    loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: c.textSecondary, marginTop: 3 },
     rowCard: {
       backgroundColor: c.surface,
       borderWidth: 1.5,

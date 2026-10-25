@@ -27,6 +27,7 @@ import Toggle from '../../components/ui/Toggle.jsx';
 import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
+import * as partnerApi from '../../shared/api/partner.js';
 import { noteLogSaved } from '../../shared/utils/rateApp.js';
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
 const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
@@ -132,6 +133,7 @@ export default function CalendarScreen() {
     accessToken,
     calendarPhases,
     periodPickerOpen,
+    partnerLove,
   } = state;
   const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
@@ -201,6 +203,12 @@ export default function CalendarScreen() {
         dispatch({ type: A.CALENDAR_PHASES_HYDRATED, phases: phasesByDate });
       })
       .catch(() => {});
+    if (state.accountType !== 'partner') {
+      partnerApi
+        .getPartnerLove({ from, to }, accessToken)
+        .then(data => dispatch({ type: A.PARTNER_LOVE_HYDRATED, from, to, items: data.items }))
+        .catch(() => {});
+    }
   }, [viewYear, viewMonth, lastPeriodDate, periodPickerOpen]);
   const scrollRef = useRef(null);
   const notesFocused = useRef(false);
@@ -417,6 +425,25 @@ export default function CalendarScreen() {
             </Card>
           )}
 
+          {!viewer.isPartner && selDate && partnerLove?.[selDate] ? (
+            <Card style={{ padding: 16, marginBottom: 14, borderRadius: 22 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={s.loveHeart}>♥</Text>
+                <Text style={s.loveTitle}>{`Love from ${partnerLove[selDate].partnerName || 'your partner'}`}</Text>
+              </View>
+              {partnerLove[selDate].labels.length ? (
+                <View style={s.loveChips}>
+                  {partnerLove[selDate].labels.map(label => (
+                    <View key={label} style={s.loveChip}>
+                      <Text style={s.loveChipTx}>{label}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {partnerLove[selDate].note ? <Text style={s.loveNote}>{`“${partnerLove[selDate].note}”`}</Text> : null}
+            </Card>
+          ) : null}
+
           {viewer.isPartner ? (
             <PartnerDayLog log={selDate ? selLog : null} name={viewer.name} />
           ) : isPeriodDay ? (
@@ -528,6 +555,19 @@ function createStyles(c) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    loveHeart: { fontSize: 14, color: c.primary },
+    loveTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
+    loveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+    loveChip: {
+      backgroundColor: c.primarySoft,
+      borderWidth: 1,
+      borderColor: c.primarySoftBorder,
+      borderRadius: 99,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+    },
+    loveChipTx: { fontSize: 10.5, fontWeight: '700', color: c.primaryDark },
+    loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 13, lineHeight: 19, color: c.textSecondary, marginTop: 10 },
     logPeriodPillTx: { fontSize: 11.5, fontWeight: '700', color: c.primaryDark },
     gridCard: {
       padding: 14,
