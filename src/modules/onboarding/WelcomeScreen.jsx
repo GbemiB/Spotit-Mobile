@@ -9,15 +9,22 @@ import { useTheme, Text } from '../../shared/styles/index.js';
 import { ChevronRightIcon } from '../../components/ui/icons.jsx';
 import { useAnimatedValue, useReduceMotion } from '../dashboard/HeroCardFx.jsx';
 import PartnerArt from './PartnerArt.jsx';
+import RhythmArt from './RhythmArt.jsx';
+import FertilityArt from './FertilityArt.jsx';
+const ARTS = { rhythm: RhythmArt, fertility: FertilityArt, partner: PartnerArt };
+function SlideArt({ kind, reduceMotion }) {
+  const Art = ARTS[kind];
+  return <Art reduceMotion={reduceMotion} />;
+}
 const { width: W } = Dimensions.get('window');
 const SLIDES = [
   {
-    image: require('../../../assets/illus-rhythm.png'),
+    art: 'rhythm',
     title: "Know your body's rhythm",
     body: 'A few taps a day builds a picture only you have, and gentle reminders let you know before your period and ovulation.',
   },
   {
-    image: require('../../../assets/illus-fertility.png'),
+    art: 'fertility',
     title: 'Know your fertile window',
     body: 'We track ovulation and your fertile days so you always know where you stand.',
   },
@@ -158,9 +165,9 @@ function Slide({ slide, index, scrollX, enter, reduceMotion, s, children }) {
             },
           ]}
         >
-          {slide.art === 'partner' ? (
+          {slide.art ? (
             <View style={s.photo}>
-              <PartnerArt reduceMotion={reduceMotion} />
+              <SlideArt kind={slide.art} reduceMotion={reduceMotion} />
             </View>
           ) : (
             <Image source={slide.image} style={s.photo} resizeMode="cover" />

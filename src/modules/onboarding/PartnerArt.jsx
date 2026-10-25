@@ -1,10 +1,7 @@
-import { useEffect } from 'react';
-import { Animated, Easing } from 'react-native';
 import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect, Circle, Ellipse, Path, G, Text as SvgText } from 'react-native-svg';
 import { FONT } from '../../shared/styles/typography.js';
 import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
-const AnimatedG = Animated.createAnimatedComponent(G);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import { AnimatedG, AnimatedCircle, Flower, Card, useLoop } from './artFx.jsx';
 const HEART = 'M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z';
 const TRAIL = 'M500 250 C 470 120, 330 110, 300 230';
 const P = [
@@ -34,16 +31,6 @@ const MEDIUM = FONT.medium;
 function Heart({ x, y, scale = 1, fill }) {
   return <Path d={HEART} fill={fill} transform={`translate(${x} ${y}) scale(${scale})`} />;
 }
-function Flower({ x, y, rx, ry, color, center }) {
-  return (
-    <G transform={`translate(${x} ${y})`}>
-      {[0, 72, 144, 216, 288].map(a => (
-        <Ellipse key={a} cx={0} cy={-ry} rx={rx} ry={ry} fill={color} transform={`rotate(${a})`} />
-      ))}
-      <Circle r={rx * 0.6} fill={center} />
-    </G>
-  );
-}
 function Person({ cx, cy, color }) {
   return (
     <G>
@@ -51,28 +38,6 @@ function Person({ cx, cy, color }) {
       <Path d={`M${cx - 11} ${cy + 12}c0-6.5 5-10.5 11-10.5s11 4 11 10.5`} fill={color} />
     </G>
   );
-}
-function Card({ x, y, w, h, r }) {
-  return (
-    <>
-      <Rect x={x} y={y + 8} width={w} height={h} rx={r} fill="rgba(192,78,104,0.08)" />
-      <Rect x={x} y={y} width={w} height={h} rx={r} fill="#FFFFFF" stroke="#F2E6E1" strokeWidth={1.5} />
-    </>
-  );
-}
-function useLoop(value, { duration, delay = 0, reduceMotion, bounce = true }) {
-  useEffect(() => {
-    if (reduceMotion) return undefined;
-    const run = bounce
-      ? Animated.sequence([
-          Animated.timing(value, { toValue: 1, duration, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-          Animated.timing(value, { toValue: 0, duration, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
-        ])
-      : Animated.timing(value, { toValue: 1, duration, easing: Easing.inOut(Easing.quad), useNativeDriver: false });
-    const anim = Animated.sequence([Animated.delay(delay), Animated.loop(run)]);
-    anim.start();
-    return () => anim.stop();
-  }, [value, duration, delay, reduceMotion, bounce]);
 }
 function Traveller({ color, scale, delay, reduceMotion }) {
   const t = useAnimatedValue(reduceMotion ? 0.5 : 0);
