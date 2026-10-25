@@ -1,4 +1,7 @@
 import {
+  loggedPeriods,
+  periodAround,
+  closePeriodStart,
   toISO,
   todayISO,
   daysInMonth,
@@ -215,5 +218,34 @@ describe('periodLogStartForMonth', () => {
   });
   test('cannot log in a future month', () => {
     expect(periodLogStartForMonth(2026, 11, '2026-10-18')).toBeNull();
+  });
+});
+describe('logged periods', () => {
+  const days = (from, n) => Object.fromEntries(Array.from({ length: n }, (_, i) => [addDays(from, i), { flow: 'medium' }]));
+  const logs = { ...days('2026-10-07', 5), ...days('2026-10-20', 5), '2026-10-15': { mood: 'calm' } };
+  test('groups flow days into periods', () => {
+    expect(loggedPeriods(logs)).toEqual([
+      { start: '2026-10-07', end: '2026-10-11' },
+      { start: '2026-10-20', end: '2026-10-24' },
+    ]);
+  });
+  test('finds the period around a day', () => {
+    expect(periodAround(logs, '2026-10-09')).toEqual({ start: '2026-10-07', end: '2026-10-11' });
+    expect(periodAround(logs, '2026-10-16')).toBeNull();
+  });
+  test('flags a new period that starts close to another one', () => {
+    const one = days('2026-10-07', 5);
+    expect(closePeriodStart({ logs: one, lastPeriodDate: '2026-10-07', start: '2026-10-20', end: '2026-10-24' })).toBe('2026-10-07');
+  });
+  test('does not flag a period a normal cycle away', () => {
+    const one = days('2026-09-12', 5);
+    expect(closePeriodStart({ logs: one, lastPeriodDate: '2026-09-12', start: '2026-10-07', end: '2026-10-11' })).toBeNull();
+  });
+  test('does not flag an edit that touches the same period', () => {
+    const one = days('2026-10-07', 5);
+    expect(closePeriodStart({ logs: one, lastPeriodDate: '2026-10-07', start: '2026-10-09', end: '2026-10-13' })).toBeNull();
+  });
+  test('counts the onboarding date when nothing is logged there', () => {
+    expect(closePeriodStart({ logs: {}, lastPeriodDate: '2026-10-21', start: '2026-10-07', end: '2026-10-11' })).toBe('2026-10-21');
   });
 });

@@ -3,7 +3,17 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { MONTHS } from '../../shared/constants/cycle.js';
-import { addDays, cycleDayOf, datesBetween, formatDisplayDate, periodStatus, phaseFor, todayISO } from '../../shared/utils/cycle.js';
+import {
+  addDays,
+  closePeriodStart,
+  cycleDayOf,
+  datesBetween,
+  formatDisplayDate,
+  periodAround,
+  periodStatus,
+  phaseFor,
+  todayISO,
+} from '../../shared/utils/cycle.js';
 import { useTheme, Text } from '../../shared/styles/index.js';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -21,8 +31,10 @@ export default function PeriodPickerSheet() {
   const status = periodStatus(today, lastPeriodDate, cycleLength);
   const newCycle = !!status && status.state !== 'tracking';
   const ongoing = !newCycle && phaseKey === 'period';
-  const defaultStart = periodPickerStart ?? (lastPeriodDate && !newCycle ? lastPeriodDate : today);
-  const defaultEnd = addDays(defaultStart, periodLength - 1);
+  const editing = periodPickerStart && logs?.[periodPickerStart]?.flow ? periodAround(logs, periodPickerStart) : null;
+  const replaceStart = editing ? editing.start : !periodPickerStart && ongoing ? lastPeriodDate : null;
+  const defaultStart = editing ? editing.start : (periodPickerStart ?? (lastPeriodDate && !newCycle ? lastPeriodDate : today));
+  const defaultEnd = editing ? editing.end : addDays(defaultStart, periodLength - 1);
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
   const [activeField, setActiveField] = useState('start');
@@ -31,6 +43,7 @@ export default function PeriodPickerSheet() {
   const [viewMonth, setViewMonth] = useState(initialAnchor.getMonth());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [closeTo, setCloseTo] = useState(null);
   function navigateMonth(delta) {
     const d = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(d.getFullYear());
@@ -42,6 +55,7 @@ export default function PeriodPickerSheet() {
     setViewMonth(d.getMonth());
   }
   function handleDayTap(iso) {
+    setCloseTo(null);
     if (activeField === 'start') {
       if (iso > today) return;
       setStart(iso);
@@ -63,13 +77,30 @@ export default function PeriodPickerSheet() {
   function close() {
     dispatch({ type: A.CLOSE_PERIOD_PICKER });
   }
-  async function handleSave() {
+  async function handleSave(moveFrom) {
     if (!start || !end || saving) return;
+    if (!replaceStart && moveFrom === undefined) {
+      const close = closePeriodStart({ logs, lastPeriodDate, start, end });
+      if (close) {
+        setCloseTo(close);
+        return;
+      }
+    }
+    setCloseTo(null);
     setError('');
     setSaving(true);
     try {
       const data = await logsApi.saveLogPeriod(
-        { startDate: start, endDate: end, flow: DEFAULT_FLOW, mood: null, symptoms: [], notes: null, intimate: false },
+        {
+          startDate: start,
+          endDate: end,
+          flow: DEFAULT_FLOW,
+          mood: null,
+          symptoms: [],
+          notes: null,
+          intimate: false,
+          replaceStart: replaceStart ?? moveFrom ?? null,
+        },
         accessToken,
       );
       dispatch({
@@ -100,7 +131,7 @@ export default function PeriodPickerSheet() {
     }
   }
   return (
-    <BottomSheet open onClose={close} title="Log a period">
+    <BottomSheet open onClose={close} title={editing || replaceStart ? 'Adjust your period' : 'Log a period'}>
       <View>
         <Text style={s.subtitle}>
           {activeField === 'start'
@@ -146,18 +177,39 @@ export default function PeriodPickerSheet() {
         {error ? <Text style={s.errorTx}>{error}</Text> : null}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10, paddingTop: 16 }}>
-        <View style={{ flex: 1 }}>
-          <Button variant="secondary" onPress={close} disabled={saving}>
-            Cancel
-          </Button>
+      {closeTo ? (
+        <View style={s.closeBox}>
+          <Text style={s.closeTitle}>Close to another period</Text>
+          <Text style={s.closeTx}>
+            {`This is close to your period on ${formatDisplayDate(closeTo)}. Move that period here, or keep both?`}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Button size="sm" variant="secondary" onPress={() => handleSave(null)} disabled={saving}>
+                Keep both
+              </Button>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button size="sm" onPress={() => handleSave(closeTo)} disabled={saving}>
+                {saving ? 'Saving…' : 'Move it here'}
+              </Button>
+            </View>
+          </View>
         </View>
-        <View style={{ flex: 2 }}>
-          <Button onPress={handleSave} disabled={saving || !start || !end}>
-            {saving ? 'Saving…' : 'Save period →'}
-          </Button>
+      ) : (
+        <View style={{ flexDirection: 'row', gap: 10, paddingTop: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Button variant="secondary" onPress={close} disabled={saving}>
+              Cancel
+            </Button>
+          </View>
+          <View style={{ flex: 2 }}>
+            <Button onPress={() => handleSave()} disabled={saving || !start || !end}>
+              {saving ? 'Saving…' : 'Save period →'}
+            </Button>
+          </View>
         </View>
-      </View>
+      )}
     </BottomSheet>
   );
 }
@@ -184,5 +236,15 @@ function createStyles(c) {
     calNavArrow: { fontSize: 14, fontWeight: '700', color: c.primaryDark },
     calMonthLabel: { fontSize: 11.5, fontWeight: '700', color: c.textPrimary, minWidth: 110, textAlign: 'center' },
     errorTx: { fontSize: 11, color: c.error, fontWeight: '600', marginTop: 12, textAlign: 'center' },
+    closeBox: {
+      marginTop: 16,
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: c.primarySoft,
+      borderWidth: 1,
+      borderColor: c.primarySoftBorder,
+    },
+    closeTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
+    closeTx: { fontSize: 11, lineHeight: 17, color: c.textSecondary, marginTop: 4 },
   });
 }

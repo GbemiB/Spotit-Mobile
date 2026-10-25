@@ -12,6 +12,7 @@ import {
   toISO,
   trackingStartOf,
   periodLogStartForMonth,
+  periodAround,
 } from '../../shared/utils/cycle.js';
 import { MONTHS, PHASE_NOTES, PHASE_LABELS } from '../../shared/constants/cycle.js';
 import { MOODS, SYMPTOMS, SYMPTOM_CATEGORIES } from '../../shared/constants/options.js';
@@ -23,6 +24,7 @@ import { viewerOf, calendarNote } from '../../shared/utils/viewer.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Toggle from '../../components/ui/Toggle.jsx';
+import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
 import { noteLogSaved } from '../../shared/utils/rateApp.js';
@@ -133,6 +135,8 @@ export default function CalendarScreen() {
   } = state;
   const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
+  const [removeAsk, setRemoveAsk] = useState(null);
+  const [removing, setRemoving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [moodOptions, setMoodOptions] = useState(() => toOptions(MOODS, MOOD_EMOJI, 'emoji'));
@@ -236,6 +240,25 @@ export default function CalendarScreen() {
       setSaving(false);
     }
   }
+  async function handleRemovePeriod() {
+    const period = removeAsk;
+    setRemoveAsk(null);
+    if (!period || removing) return;
+    setRemoving(true);
+    try {
+      const data = await logsApi.removePeriod(period.start, accessToken);
+      dispatch({
+        type: A.PERIOD_REMOVED,
+        clearedEntries: data.clearedEntries,
+        lastPeriodDate: data.lastPeriodDate,
+        trackingStartDate: data.trackingStartDate,
+      });
+    } catch (e) {
+      Alert.alert('Could not remove the period', e.message);
+    } finally {
+      setRemoving(false);
+    }
+  }
   async function handleDelete() {
     if (deleting) return;
     setDeleting(true);
@@ -314,6 +337,20 @@ export default function CalendarScreen() {
           </Pressable>
         </View>
         <CalendarGuideSheet open={guideOpen} onClose={() => setGuideOpen(false)} />
+        <ConfirmModal
+          visible={!!removeAsk}
+          title="Remove this period?"
+          message={
+            removeAsk
+              ? `This clears your period from ${formatDisplayDate(removeAsk.start)} to ${formatDisplayDate(removeAsk.end)}. Moods, symptoms and notes on those days stay.`
+              : ''
+          }
+          confirmLabel="Remove"
+          cancelLabel="Keep it"
+          destructive
+          onConfirm={handleRemovePeriod}
+          onCancel={() => setRemoveAsk(null)}
+        />
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
           <Card style={s.gridCard}>
@@ -358,14 +395,23 @@ export default function CalendarScreen() {
                       : calendarNote('no-period', viewer)}
               </Text>
               {selDate <= todayISO() && !viewer.isPartner && (
-                <View style={{ marginTop: 14 }}>
-                  <Button
-                    size="sm"
-                    variant={selLog?.flow ? 'secondary' : 'primary'}
-                    onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER, startDate: selDate })}
-                  >
-                    {selLog?.flow ? 'Edit this period' : 'Log period from this day'}
-                  </Button>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+                  <View style={{ flex: 2 }}>
+                    <Button
+                      size="sm"
+                      variant={selLog?.flow ? 'secondary' : 'primary'}
+                      onPress={() => dispatch({ type: A.OPEN_PERIOD_PICKER, startDate: selDate })}
+                    >
+                      {selLog?.flow ? 'Edit this period' : 'Log period from this day'}
+                    </Button>
+                  </View>
+                  {selLog?.flow ? (
+                    <View style={{ flex: 1 }}>
+                      <Button size="sm" variant="danger" onPress={() => setRemoveAsk(periodAround(logs, selDate))} disabled={removing}>
+                        {removing ? 'Removing…' : 'Remove'}
+                      </Button>
+                    </View>
+                  ) : null}
                 </View>
               )}
             </Card>

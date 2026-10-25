@@ -152,6 +152,17 @@ function applySavedLog(state, { date, entry, pointsAwarded, newBalance, streak }
   }
   return next;
 }
+function applyCleared(logs, clearedEntries) {
+  (clearedEntries || []).forEach(e => {
+    const isEmpty = !e.flow && !e.mood && (!e.symptoms || e.symptoms.length === 0) && !e.notes && !e.intimate;
+    if (isEmpty) {
+      delete logs[e.date];
+    } else {
+      logs[e.date] = { flow: e.flow, mood: e.mood, symptoms: e.symptoms, notes: e.notes, intimate: e.intimate };
+    }
+  });
+  return logs;
+}
 function applySavedPeriod(
   state,
   { dates, flow, date, entry, lastPeriodDate, trackingStartDate, pointsAwarded, newBalance, streak, clearedEntries },
@@ -161,14 +172,7 @@ function applySavedPeriod(
   dates.forEach(d => {
     logs[d] = d === date ? entry : { ...(logs[d] || {}), flow };
   });
-  (clearedEntries || []).forEach(e => {
-    const isEmpty = !e.flow && !e.mood && (!e.symptoms || e.symptoms.length === 0) && !e.notes && !e.intimate;
-    if (isEmpty) {
-      delete logs[e.date];
-    } else {
-      logs[e.date] = { flow: e.flow, mood: e.mood, symptoms: e.symptoms, notes: e.notes, intimate: e.intimate };
-    }
-  });
+  applyCleared(logs, clearedEntries);
   let next = {
     ...state,
     logs,
@@ -245,6 +249,16 @@ export function reducer(state, action) {
       return applySavedLog(state, action);
     case A.SAVE_LOG_PERIOD:
       return applySavedPeriod(state, action);
+    case A.PERIOD_REMOVED:
+      return {
+        ...state,
+        logs: applyCleared({ ...state.logs }, action.clearedEntries),
+        lastPeriodDate: action.lastPeriodDate ?? null,
+        trackingStartDate: action.trackingStartDate ?? state.trackingStartDate,
+        cycleStatus: null,
+        calendarPhases: {},
+        toast: { icon: '✓', text: 'Period removed' },
+      };
     case A.DELETE_LOG: {
       const logs = { ...state.logs };
       delete logs[action.date];

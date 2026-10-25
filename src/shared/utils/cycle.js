@@ -136,3 +136,38 @@ export function periodLogStartForMonth(year, month, todayIso) {
   if (first.slice(0, 7) === todayIso.slice(0, 7)) return todayIso;
   return first < todayIso ? first : null;
 }
+const PERIOD_GAP_DAYS = 2;
+export const CLOSE_PERIOD_DAYS = 15;
+function daysApart(a, b) {
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  return Math.round(Math.abs(new Date(ay, am - 1, ad) - new Date(by, bm - 1, bd)) / 86400000);
+}
+export function loggedPeriods(logs) {
+  const days = Object.keys(logs || {})
+    .filter(d => logs[d]?.flow)
+    .sort();
+  const periods = [];
+  days.forEach(d => {
+    const last = periods[periods.length - 1];
+    if (last && d <= addDays(last.end, PERIOD_GAP_DAYS)) {
+      last.end = d;
+    } else {
+      periods.push({ start: d, end: d });
+    }
+  });
+  return periods;
+}
+export function periodAround(logs, iso) {
+  if (!iso) return null;
+  return loggedPeriods(logs).find(p => iso >= addDays(p.start, -PERIOD_GAP_DAYS) && iso <= addDays(p.end, PERIOD_GAP_DAYS)) || null;
+}
+export function closePeriodStart({ logs, lastPeriodDate, start, end }) {
+  const periods = loggedPeriods(logs);
+  if (lastPeriodDate && !periodAround(logs, lastPeriodDate)) periods.push({ start: lastPeriodDate, end: lastPeriodDate });
+  const close = periods
+    .filter(p => !(start <= addDays(p.end, PERIOD_GAP_DAYS) && end >= addDays(p.start, -PERIOD_GAP_DAYS)))
+    .filter(p => daysApart(p.start, start) < CLOSE_PERIOD_DAYS)
+    .sort((a, b) => daysApart(a.start, start) - daysApart(b.start, start));
+  return close.length ? close[0].start : null;
+}

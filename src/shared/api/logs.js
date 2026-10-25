@@ -8,8 +8,15 @@ export function getLogsInRange({ from, to }, token) {
 export function saveLog(date, { flow, mood, symptoms, notes, intimate }, token) {
   return apiRequest(`/logs/${date}`, { method: 'PUT', body: { flow, mood, symptoms, notes, intimate }, token });
 }
-export function saveLogPeriod({ startDate, endDate, flow, mood, symptoms, notes, intimate }, token) {
-  return apiRequest('/logs/period', { method: 'PUT', body: { startDate, endDate, flow, mood, symptoms, notes, intimate }, token });
+export function saveLogPeriod({ startDate, endDate, flow, mood, symptoms, notes, intimate, replaceStart = null }, token) {
+  return apiRequest('/logs/period', {
+    method: 'PUT',
+    body: { startDate, endDate, flow, mood, symptoms, notes, intimate, replaceStart },
+    token,
+  });
+}
+export function removePeriod(date, token) {
+  return apiRequest(`/logs/period/${date}`, { method: 'DELETE', token });
 }
 export function deleteLog(date, token) {
   return apiRequest(`/logs/${date}`, { method: 'DELETE', token });
