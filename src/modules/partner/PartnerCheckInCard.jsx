@@ -115,7 +115,11 @@ function Tile({ option, on, onPress, reduceMotion, c, s }) {
             <Heart size={14} color={c.primary} />
           </Animated.View>
         )}
-        <OptionIcon id={option.id} color={on ? c.primaryDark : c.textMuted} />
+        {ICONS[option.id] || !option.emoji ? (
+          <OptionIcon id={option.id} color={on ? c.primaryDark : c.textMuted} />
+        ) : (
+          <Text style={s.tileEmoji}>{option.emoji}</Text>
+        )}
         <Text style={[s.tileTx, { color: on ? c.primaryDark : c.textSecondary }]} numberOfLines={1}>
           {option.label}
         </Text>
@@ -147,27 +151,12 @@ function BurstHeart({ x, y, delay, color }) {
     </Animated.View>
   );
 }
-export const EXPRESSION_EMOJI = { hug: '🤗', kiss: '😘', love: '❤️', thinking: '🌸', strong: '💪', here: '🫶' };
-const EXPRESSION_PHRASE = {
-  hug: 'a hug',
-  kiss: 'a kiss',
-  love: '“Love you”',
-  thinking: '“Thinking of you”',
-  strong: '“You’ve got this”',
-  here: '“Here for you”',
+const KIND_ICONS = {
+  promise: [HEART, 'M9.5 12.5l1.8 1.8 3.2-3.6'],
+  text: ['M4 5h16v11H9l-5 4V5z', 'M8 9.5h8M8 12.5h5'],
+  expression: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01'],
 };
-const STARTERS = ['Proud of you', 'Thinking of you', 'You’ve got this', 'I’m here for you'];
-const KINDS = [
-  { id: 'promise', title: 'Make a promise', sub: 'Do something for her today', icon: [HEART, 'M9.5 12.5l1.8 1.8 3.2-3.6'] },
-  { id: 'text', title: 'Send a text', sub: 'Say something sweet', icon: ['M4 5h16v11H9l-5 4V5z', 'M8 9.5h8M8 12.5h5'] },
-  {
-    id: 'expression',
-    title: 'Send an expression',
-    sub: 'A hug, a kiss, a smile',
-    icon: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z', 'M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01'],
-  },
-];
-const TITLES = { pick: null, promise: 'Make a promise', text: 'Send a text', expression: 'Send an expression', sent: 'Sent ♡' };
+const FALLBACK_ICON = [HEART, 'M12 8v0'];
 function Appear({ delay = 0, reduceMotion, children, style }) {
   const v = useAnimatedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
@@ -256,7 +245,8 @@ function previewOf(sent, partnerFirstName) {
   const me = partnerFirstName || 'Your partner';
   if (sent.kind === 'promise') return [`A promise from ${me} ♡`, sent.labels.join(' · ')];
   if (sent.kind === 'text') return [`${me} sent you a message`, `“${sent.note}”`];
-  return [`${me} sent you ${EXPRESSION_PHRASE[sent.expression]} ${EXPRESSION_EMOJI[sent.expression]}`, 'Just because ♡'];
+  const phrase = sent.expressionPhrase || `“${sent.expressionLabel}”`;
+  return [`${me} sent you ${phrase}${sent.expressionEmoji ? ` ${sent.expressionEmoji}` : ''}`, 'Just because ♡'];
 }
 export default function PartnerCheckInCard({ name }) {
   const { state, dispatch } = useApp();
@@ -286,6 +276,9 @@ export default function PartnerCheckInCard({ name }) {
   const byKind = checkIn.sentByKind || {};
   const labelOf = id => (checkIn.options || []).find(o => o.id === id)?.label || id;
   const expressions = checkIn.expressions || [];
+  const categories = checkIn.categories || [];
+  const starters = checkIn.starters || [];
+  const titleOf = id => (id === 'sent' ? 'Sent ♡' : categories.find(cat => cat.id === id)?.label);
   function reset() {
     setPicked([]);
     setNote('');
@@ -313,6 +306,8 @@ export default function PartnerCheckInCard({ name }) {
         note: body.note,
         expression: body.expression,
         expressionLabel: expressions.find(e => e.id === body.expression)?.label,
+        expressionEmoji: expressions.find(e => e.id === body.expression)?.emoji,
+        expressionPhrase: expressions.find(e => e.id === body.expression)?.phrase,
         pointsAwarded: result.pointsAwarded,
         streak: result.streak,
       });
@@ -361,7 +356,7 @@ export default function PartnerCheckInCard({ name }) {
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title={TITLES[screen] || `Show ${her} some love`}
+        title={titleOf(screen) || `Show ${her} some love`}
         closeLabel={screen === 'sent' ? 'Close' : 'Cancel'}
         avoidKeyboard
       >
@@ -375,17 +370,17 @@ export default function PartnerCheckInCard({ name }) {
             <Appear reduceMotion={reduceMotion}>
               <Text style={s.sheetSub}>Little things, big love. How will you show it today?</Text>
             </Appear>
-            {KINDS.map((k, i) => {
+            {categories.map((k, i) => {
               const times = byKind[k.id] || 0;
               return (
                 <Appear key={k.id} delay={80 + i * 70} reduceMotion={reduceMotion}>
-                  <PressScale onPress={() => setScreen(k.id)} accessibilityLabel={k.title} style={s.kindRow}>
+                  <PressScale onPress={() => setScreen(k.id)} accessibilityLabel={k.label} style={s.kindRow}>
                     <View style={s.kindIcon}>
-                      <KindIcon icon={k.icon} color={colors.primaryDark} />
+                      <KindIcon icon={KIND_ICONS[k.id] || FALLBACK_ICON} color={colors.primaryDark} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.kindTitle}>{k.title}</Text>
-                      <Text style={s.kindSub}>{k.sub}</Text>
+                      <Text style={s.kindTitle}>{k.label}</Text>
+                      {k.sub ? <Text style={s.kindSub}>{k.sub}</Text> : null}
                     </View>
                     <Text style={s.kindTag}>{times === 0 ? '›' : times === 1 ? 'Sent today ›' : `Sent ${times}× ›`}</Text>
                   </PressScale>
@@ -436,7 +431,7 @@ export default function PartnerCheckInCard({ name }) {
           <Appear key="text" reduceMotion={reduceMotion}>
             <Text style={s.sheetSub}>{`Say something sweet. ${name || 'She'} gets it straight away.`}</Text>
             <View style={[s.chips, { justifyContent: 'center' }]}>
-              {STARTERS.map((label, i) => (
+              {starters.map((label, i) => (
                 <Appear key={label} delay={60 + i * 50} reduceMotion={reduceMotion}>
                   <PressScale onPress={() => setText(label)} style={s.starter} accessibilityLabel={`Use “${label}”`}>
                     <Text style={s.starterTx}>{label}</Text>
@@ -478,7 +473,7 @@ export default function PartnerCheckInCard({ name }) {
                       style={[s.exprTile, on && { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primarySoft }]}
                     >
                       <Wiggle active={on} reduceMotion={reduceMotion}>
-                        <Text style={s.exprEmoji}>{EXPRESSION_EMOJI[e.id]}</Text>
+                        <Text style={s.exprEmoji}>{e.emoji || '♡'}</Text>
                       </Wiggle>
                       <Text style={[s.tileTx, { color: on ? colors.primaryDark : colors.textSecondary }]} numberOfLines={1}>
                         {e.label}
@@ -505,9 +500,9 @@ export default function PartnerCheckInCard({ name }) {
               <Beating reduceMotion={reduceMotion}>
                 <View style={s.sentCircle}>
                   {sent.kind === 'expression' ? (
-                    <Text style={s.sentEmoji}>{EXPRESSION_EMOJI[sent.expression]}</Text>
+                    <Text style={s.sentEmoji}>{sent.expressionEmoji || '♡'}</Text>
                   ) : (
-                    <KindIcon icon={KINDS.find(k => k.id === sent.kind).icon} color={colors.primary} />
+                    <KindIcon icon={KIND_ICONS[sent.kind] || FALLBACK_ICON} color={colors.primary} />
                   )}
                 </View>
               </Beating>
@@ -597,6 +592,7 @@ function createStyles(c) {
       paddingHorizontal: 4,
     },
     exprEmoji: { fontSize: 30, lineHeight: 38 },
+    tileEmoji: { fontSize: 20, lineHeight: 26 },
     noteInput: {
       marginTop: 12,
       minHeight: 44,
