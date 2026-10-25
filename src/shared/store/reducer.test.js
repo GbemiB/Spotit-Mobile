@@ -587,13 +587,26 @@ describe('partner view', () => {
 });
 describe('partner love', () => {
   test('stores his check-ins by day and replaces the fetched range', () => {
-    const start = { ...INIT, partnerLove: { '2026-10-02': { partnerName: 'Tunde', labels: ['Chores'], note: null } } };
+    const start = { ...INIT, partnerLove: { '2026-10-02': [{ kind: 'promise', partnerName: 'Tunde', labels: ['Chores'], note: null }] } };
     const next = reducer(start, {
       type: A.PARTNER_LOVE_HYDRATED,
       from: '2026-10-01',
       to: '2026-10-31',
-      items: [{ date: '2026-10-24', partnerName: 'Tunde', labels: ['Listened'], note: 'Proud of you' }],
+      items: [
+        { date: '2026-10-24', kind: 'promise', partnerName: 'Tunde', labels: ['Listen to her'], note: null },
+        {
+          date: '2026-10-24',
+          kind: 'expression',
+          partnerName: 'Tunde',
+          labels: [],
+          expression: 'hug',
+          expressionLabel: 'Hug',
+          expressionEmoji: '🤗',
+        },
+      ],
     });
-    expect(next.partnerLove).toEqual({ '2026-10-24': { partnerName: 'Tunde', labels: ['Listened'], note: 'Proud of you' } });
+    expect(Object.keys(next.partnerLove)).toEqual(['2026-10-24']);
+    expect(next.partnerLove['2026-10-24'].map(i => i.kind)).toEqual(['promise', 'expression']);
+    expect(next.partnerLove['2026-10-24'][1].expressionEmoji).toBe('🤗');
   });
 });

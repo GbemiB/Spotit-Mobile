@@ -89,9 +89,7 @@ export async function apiRequest(path, options = {}, _isRetry = false) {
         const newToken = await refreshAccessToken();
         return await apiRequest(path, { ...options, token: newToken }, true);
       } catch (refreshErr) {
-        const authRejected =
-          refreshErr instanceof ApiError &&
-          (refreshErr.status === 401 || refreshErr.status === 403);
+        const authRejected = refreshErr instanceof ApiError && (refreshErr.status === 401 || refreshErr.status === 403);
         if (authRejected) authBridge.onSessionExpired();
         throw e;
       }

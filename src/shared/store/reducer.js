@@ -256,7 +256,16 @@ export function reducer(state, action) {
       const partnerLove = { ...state.partnerLove };
       (action.from && action.to ? datesBetween(action.from, action.to) : []).forEach(d => delete partnerLove[d]);
       (action.items || []).forEach(item => {
-        partnerLove[item.date] = { partnerName: item.partnerName, labels: item.labels || [], note: item.note || null };
+        const entry = {
+          kind: item.kind || (item.labels && item.labels.length ? 'promise' : 'text'),
+          partnerName: item.partnerName,
+          labels: item.labels || [],
+          note: item.note || null,
+          expression: item.expression || null,
+          expressionLabel: item.expressionLabel || null,
+          expressionEmoji: item.expressionEmoji || null,
+        };
+        partnerLove[item.date] = [...(partnerLove[item.date] || []), entry];
       });
       return { ...state, partnerLove };
     }

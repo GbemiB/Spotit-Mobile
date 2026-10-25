@@ -20,8 +20,8 @@ export function getPartnerProfile(token) {
 export function getPartnerCheckIn(token) {
   return apiRequest('/partner/check-in', { token });
 }
-export function partnerCheckIn({ supports, note = null }, token) {
-  return apiRequest('/partner/check-in', { method: 'POST', body: { supports, note }, token });
+export function partnerCheckIn({ kind = null, supports = [], note = null, expression = null }, token) {
+  return apiRequest('/partner/check-in', { method: 'POST', body: { kind, supports, note, expression }, token });
 }
 export function getPartnerLove({ from, to }, token) {
   return apiRequest(`/partner/love?from=${from}&to=${to}`, { token });

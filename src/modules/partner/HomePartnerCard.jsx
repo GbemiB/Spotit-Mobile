@@ -7,6 +7,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import * as partnerApi from '../../shared/api/partner.js';
 import { addDays, todayISO } from '../../shared/utils/cycle.js';
+import { loveLine, loveHeadline } from '../../shared/utils/partnerLove.js';
 import { FONT } from '../../shared/styles/typography.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
@@ -313,18 +314,18 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
               <Text style={[s.serif, { flex: 1, fontSize: 19, lineHeight: 24 }]}>{connectedTitle(status.partnerFirstName)}</Text>
             </View>
             <Text style={s.body}>{connectedLine({ partnerName: status.partnerFirstName })}</Text>
-            {loveToday ? (
+            {loveToday && loveToday.length ? (
               <View style={s.lovePanel}>
                 <Svg width={14} height={14} viewBox="0 0 24 24" fill={colors.primary}>
                   <Path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z" />
                 </Svg>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.loveTitle}>
-                    {loveToday.labels.length
-                      ? `${loveToday.partnerName || Partner} promised: ${loveToday.labels.join(' · ')}`
-                      : `${loveToday.partnerName || Partner} left you a note today`}
-                  </Text>
-                  {loveToday.note ? <Text style={s.loveNote}>{`“${loveToday.note}”`}</Text> : null}
+                  <Text style={s.loveTitle}>{loveHeadline(loveToday, Partner)}</Text>
+                  {loveToday.slice(-3).map((item, i) => (
+                    <Text key={i} style={item.kind === 'text' ? s.loveNote : s.loveLine} numberOfLines={2}>
+                      {loveLine(item)}
+                    </Text>
+                  ))}
                 </View>
               </View>
             ) : null}
@@ -466,6 +467,7 @@ function createStyles(c, isDark) {
       borderColor: c.primarySoftBorder,
     },
     loveTitle: { fontSize: 10.5, fontWeight: '700', color: c.textPrimary, lineHeight: 15 },
+    loveLine: { fontSize: 10.5, color: c.textSecondary, lineHeight: 16, marginTop: 3 },
     loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: c.textSecondary, marginTop: 3 },
     rowCard: {
       backgroundColor: c.surface,

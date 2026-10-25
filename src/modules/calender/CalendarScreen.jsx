@@ -28,6 +28,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
 import * as logsApi from '../../shared/api/logs.js';
 import * as cycleApi from '../../shared/api/cycle.js';
 import * as partnerApi from '../../shared/api/partner.js';
+import { loveLine } from '../../shared/utils/partnerLove.js';
 import { noteLogSaved } from '../../shared/utils/rateApp.js';
 const MOOD_EMOJI = Object.fromEntries(MOODS.map(m => [m.id, m.emoji]));
 const SYMPTOM_CATEGORY_BY_ID = Object.fromEntries(SYMPTOMS.map(s => [s.id, s.category]));
@@ -425,22 +426,27 @@ export default function CalendarScreen() {
             </Card>
           )}
 
-          {!viewer.isPartner && selDate && partnerLove?.[selDate] ? (
+          {!viewer.isPartner && selDate && partnerLove?.[selDate]?.length ? (
             <Card style={{ padding: 16, marginBottom: 14, borderRadius: 22 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={s.loveHeart}>♥</Text>
-                <Text style={s.loveTitle}>{`${partnerLove[selDate].partnerName || 'Your partner'}’s promise`}</Text>
+                <Text style={s.loveTitle}>{`Love from ${partnerLove[selDate][0].partnerName || 'your partner'}`}</Text>
               </View>
-              {partnerLove[selDate].labels.length ? (
-                <View style={s.loveChips}>
-                  {partnerLove[selDate].labels.map(label => (
-                    <View key={label} style={s.loveChip}>
-                      <Text style={s.loveChipTx}>{label}</Text>
+              {partnerLove[selDate].map((item, i) => (
+                <View key={i} style={s.loveItem}>
+                  {item.kind === 'promise' ? (
+                    <View style={s.loveChips}>
+                      {item.labels.map(label => (
+                        <View key={label} style={s.loveChip}>
+                          <Text style={s.loveChipTx}>{label}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  ) : null}
+                  {item.kind === 'expression' ? <Text style={s.loveExpr}>{loveLine(item)}</Text> : null}
+                  {item.note ? <Text style={s.loveNote}>{`“${item.note}”`}</Text> : null}
                 </View>
-              ) : null}
-              {partnerLove[selDate].note ? <Text style={s.loveNote}>{`“${partnerLove[selDate].note}”`}</Text> : null}
+              ))}
             </Card>
           ) : null}
 
@@ -557,7 +563,9 @@ function createStyles(c) {
     },
     loveHeart: { fontSize: 14, color: c.primary },
     loveTitle: { fontSize: 12, fontWeight: '700', color: c.textPrimary },
-    loveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+    loveItem: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border },
+    loveExpr: { fontSize: 13, fontWeight: '700', color: c.primaryDark },
+    loveChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     loveChip: {
       backgroundColor: c.primarySoft,
       borderWidth: 1,
@@ -567,7 +575,7 @@ function createStyles(c) {
       paddingHorizontal: 10,
     },
     loveChipTx: { fontSize: 10.5, fontWeight: '700', color: c.primaryDark },
-    loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 13, lineHeight: 19, color: c.textSecondary, marginTop: 10 },
+    loveNote: { fontFamily: FONT.serif, fontStyle: 'italic', fontSize: 13, lineHeight: 19, color: c.textSecondary, marginTop: 6 },
     logPeriodPillTx: { fontSize: 11.5, fontWeight: '700', color: c.primaryDark },
     gridCard: {
       padding: 14,

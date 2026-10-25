@@ -47,13 +47,13 @@ test('accepting sends the code and the name he calls her', () => {
 test('his app reads her profile and his check-in', () => {
   getPartnerProfile('access');
   getPartnerCheckIn('access');
-  partnerCheckIn({ supports: ['snacks'], note: 'Proud of you' }, 'access');
+  partnerCheckIn({ kind: 'promise', supports: ['snacks'], note: 'Proud of you' }, 'access');
   getPartnerLove({ from: '2026-10-01', to: '2026-10-31' }, 'access');
   expect(apiRequest).toHaveBeenNthCalledWith(1, '/partner/profile', { token: 'access' });
   expect(apiRequest).toHaveBeenNthCalledWith(2, '/partner/check-in', { token: 'access' });
   expect(apiRequest).toHaveBeenNthCalledWith(3, '/partner/check-in', {
     method: 'POST',
-    body: { supports: ['snacks'], note: 'Proud of you' },
+    body: { kind: 'promise', supports: ['snacks'], note: 'Proud of you', expression: null },
     token: 'access',
   });
   expect(apiRequest).toHaveBeenNthCalledWith(4, '/partner/love?from=2026-10-01&to=2026-10-31', { token: 'access' });
