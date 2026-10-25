@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, StyleSheet, Linking, AppState } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Linking, AppState, Platform } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
@@ -19,6 +19,7 @@ import PartnerSelfSection from '../partner/PartnerSelfSection.jsx';
 import appConfig from '../../../app.json';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
+import { getSupport } from '../../shared/api/app.js';
 import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
 import { DAY_OPTIONS, toggleDay } from '../../shared/utils/reminders.js';
 import { canRateApp, openStoreListing } from '../../shared/utils/rateApp.js';
@@ -137,6 +138,18 @@ export default function SettingsScreen() {
     saveProfile({ themePref: pref });
   }
   const [permission, setPermission] = useState('granted');
+  const [supportEmail, setSupportEmail] = useState(null);
+  useEffect(() => {
+    getSupport()
+      .then(data => setSupportEmail(data?.email || null))
+      .catch(() => {});
+  }, []);
+  function contactSupport() {
+    if (!supportEmail) return;
+    const subject = encodeURIComponent('Spot it support');
+    const body = encodeURIComponent(`\n\n—\nApp version: ${APP_VERSION}\nPhone: ${Platform.OS} ${Platform.Version}`);
+    Linking.openURL(`mailto:${supportEmail}?subject=${subject}&body=${body}`).catch(() => toast('🌸', `Email us at ${supportEmail}`));
+  }
   useEffect(() => {
     getPermissionState().then(setPermission);
     const sub = AppState.addEventListener('change', next => {
@@ -349,6 +362,15 @@ export default function SettingsScreen() {
                 <Text style={s.chevron}>›</Text>
               </Pressable>
             ) : null}
+            {supportEmail ? (
+              <Pressable style={s.row} onPress={contactSupport} accessibilityRole="button">
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.rowLabel, { color: colors.primary }]}>Contact support</Text>
+                  <Text style={s.supportTx}>{supportEmail}</Text>
+                </View>
+                <Text style={s.chevron}>›</Text>
+              </Pressable>
+            ) : null}
             <Pressable style={s.row} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
               <Text style={[s.rowLabel, { color: colors.primary }]}>Privacy Policy</Text>
               <Text style={s.chevron}>›</Text>
@@ -488,6 +510,7 @@ function createStyles(c) {
     permCard: { marginTop: 10, padding: 16, gap: 12 },
     permTx: { fontSize: 11, color: c.textSecondary, lineHeight: 17 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
+    supportTx: { fontSize: 10, color: c.textMuted, marginTop: 2 },
     inlineInput: { fontSize: 12, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },
     stepBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },

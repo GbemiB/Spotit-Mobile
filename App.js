@@ -38,6 +38,7 @@ import * as contentApi from './src/shared/api/content.js';
 import { toISO, todayISO } from './src/shared/utils/cycle.js';
 import ConfirmModal from './src/components/ui/ConfirmModal.jsx';
 import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx';
+import { setCrashContext, flushCrashes } from './src/shared/utils/crashReporter.js';
 import WelcomeTour from './src/modules/tour/WelcomeTour.jsx';
 import LivingBackground from './src/components/ui/LivingBackground.jsx';
 import { tourCards, wasTourSeen, markTourSeen } from './src/shared/utils/tour.js';
@@ -98,6 +99,13 @@ function AppContent() {
     if (levelIdx > before && toast) noteLevelUp();
   }, [levelIdx]);
   const [resumedAt, setResumedAt] = useState(0);
+  useEffect(() => {
+    setCrashContext({ screen: authDone ? screen : authScreen || 'welcome' });
+  }, [authDone, screen, authScreen]);
+  useEffect(() => {
+    setCrashContext({ token: accessToken || null });
+    flushCrashes().catch(() => {});
+  }, [accessToken, resumedAt]);
   useEffect(() => {
     const sub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
