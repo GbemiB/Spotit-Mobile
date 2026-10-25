@@ -5,5 +5,11 @@ export const NOTIF_ROWS = [
   { key: 'ovulation', icon: '🌼', colorKey: 'tertiary', label: 'Ovulation updates', sub: 'On your predicted ovulation day' },
   { key: 'dailyLog', icon: '📝', colorKey: 'success', label: 'Daily log nudge', sub: 'An evening prompt on your period days' },
   { key: 'digest', icon: '📊', colorKey: 'secondary', label: 'Weekly digest', sub: 'Sundays: your logging and mood summary' },
-  { key: 'partnerLove', icon: '💞', colorKey: 'primary', label: 'Love from your partner', sub: 'When your partner checks in for you' },
+  {
+    key: 'partnerLove',
+    icon: '💞',
+    colorKey: 'primary',
+    label: 'Promises from your partner',
+    sub: 'When your partner makes you a promise',
+  },
 ];

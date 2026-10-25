@@ -13,7 +13,7 @@ function ownerCards(firstName) {
     { key: 'calendar', title: 'Know what’s next', body: 'Period, fertile days and ovulation, colour-coded.' },
     { key: 'log', title: 'Log in a tap', body: 'Your period, mood and symptoms, any day.' },
     { key: 'points', title: 'Earn SpotPoints', body: 'Every log and check-in counts.' },
-    { key: 'partner', title: 'Bring your partner in', body: 'They follow your cycle and send you love.' },
+    { key: 'partner', title: 'Bring your partner in', body: 'They follow your cycle and make you promises.' },
     { key: 'control', title: 'You’re in control', body: 'Change any of it in Profile.', next: 'Start tracking' },
   ];
 }
@@ -25,7 +25,7 @@ function partnerCards(firstName, partnerName) {
       body: `See ${hers(partnerName)} app. You can look, not change.`,
       next: 'Show me',
     },
-    { key: 'partnerCheckIn', title: 'Show her some love', body: 'Tea, a back rub, a sweet note. She’ll see it.' },
+    { key: 'partnerCheckIn', title: 'Make her a promise', body: 'Tea, a back rub, a sweet note. She’ll see it.' },
     {
       key: 'partnerReminder',
       title: 'Know before it starts',

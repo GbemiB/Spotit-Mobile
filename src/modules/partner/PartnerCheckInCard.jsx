@@ -161,7 +161,7 @@ function LoveSent({ checkIn, name, justSent, reduceMotion, c, s }) {
           </View>
         </Beating>
       </View>
-      <Text style={s.sentTitle}>Love sent</Text>
+      <Text style={s.sentTitle}>Promise sent</Text>
       <Text style={s.sentSub}>{`${name || 'She'} will see this.`}</Text>
       {labels.length > 0 && (
         <View style={[s.chips, { justifyContent: 'center' }]}>
@@ -216,7 +216,7 @@ export default function PartnerCheckInCard({ name }) {
       dispatch({
         type: A.SHOW_TOAST,
         icon: '💞',
-        text: result.pointsAwarded > 0 ? `+${result.pointsAwarded} SP · love sent` : 'Love sent',
+        text: result.pointsAwarded > 0 ? `+${result.pointsAwarded} SP · promise sent` : 'Promise sent',
       });
       rewardsApi
         .getSummary(accessToken)
@@ -236,7 +236,7 @@ export default function PartnerCheckInCard({ name }) {
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={sent ? 'See the love you sent today' : `Show ${her} some love today`}
+        accessibilityLabel={sent ? 'See the promise you sent today' : `Promise ${her} something sweet`}
       >
         <View style={[s.card, s.teaser, sent && { backgroundColor: colors.primarySoft, borderColor: colors.primarySoftBorder }]}>
           {!sent && <View style={s.blush} />}
@@ -247,9 +247,9 @@ export default function PartnerCheckInCard({ name }) {
           </Beating>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.teaserTitle} numberOfLines={1}>
-              {sent ? 'Love sent ♡' : `Show ${her} some love today ♡`}
+              {sent ? 'Promise sent ♡' : `Promise ${her} something sweet ♡`}
             </Text>
-            <Text style={s.sub}>{sent ? `${checkIn.streak}-day streak · tap to see what you sent` : 'Tap to send'}</Text>
+            <Text style={s.sub}>{sent ? `${checkIn.streak}-day streak · tap to see your promise` : 'Tap to choose'}</Text>
           </View>
           {!sent && (
             <View style={s.spPill}>
@@ -269,7 +269,7 @@ export default function PartnerCheckInCard({ name }) {
           <LoveSent checkIn={checkIn} name={name} justSent={justSent} reduceMotion={reduceMotion} c={colors} s={s} />
         ) : (
           <View>
-            <Text style={s.sheetSub}>Little things, big love. Tap what you did.</Text>
+            <Text style={s.sheetSub}>Little things, big love. What will you do for her today?</Text>
             <View style={s.grid}>
               {checkIn.options.map(option => (
                 <Tile
@@ -294,7 +294,7 @@ export default function PartnerCheckInCard({ name }) {
             />
             <View style={{ marginTop: 12, marginBottom: 8, opacity: ready ? 1 : 0.6 }}>
               <Button onPress={submit} disabled={busy || !ready}>
-                {busy ? 'Sending…' : ready ? 'Send love ♡' : 'Pick something or write a note'}
+                {busy ? 'Sending…' : ready ? 'Send my promise ♡' : 'Pick something or write a note'}
               </Button>
             </View>
           </View>

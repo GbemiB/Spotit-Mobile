@@ -33,7 +33,7 @@ describe('tourCards for a partner', () => {
   test('uses the name he saved for her', () => {
     expect(cards[0].title).toBe('Hi, Tunde');
     expect(cards[0].body).toBe('See Amaka’s app. You can look, not change.');
-    expect(cards[1].title).toBe('Show her some love');
+    expect(cards[1].title).toBe('Make her a promise');
     expect(cards[1].body).toBe('Tea, a back rub, a sweet note. She’ll see it.');
     expect(cards[2].body).toBe('A heads-up 5 days before Amaka’s period.');
     expect(cards[2].next).toBe('Get started');

@@ -20,7 +20,7 @@ const MOODS = [
   ['🥺', 'Tender'],
 ];
 const SUPPORT = [
-  ['listened', 'Listened'],
+  ['listened', 'Listen to her'],
   ['snacks', 'Tea & treats'],
   ['massage', 'Back rub'],
 ];
@@ -251,7 +251,7 @@ function CheckIn({ s, c, name, reduceMotion }) {
         <Svg width={13} height={13} viewBox="0 0 24 24" fill={c.primary}>
           <Path d={HEART} />
         </Svg>
-        <Text style={s.cardTitle}>{`Love for ${name || 'her'} today`}</Text>
+        <Text style={s.cardTitle}>{`Promise ${name || 'her'} something sweet`}</Text>
       </View>
       <View style={s.loveTiles}>
         {SUPPORT.map(([id, label], i) => {
@@ -287,8 +287,8 @@ function LoveNotice({ s, c, reduceMotion }) {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.noticeApp}>Spot it · now</Text>
-          <Text style={s.noticeTx}>Love from your partner</Text>
-          <Text style={s.noticeSub}>Listened · Tea & treats — “Proud of you”</Text>
+          <Text style={s.noticeTx}>A promise from your partner ♡</Text>
+          <Text style={s.noticeSub}>Tea & treats · Back rub — “Proud of you”</Text>
         </View>
       </View>
     </FadeIn>

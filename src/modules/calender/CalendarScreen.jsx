@@ -429,7 +429,7 @@ export default function CalendarScreen() {
             <Card style={{ padding: 16, marginBottom: 14, borderRadius: 22 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={s.loveHeart}>♥</Text>
-                <Text style={s.loveTitle}>{`Love from ${partnerLove[selDate].partnerName || 'your partner'}`}</Text>
+                <Text style={s.loveTitle}>{`${partnerLove[selDate].partnerName || 'Your partner'}’s promise`}</Text>
               </View>
               {partnerLove[selDate].labels.length ? (
                 <View style={s.loveChips}>

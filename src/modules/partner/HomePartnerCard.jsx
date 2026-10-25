@@ -321,8 +321,8 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
                 <View style={{ flex: 1 }}>
                   <Text style={s.loveTitle}>
                     {loveToday.labels.length
-                      ? `${loveToday.partnerName || Partner} today: ${loveToday.labels.join(' · ')}`
-                      : `${loveToday.partnerName || Partner} sent you love today`}
+                      ? `${loveToday.partnerName || Partner} promised: ${loveToday.labels.join(' · ')}`
+                      : `${loveToday.partnerName || Partner} left you a note today`}
                   </Text>
                   {loveToday.note ? <Text style={s.loveNote}>{`“${loveToday.note}”`}</Text> : null}
                 </View>
