@@ -76,6 +76,10 @@ export default function HubView({
   pick,
   cards,
   topicCount,
+  settings,
+  loading,
+  error,
+  onRetry,
   reduceMotion,
   onPlayPick,
   onOpenTopics,
@@ -105,34 +109,46 @@ export default function HubView({
             <Blob size={170} color={q.blobB} duration={4250} delay={1800} reduceMotion={reduceMotion} style={{ bottom: -60, left: -50 }} />
             <Waves isDark={isDark} reduceMotion={reduceMotion} />
             <QuizArt reduceMotion={reduceMotion} />
-            <View style={{ maxWidth: 196 }}>
-              <Text style={[s.label, { color: q.gold }]}>Today’s pick · {pick.topic.name}</Text>
-              <Text style={s.heroTitle}>
-                {pick.titleA}
-                <Text style={{ fontFamily: FONT.serif, color: c.primary }}>{pick.titleB}</Text>
-              </Text>
-              <View style={s.metaRow}>
-                <Text style={s.meta}>Level {pick.level} · 5 rounds</Text>
-                <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel="3 lives">
-                  <Beat reduceMotion={reduceMotion}>
-                    <Icon d={HEART} size={11} color={c.primary} fill />
-                  </Beat>
-                  <Icon d={HEART} size={11} color={c.primary} fill />
-                  <Icon d={HEART} size={11} color={c.primary} fill />
+            {pick ? (
+              <View style={{ maxWidth: 196 }}>
+                <Text style={[s.label, { color: q.gold }]}>Today’s pick · {pick.topic.name}</Text>
+                <Text style={s.heroTitle}>
+                  {pick.titleA}
+                  <Text style={{ fontFamily: FONT.serif, color: c.primary }}>{pick.titleB}</Text>
+                </Text>
+                <View style={s.metaRow}>
+                  <Text style={s.meta}>
+                    Level {pick.level.n} · {settings.rounds} rounds
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${settings.lives} hearts`}>
+                    <Beat reduceMotion={reduceMotion}>
+                      <Icon d={HEART} size={11} color={c.primary} fill />
+                    </Beat>
+                    {Array.from({ length: Math.max(0, settings.lives - 1) }, (_, i) => (
+                      <Icon key={i} d={HEART} size={11} color={c.primary} fill />
+                    ))}
+                  </View>
+                </View>
+                <View style={s.ctaRow}>
+                  <GradientButton
+                    small
+                    colors={q.button}
+                    reduceMotion={reduceMotion}
+                    onPress={onPlayPick}
+                    label={<Text style={s.ctaTx}>{pick.free ? 'Play free' : `Play · ${pick.level.cost} SP`}</Text>}
+                    icon={<Icon d="M5 12h13M13 6l6 6-6 6" size={14} color="#FFFFFF" width={2.2} />}
+                  />
                 </View>
               </View>
-              <View style={s.ctaRow}>
-                <GradientButton
-                  small
-                  colors={q.button}
-                  reduceMotion={reduceMotion}
-                  onPress={onPlayPick}
-                  label={<Text style={s.ctaTx}>{pick.free ? 'Play free' : 'Play'}</Text>}
-                  icon={<Icon d="M5 12h13M13 6l6 6-6 6" size={14} color="#FFFFFF" width={2.2} />}
-                />
-                <Text style={s.meta}>~5 min</Text>
+            ) : (
+              <View style={{ maxWidth: 196 }}>
+                <Text style={[s.label, { color: q.gold }]}>Today’s pick</Text>
+                <Text style={s.heroTitle}>
+                  New questions <Text style={{ fontFamily: FONT.serif, color: c.primary }}>soon</Text>
+                </Text>
+                <Text style={[s.meta, { marginTop: 8 }]}>We’re getting fresh myth-or-fact rounds ready for you.</Text>
               </View>
-            </View>
+            )}
           </View>
         </HeroFrame>
       </Rise>
@@ -157,6 +173,16 @@ export default function HubView({
           <Text style={s.link}>All {topicCount} topics ›</Text>
         </PressScale>
       </Rise>
+
+      {error ? (
+        <View style={[s.section, s.notice, { borderColor: c.border, backgroundColor: c.surface }]}>
+          <Text style={s.noticeTx}>{error}</Text>
+          <PressScale onPress={onRetry} accessibilityLabel="Try again">
+            <Text style={s.link}>Try again</Text>
+          </PressScale>
+        </View>
+      ) : null}
+      {loading && cards.length === 0 && !error ? <Text style={s.note}>Loading topics…</Text> : null}
 
       <Rise index={4} reduceMotion={reduceMotion}>
         <ScrollView
@@ -218,6 +244,8 @@ function createStyles(c) {
     sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 6 },
     sectionTitle: { fontFamily: FONT.serif, fontSize: 20, color: c.textPrimary },
     link: { fontSize: 11, fontWeight: '700', color: c.primaryDark, paddingVertical: 10 },
+    notice: { borderWidth: 1.5, borderRadius: 18, padding: 14, alignItems: 'center', gap: 2 },
+    noticeTx: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
     note: { fontSize: 10, color: c.textMuted, textAlign: 'center', marginTop: 14, paddingHorizontal: 24 },
   });
 }

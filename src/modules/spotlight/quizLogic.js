@@ -1,38 +1,46 @@
-import { LEVEL_COUNT, LEVEL_NAMES, START_LIVES, HINT_COST } from './sampleQuiz.js';
-
-export function ageOn(dob, today) {
-  if (!dob || !today) return null;
-  const [y, m, d] = String(dob).slice(0, 10).split('-').map(Number);
-  const [ty, tm, td] = String(today).slice(0, 10).split('-').map(Number);
-  if (!y || !ty) return null;
-  let age = ty - y;
-  if (tm < m || (tm === m && td < d)) age -= 1;
-  return age;
+export function splitTitle(name = '') {
+  const at = name.lastIndexOf(' ');
+  return at > 0 ? { titleA: name.slice(0, at + 1), titleB: name.slice(at + 1) } : { titleA: '', titleB: name };
 }
 
-export function isTopicLocked(topic, age) {
-  if (topic.minAge <= 13) return false;
-  return age == null || age < topic.minAge;
+export function toTopic(card) {
+  return { id: card.id, name: card.name, group: card.groupId, tone: card.tone, minAge: card.minAge };
 }
 
-export function levelCost(n) {
-  return n <= 3 ? 0 : 30 + (n - 4) * 10;
+export function topicStatus(card) {
+  const pct = card.levelCount ? Math.round((card.levelsCleared / card.levelCount) * 100) : 0;
+  if (card.locked) return { label: 'Opens at 18', pct: 0 };
+  if (!card.ready && card.levelsCleared < card.levelCount) return { label: 'Coming soon', pct };
+  if (!card.started) return { label: 'Start playing', pct: 0 };
+  if (card.levelsCleared >= card.levelCount) return { label: 'All levels cleared', pct: 100 };
+  return { label: `Level ${card.currentLevel} of ${card.levelCount}`, pct };
 }
 
-export function buildLevels(progress) {
-  const current = progress?.current ?? 1;
-  const stars = progress?.stars ?? {};
-  return Array.from({ length: LEVEL_COUNT }, (_, i) => {
-    const n = i + 1;
-    const state = n < current ? 'cleared' : n === current ? 'current' : 'locked';
-    return { n, name: LEVEL_NAMES[i] || `Level ${n}`, cost: levelCost(n), state, stars: stars[n] ?? 0 };
-  });
+export function toCards(cards = []) {
+  return cards.map(card => ({ topic: toTopic(card), status: topicStatus(card), locked: card.locked, ready: card.ready }));
 }
 
-export function topicStatus(progress) {
-  if (!progress) return { label: 'Free to start', pct: 0 };
-  const current = progress.current ?? 1;
-  return { label: `Level ${current} of ${LEVEL_COUNT}`, pct: Math.round(((current - 1) / LEVEL_COUNT) * 100) };
+export function toGroups(response) {
+  return (response?.groups || []).map(g => ({
+    key: g.id,
+    label: g.label,
+    tone: g.tone,
+    items: toCards(g.topics),
+  }));
+}
+
+export function toLevel(view) {
+  return { n: view.number, name: view.name, cost: view.cost, state: view.state, stars: view.stars, ready: view.ready };
+}
+
+export function toPick(pick) {
+  if (!pick) return null;
+  return {
+    topic: { id: pick.topicId, name: pick.topicName, group: pick.groupId, tone: pick.tone },
+    level: { n: pick.level, name: pick.levelName, cost: pick.cost, state: 'current', stars: 0, ready: true },
+    free: pick.cost === 0,
+    ...splitTitle(pick.levelName),
+  };
 }
 
 export function sheetModeFor(level, balance) {
@@ -40,61 +48,74 @@ export function sheetModeFor(level, balance) {
   return balance >= level.cost ? 'unlock' : 'short';
 }
 
-export function initialPlay(questions) {
+export function initialPlay() {
   return {
     phase: 'intro',
+    attempt: null,
     round: 0,
-    total: questions.length,
-    lives: START_LIVES,
+    total: 0,
+    lives: 0,
+    startLives: 0,
     streak: 0,
     best: 0,
     correct: 0,
+    hint: null,
     hinted: false,
-    hintsSpent: 0,
-    picked: null,
-    right: null,
+    feedback: null,
+    stars: 0,
+    nextLevel: null,
+    busy: false,
+    error: null,
   };
 }
 
 export function playReducer(state, action) {
   switch (action.type) {
-    case 'start':
-      return { ...state, phase: 'countdown' };
+    case 'loading':
+      return { ...state, busy: true, error: null };
+    case 'failed':
+      return { ...state, busy: false, error: action.message };
+    case 'started': {
+      const a = action.attempt;
+      return {
+        ...initialPlay(),
+        phase: 'countdown',
+        attempt: a,
+        total: a.rounds.length,
+        lives: a.lives,
+        startLives: a.lives,
+      };
+    }
     case 'go':
-      return { ...state, phase: 'question' };
-    case 'hint':
-      if (state.phase !== 'question' || state.hinted) return state;
-      return { ...state, hinted: true, hintsSpent: state.hintsSpent + HINT_COST };
-    case 'answer': {
-      if (state.phase !== 'question') return state;
-      const right = action.choice === action.answer;
-      const streak = right ? state.streak + 1 : 0;
+      return state.phase === 'countdown' ? { ...state, phase: 'question' } : state;
+    case 'hinted':
+      return { ...state, busy: false, hinted: true, hint: action.hint };
+    case 'answered': {
+      const r = action.result;
       return {
         ...state,
+        busy: false,
         phase: 'feedback',
-        picked: action.choice,
-        right,
-        streak,
-        best: Math.max(state.best, streak),
-        correct: state.correct + (right ? 1 : 0),
-        lives: right ? state.lives : state.lives - 1,
+        feedback: r,
+        lives: r.lives,
+        streak: r.streak,
+        best: r.bestStreak,
+        correct: r.correct,
+        stars: r.stars,
+        nextLevel: r.nextLevelOpened ?? null,
       };
     }
     case 'next': {
       if (state.phase !== 'feedback') return state;
-      if (state.lives <= 0) return { ...state, phase: 'out' };
-      if (state.round + 1 >= state.total) return { ...state, phase: 'cleared' };
-      return { ...state, phase: 'question', round: state.round + 1, hinted: false, picked: null, right: null };
+      const status = state.feedback?.status;
+      if (status === 'cleared' || status === 'out') return { ...state, phase: status };
+      return { ...state, phase: 'question', round: state.round + 1, hint: null, hinted: false, feedback: null };
     }
     case 'restart':
-      return initialPlay({ length: state.total });
+      return initialPlay();
     default:
       return state;
   }
-}
-
-export function starsFor(state) {
-  return state.phase === 'cleared' ? Math.max(1, state.lives) : 0;
 }
 
 export function resultTitle(stars) {
@@ -108,4 +129,11 @@ export function feedbackTitle(right, streak) {
   if (streak >= 3) return 'On fire!';
   if (streak === 2) return 'Spot on!';
   return 'Nailed it!';
+}
+
+export function friendlyError(e) {
+  if (e?.status === 402) return 'You don’t have enough SpotPoints for that yet.';
+  if (e?.status === 409) return 'This level isn’t ready yet. New questions are on the way.';
+  if (e?.status === 403) return 'This level isn’t open yet.';
+  return e?.message || 'Something went wrong. Please try again.';
 }

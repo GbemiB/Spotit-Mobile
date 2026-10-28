@@ -123,6 +123,7 @@ export default function HomeScreen() {
   const {
     userName,
     femPoints,
+    pointsSpent,
     streak,
     cycleLength,
     periodLength,
@@ -186,7 +187,8 @@ export default function HomeScreen() {
   const milestone = hasCycleData && !unconfirmed ? nextMilestone(cycleDay, cycleLength, periodLength) : null;
   const milestoneDate = milestone ? addDays(today, milestone.daysUntil) : null;
   const daysToPeriod = !unconfirmed && nextP ? daysFromToday(today, nextP) : null;
-  const level = levelInfo(femPoints, levels);
+  const lifetime = femPoints + (pointsSpent || 0);
+  const level = levelInfo(lifetime, levels);
   const reduceMotion = useReduceMotion();
   const ovDay = cycleLength - 14;
   const daysToOv = hasCycleData ? (ovDay - cycleDay + cycleLength) % cycleLength : null;
@@ -380,7 +382,7 @@ export default function HomeScreen() {
           levelName={level.name}
           points={femPoints.toLocaleString()}
           pct={level.pct}
-          toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+          toNextText={level.next ? `${(level.hi - lifetime).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
           onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}
         />
       </RiseIn>

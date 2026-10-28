@@ -44,7 +44,7 @@ function Node({ level, t }) {
   );
 }
 
-function LevelCard({ level, t, balance, reduceMotion, onPress }) {
+function LevelCard({ level, t, balance, settings, reduceMotion, onPress }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   if (level.state === 'current') {
@@ -55,15 +55,23 @@ function LevelCard({ level, t, balance, reduceMotion, onPress }) {
           <Blob size={120} color={q.blobA} reduceMotion={reduceMotion} style={{ top: -50, right: -40 }} />
           <Text style={[styles.tag, { color: q.gold }]}>{level.cost === 0 ? 'Free · Up next' : `Up next · ${level.cost} SP`}</Text>
           <Text style={[styles.name, { color: c.textPrimary }]}>{level.name}</Text>
-          <Text style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>5 rounds · 3 lives · myth or fact</Text>
-          <GradientButton
-            small
-            style={{ marginTop: 12, alignSelf: 'flex-start' }}
-            colors={level.cost > balance ? q.goldButton : q.button}
-            reduceMotion={reduceMotion}
-            onPress={onPress}
-            label={<Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{label}</Text>}
-          />
+          <Text style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>
+            {settings?.rounds ?? 5} rounds · {settings?.lives ?? 3} hearts · myth or fact
+          </Text>
+          {level.ready === false ? (
+            <Text style={{ fontSize: 11, fontWeight: '700', color: q.goldDeep, marginTop: 12 }}>
+              Coming soon · new questions on the way
+            </Text>
+          ) : (
+            <GradientButton
+              small
+              style={{ marginTop: 12, alignSelf: 'flex-start' }}
+              colors={level.cost > balance ? q.goldButton : q.button}
+              reduceMotion={reduceMotion}
+              onPress={onPress}
+              label={<Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>{label}</Text>}
+            />
+          )}
         </View>
       </HeroFrame>
     );
@@ -93,7 +101,18 @@ function LevelCard({ level, t, balance, reduceMotion, onPress }) {
   );
 }
 
-export default function TrackView({ insets, balance, topic, levels, reduceMotion, onBack, onPlayLevel, onHowItWorks, onOpenPoints }) {
+export default function TrackView({
+  insets,
+  balance,
+  topic,
+  levels,
+  settings,
+  reduceMotion,
+  onBack,
+  onPlayLevel,
+  onHowItWorks,
+  onOpenPoints,
+}) {
   const { colors: c, isDark } = useTheme();
   const s = useMemo(() => createStyles(c), [c]);
   const t = tone(topic.tone, isDark);
@@ -134,7 +153,14 @@ export default function TrackView({ insets, balance, topic, levels, reduceMotion
               {i < levels.length - 1 && <View style={[s.line, { borderColor: level.state === 'cleared' ? t.ink : c.border }]} />}
             </View>
             <View style={{ flex: 1, paddingBottom: 12 }}>
-              <LevelCard level={level} t={t} balance={balance} reduceMotion={reduceMotion} onPress={() => onPlayLevel(level)} />
+              <LevelCard
+                level={level}
+                t={t}
+                balance={balance}
+                settings={settings}
+                reduceMotion={reduceMotion}
+                onPress={() => onPlayLevel(level)}
+              />
             </View>
           </Rise>
         ))}

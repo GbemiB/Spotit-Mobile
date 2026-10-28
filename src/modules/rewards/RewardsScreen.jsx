@@ -111,8 +111,20 @@ export default function RewardsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { femPoints, streak, isPremium, autoRenew, history, badges, challenges, shopProducts, lastClaimedDate, accessToken, levels } =
-    state;
+  const {
+    femPoints,
+    pointsSpent,
+    streak,
+    isPremium,
+    autoRenew,
+    history,
+    badges,
+    challenges,
+    shopProducts,
+    lastClaimedDate,
+    accessToken,
+    levels,
+  } = state;
   const insets = useSafeAreaInsets();
   const [billingLoading, setBillingLoading] = useState(false);
   const [adLoading, setAdLoading] = useState(false);
@@ -237,7 +249,8 @@ export default function RewardsScreen() {
       setBillingLoading(false);
     }
   }
-  const level = levelInfo(femPoints, levels);
+  const lifetime = femPoints + (pointsSpent || 0);
+  const level = levelInfo(lifetime, levels);
   const shopRows = shopView(shopProducts);
   const earnedBadgeCount = badges.filter(b => b.earned).length;
   return (
@@ -252,7 +265,7 @@ export default function RewardsScreen() {
             levelName={level.name}
             points={femPoints}
             pct={level.pct}
-            toNextText={level.next ? `${(level.hi - femPoints).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
+            toNextText={level.next ? `${(level.hi - lifetime).toLocaleString()} SP to ${level.next.name}` : 'Max level reached'}
             streak={streak}
             badgeCount={earnedBadgeCount}
           />

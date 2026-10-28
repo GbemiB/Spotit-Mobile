@@ -90,10 +90,10 @@ export default function SettingsScreen() {
   const { state, dispatch } = useApp();
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
-  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, accessToken, levels } = state;
+  const { userName, cycleLength, periodLength, notifs, themePref, femPoints, pointsSpent, accessToken, levels } = state;
   const isPartner = state.accountType === 'partner';
   const insets = useSafeAreaInsets();
-  const level = levelInfo(femPoints, levels);
+  const level = levelInfo(femPoints + (pointsSpent || 0), levels);
   const [confirming, setConfirming] = useState(null);
   const [nameDraft, setNameDraft] = useState(userName);
   useEffect(() => {

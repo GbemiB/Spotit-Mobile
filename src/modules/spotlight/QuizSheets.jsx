@@ -4,7 +4,6 @@ import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import { GradientButton, PressScale, Icon, Pop, HEART, SPARKLE } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
-import { HINT_COST, POINT_PACKS } from './sampleQuiz.js';
 
 function Ghost({ label, onPress }) {
   const { colors: c } = useTheme();
@@ -27,19 +26,22 @@ function Rule({ icon, color, children }) {
   );
 }
 
-function Rules() {
+function Rules({ settings }) {
+  const rounds = settings?.rounds ?? 5;
+  const lives = settings?.lives ?? 3;
+  const hintCost = settings?.hintCost ?? 5;
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   return (
     <View style={{ gap: 10 }}>
       <Rule icon="M4 6h16M4 12h16M4 18h10" color={c.primaryDark}>
-        5 quick rounds: is it a myth or a fact?
+        {rounds} quick rounds: is it a myth or a fact?
       </Rule>
       <Rule icon={HEART} color={c.primary}>
-        3 hearts. A wrong answer costs one.
+        {lives} hearts. A wrong answer costs one.
       </Rule>
       <Rule icon={SPARKLE} color={q.gold}>
-        Stuck? A hint costs {HINT_COST} SP.
+        Stuck? A hint costs {hintCost} SP.
       </Rule>
       <Rule icon="M5 12.5l4.2 4.2L19 7" color={q.green}>
         Finish with a heart left to clear the level.
@@ -58,35 +60,7 @@ function Row({ label, value, strong }) {
   );
 }
 
-function Packs({ need }) {
-  const { colors: c, isDark } = useTheme();
-  const q = quizColors(c, isDark);
-  return (
-    <View style={{ gap: 10 }}>
-      {POINT_PACKS.map((p, i) => (
-        <View
-          key={p.id}
-          style={[
-            styles.pack,
-            { backgroundColor: c.surface, borderColor: i === 0 ? c.primaryDark : c.border, borderWidth: i === 0 ? 2 : 1.5 },
-          ]}
-        >
-          <View style={[styles.packIcon, { backgroundColor: q.goldSoft }]}>
-            <Icon d="M12 7.6l1.3 2.8 3 .3-2.3 2 .7 2.9-2.7-1.6-2.7 1.6.7-2.9-2.3-2 3-.3z" size={18} color={q.gold} fill />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: c.textPrimary }}>{p.sp} SP</Text>
-            {p.bonus > 0 && <Text style={{ fontSize: 10, fontWeight: '600', color: q.green }}>+{p.bonus} bonus</Text>}
-          </View>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: c.textSecondary }}>{p.price}</Text>
-        </View>
-      ))}
-      {need > 0 && <Text style={{ fontSize: 10, color: c.textMuted, textAlign: 'center' }}>Any pack covers the {need} SP you need.</Text>}
-    </View>
-  );
-}
-
-export function LevelSheet({ open, mode, level, topic, balance, reduceMotion, onClose, onStart }) {
+export function LevelSheet({ open, mode, level, topic, balance, settings, reduceMotion, onClose, onStart }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   if (!level || !topic) return <BottomSheet open={false} onClose={onClose} />;
@@ -111,7 +85,7 @@ export function LevelSheet({ open, mode, level, topic, balance, reduceMotion, on
         <>
           <Text style={[styles.free, { color: q.green, backgroundColor: q.greenSoft }]}>{replay ? 'Replay · free' : 'Free level'}</Text>
           <View style={[styles.box, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Rules />
+            <Rules settings={settings} />
           </View>
           <GradientButton colors={q.button} reduceMotion={reduceMotion} onPress={onStart} label={<Text style={styles.btnTx}>Start</Text>} />
         </>
@@ -136,18 +110,9 @@ export function LevelSheet({ open, mode, level, topic, balance, reduceMotion, on
       {mode === 'short' && (
         <>
           <Text style={[styles.body, { color: c.textSecondary }]}>
-            {level.name} costs {level.cost} SP and you have {balance}. Keep logging and checking in to earn more, or top up with a pack.
+            {level.name} costs {level.cost} SP and you have {balance}. Keep logging, checking in and tracking your mood to earn the rest.
           </Text>
-          <View style={{ marginTop: 14 }}>
-            <Packs need={need} />
-          </View>
-          <Text style={[styles.fine, { color: c.textMuted }]}>Points packs are coming soon. Bought SP is for challenges only.</Text>
-          <GradientButton
-            disabled
-            colors={q.goldButton}
-            reduceMotion={reduceMotion}
-            label={<Text style={styles.btnTx}>Buy with Google Play</Text>}
-          />
+          <Text style={[styles.fine, { color: c.textMuted }]}>Points packs are coming soon.</Text>
         </>
       )}
       <Ghost label={mode === 'short' ? 'Earn SP for free' : 'Not now'} onPress={onClose} />
@@ -155,7 +120,7 @@ export function LevelSheet({ open, mode, level, topic, balance, reduceMotion, on
   );
 }
 
-export function InfoSheet({ open, kind, topic, balance, reduceMotion, onClose, onShowMine }) {
+export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, onClose, onShowMine }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   return (
@@ -185,7 +150,7 @@ export function InfoSheet({ open, kind, topic, balance, reduceMotion, onClose, o
         <>
           <Text style={[styles.title, { color: c.textPrimary, marginTop: 0 }]}>How it works</Text>
           <View style={[styles.box, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Rules />
+            <Rules settings={settings} />
           </View>
           <Text style={[styles.body, { color: c.textSecondary }]}>
             Levels 1 to 3 of every topic are free. Higher levels cost SP to unlock. Challenges never pay SP back.
@@ -200,9 +165,6 @@ export function InfoSheet({ open, kind, topic, balance, reduceMotion, onClose, o
           <Text style={[styles.body, { color: c.textSecondary }]}>
             Earn SP by logging, checking in and tracking your mood. Spend it on higher levels and hints.
           </Text>
-          <View style={{ marginTop: 14 }}>
-            <Packs need={0} />
-          </View>
           <Text style={[styles.fine, { color: c.textMuted }]}>Points packs are coming soon.</Text>
           <Ghost label="Close" onPress={onClose} />
         </>
@@ -231,6 +193,4 @@ const styles = StyleSheet.create({
   big: { fontSize: 34, fontWeight: '800', textAlign: 'center', marginTop: 6 },
   fine: { fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 10, marginBottom: 14 },
   btnTx: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  pack: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18 },
-  packIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

@@ -39,6 +39,7 @@ export const INIT = {
   trackingStartDate: null,
   periodPromptDismissedOn: null,
   femPoints: 0,
+  pointsSpent: 0,
   streak: 0,
   longestStreak: 0,
   lastLogDate: null,
@@ -95,6 +96,7 @@ const USER_DATA_KEYS = [
   'trackingStartDate',
   'periodPromptDismissedOn',
   'femPoints',
+  'pointsSpent',
   'streak',
   'longestStreak',
   'lastLogDate',
@@ -341,6 +343,7 @@ export function reducer(state, action) {
       const next = {
         ...state,
         femPoints: newBalance,
+        pointsSpent: (state.pointsSpent || 0) + pointsSpent,
         shopProducts: state.shopProducts.map(p => (p.id === productId ? { ...p, locked: true, lockReason: 'redeemed' } : p)),
         toast: { icon: '🎉', text: `${productName} is on its way!` },
       };
@@ -396,8 +399,18 @@ export function reducer(state, action) {
       };
     }
     case A.REWARDS_HYDRATED: {
-      const { points, streak, longestStreak } = action;
-      return { ...state, femPoints: points, streak, longestStreak: Math.max(longestStreak, state.longestStreak) };
+      const { points, streak, longestStreak, lifetimePoints } = action;
+      return {
+        ...state,
+        femPoints: points,
+        pointsSpent: Math.max(0, (lifetimePoints ?? points) - points),
+        streak,
+        longestStreak: Math.max(longestStreak, state.longestStreak),
+      };
+    }
+    case A.POINTS_SPENT: {
+      const spent = Math.max(0, state.femPoints - action.newBalance);
+      return { ...state, femPoints: action.newBalance, pointsSpent: (state.pointsSpent || 0) + spent };
     }
     case A.BADGES_HYDRATED:
       return { ...state, badges: action.badges };

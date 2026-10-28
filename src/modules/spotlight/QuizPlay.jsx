@@ -7,8 +7,7 @@ import LivingBackground from '../../components/ui/LivingBackground.jsx';
 import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
 import { GradientButton, PressScale, Icon, Pop, Rise, Flicker, Blob, Twinkle, HEART, STAR, FLAME, SPARKLE } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
-import { initialPlay, playReducer, starsFor, resultTitle, feedbackTitle } from './quizLogic.js';
-import { HINT_COST, START_LIVES } from './sampleQuiz.js';
+import { initialPlay, playReducer, resultTitle, feedbackTitle, friendlyError } from './quizLogic.js';
 
 const BURST = Array.from({ length: 14 }, (_, i) => ({
   angle: (i / 14) * Math.PI * 2,
@@ -240,10 +239,14 @@ function Feedback({ state, question, isLast, reduceMotion, onNext }) {
         <Text style={{ fontSize: 11, fontWeight: '600', color: c.primaryDark, marginTop: 2 }}>You lost a heart · {state.lives} left</Text>
       )}
       <Text style={[styles.explain, { color: c.textSecondary }]}>{question.explain}</Text>
-      <View style={[styles.dyk, { backgroundColor: q.goldSoft }]}>
-        <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 1, color: q.goldDeep }}>DID YOU KNOW?</Text>
-        <Text style={{ fontSize: 11, lineHeight: 16, color: c.textSecondary, marginTop: 3 }}>{question.fact}</Text>
-      </View>
+      {question.fact ? (
+        <View style={[styles.dyk, { backgroundColor: q.goldSoft }]}>
+          <Text style={{ fontSize: 9, fontWeight: '800', letterSpacing: 1, color: q.goldDeep }}>DID YOU KNOW?</Text>
+          <Text style={{ fontSize: 11, lineHeight: 16, color: c.textSecondary, marginTop: 3 }}>{question.fact}</Text>
+        </View>
+      ) : (
+        <View style={{ height: 14 }} />
+      )}
       <GradientButton
         colors={q.button}
         reduceMotion={reduceMotion}
@@ -254,11 +257,11 @@ function Feedback({ state, question, isLast, reduceMotion, onNext }) {
   );
 }
 
-function Result({ state, level, topic, reduceMotion, onReplay, onNextLevel, onClose }) {
+function Result({ state, level, topic, hasNext, reduceMotion, onReplay, onNextLevel, onClose }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   const cleared = state.phase === 'cleared';
-  const stars = starsFor(state);
+  const stars = state.stars;
   return (
     <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 10, alignItems: 'center' }} showsVerticalScrollIndicator={false}>
       <View style={{ width: 200, height: 120, alignItems: 'center', justifyContent: 'center' }}>
@@ -302,13 +305,13 @@ function Result({ state, level, topic, reduceMotion, onReplay, onNextLevel, onCl
           </View>
         ))}
       </Rise>
-      {cleared && level.n < 10 && (
+      {cleared && state.nextLevel && (
         <Rise index={4} reduceMotion={reduceMotion}>
           <Text style={[styles.unlocked, { color: q.green, backgroundColor: q.greenSoft }]}>Level {level.n + 1} is now open</Text>
         </Rise>
       )}
       <Rise index={5} reduceMotion={reduceMotion} style={{ width: '100%', gap: 4, marginTop: 18 }}>
-        {cleared && level.n < 10 ? (
+        {cleared && hasNext ? (
           <GradientButton
             colors={q.button}
             reduceMotion={reduceMotion}
@@ -340,11 +343,21 @@ function Result({ state, level, topic, reduceMotion, onReplay, onNextLevel, onCl
   );
 }
 
-export default function QuizPlay({ open, topic, level, questions, balance, reduceMotion, onClose, onFinish, onNextLevel, onHint }) {
+function ErrorNote({ text }) {
+  const { colors: c } = useTheme();
+  if (!text) return null;
+  return (
+    <View style={[styles.errorBox, { backgroundColor: c.errorSoft, borderColor: c.errorBorder }]}>
+      <Text style={{ fontSize: 11, lineHeight: 16, color: c.error, textAlign: 'center' }}>{text}</Text>
+    </View>
+  );
+}
+
+export default function QuizPlay({ open, topic, level, hasNext, settings, balance, api, reduceMotion, onClose, onFinish, onNextLevel }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   const insets = useSafeAreaInsets();
-  const [state, dispatch] = useReducer(playReducer, questions, initialPlay);
+  const [state, dispatch] = useReducer(playReducer, undefined, initialPlay);
   const reported = useRef(false);
   useEffect(() => {
     if (open) {
@@ -352,26 +365,61 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
       reported.current = false;
     }
   }, [open, level?.n, topic?.id]);
-  const justLost = state.phase === 'feedback' && !state.right ? state.lives : -1;
+  const right = state.feedback?.right;
+  const justLost = state.phase === 'feedback' && right === false ? state.lives : -1;
   useEffect(() => {
     if (state.phase === 'intro') reported.current = false;
-    if (state.phase === 'feedback') buzz(state.right ? 'right' : 'wrong');
+    if (state.phase === 'feedback') buzz(right ? 'right' : 'wrong');
     if ((state.phase === 'cleared' || state.phase === 'out') && !reported.current) {
       reported.current = true;
-      onFinish({ cleared: state.phase === 'cleared', stars: starsFor(state) });
+      onFinish({ cleared: state.phase === 'cleared', stars: state.stars, nextLevel: state.nextLevel });
     }
   }, [state.phase]);
   const go = useCallback(() => dispatch({ type: 'go' }), []);
-  const question = questions[state.round];
-  const playing = state.phase === 'question' || state.phase === 'feedback';
-  const done = state.phase === 'cleared' || state.phase === 'out';
   const s = useMemo(() => createStyles(c), [c]);
   if (!topic || !level) return null;
-  const spLeft = balance;
+  const hintCost = settings?.hintCost ?? 5;
+  const lives = state.startLives || settings?.lives || 3;
+  const rounds = state.total || settings?.rounds || 5;
+  const round = state.attempt?.rounds?.[state.round];
+  const question = round
+    ? {
+        statement: round.statement,
+        answer: state.feedback?.answer,
+        hint: state.hint,
+        explain: state.feedback?.explanation,
+        fact: state.feedback?.funFact,
+      }
+    : null;
+  const view = { ...state, right };
+  const playing = state.phase === 'question' || state.phase === 'feedback';
+  const done = state.phase === 'cleared' || state.phase === 'out';
+  const canHint = !state.hinted && !state.busy && balance >= hintCost;
+  const run = async (work, onOk) => {
+    if (state.busy) return;
+    dispatch({ type: 'loading' });
+    try {
+      onOk(await work());
+    } catch (e) {
+      dispatch({ type: 'failed', message: friendlyError(e) });
+    }
+  };
+  const start = () =>
+    run(
+      () => api.start(),
+      attempt => dispatch({ type: 'started', attempt }),
+    );
+  const choose = choice =>
+    run(
+      () => api.answer(state.attempt.attemptId, state.round, choice),
+      result => dispatch({ type: 'answered', result }),
+    );
   const takeHint = () => {
-    if (state.hinted || spLeft < HINT_COST) return;
-    dispatch({ type: 'hint' });
-    onHint(HINT_COST);
+    if (!canHint) return;
+    run(
+      () => api.hint(state.attempt.attemptId, state.round),
+      res => dispatch({ type: 'hinted', hint: res.hint || 'No hint for this one, sorry!' }),
+    );
   };
   return (
     <Modal visible={open} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
@@ -384,16 +432,16 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
             </View>
           </PressScale>
           <View style={s.segments}>
-            {Array.from({ length: state.total }, (_, i) => {
+            {Array.from({ length: rounds }, (_, i) => {
               const filled = i < state.round || (i === state.round && (state.phase === 'feedback' || done));
               return <View key={i} style={[s.segment, { backgroundColor: filled ? c.primary : c.border }]} />;
             })}
           </View>
-          <View style={{ flexDirection: 'row', gap: 3 }} accessibilityLabel={`${state.lives} hearts left`}>
-            {Array.from({ length: START_LIVES }, (_, i) => (
+          <View style={{ flexDirection: 'row', gap: 3 }} accessibilityLabel={`${state.attempt ? state.lives : lives} hearts left`}>
+            {Array.from({ length: lives }, (_, i) => (
               <Heart
                 key={i}
-                alive={i < state.lives}
+                alive={i < (state.attempt ? state.lives : lives)}
                 justLost={i === justLost}
                 color={c.primary}
                 faded={c.border}
@@ -413,9 +461,9 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
                 <Text style={{ fontSize: 11, fontWeight: '800', color: q.peach }}>{state.streak}</Text>
               </View>
             )}
-            <Text style={{ fontSize: 11, fontWeight: '700', color: c.textSecondary }}>{spLeft} SP</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: c.textSecondary }}>{balance} SP</Text>
           </View>
-          <FloatTag text={`−${HINT_COST} SP`} color={q.gold} trigger={state.hintsSpent} reduceMotion={reduceMotion} />
+          <FloatTag text={`−${hintCost} SP`} color={q.gold} trigger={state.hinted ? state.round + 1 : 0} reduceMotion={reduceMotion} />
         </View>
 
         {state.phase === 'intro' && (
@@ -429,19 +477,21 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
               <Text style={[styles.kicker, { color: q.gold }]}>{topic.name}</Text>
               <Text style={[styles.resultTitle, { color: c.textPrimary }]}>{level.name}</Text>
               <View style={s.introStats}>
-                <Text style={s.introStat}>{state.total} rounds</Text>
+                <Text style={s.introStat}>{rounds} rounds</Text>
                 <Text style={s.dot}>·</Text>
-                <Text style={s.introStat}>{START_LIVES} hearts</Text>
+                <Text style={s.introStat}>{lives} hearts</Text>
                 <Text style={s.dot}>·</Text>
                 <Text style={s.introStat}>up to 3 stars</Text>
               </View>
             </Rise>
+            <ErrorNote text={state.error} />
             <View style={{ height: 20 }} />
             <GradientButton
               colors={q.button}
               reduceMotion={reduceMotion}
-              onPress={() => dispatch({ type: 'start' })}
-              label={<Text style={styles.btnTx}>I’m ready</Text>}
+              onPress={start}
+              disabled={state.busy}
+              label={<Text style={styles.btnTx}>{state.busy ? 'Getting ready…' : state.error ? 'Try again' : 'I’m ready'}</Text>}
             />
           </View>
         )}
@@ -454,28 +504,33 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
             showsVerticalScrollIndicator={false}
           >
             <Text style={s.prompt}>Myth or fact?</Text>
-            <StatementCard question={question} state={state} reduceMotion={reduceMotion} />
+            <StatementCard question={question} state={view} reduceMotion={reduceMotion} />
             {state.phase === 'question' ? (
               <View style={{ marginTop: 'auto', paddingTop: 22 }}>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <ErrorNote text={state.error} />
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: state.error ? 12 : 0 }}>
                   <ChoiceButton
                     label="MYTH"
                     colors={q.goldButton}
                     reduceMotion={reduceMotion}
-                    onPress={() => dispatch({ type: 'answer', choice: 'myth', answer: question.answer })}
+                    disabled={state.busy}
+                    dim={state.busy}
+                    onPress={() => choose('myth')}
                   />
                   <ChoiceButton
                     label="FACT"
                     colors={q.button}
                     reduceMotion={reduceMotion}
-                    onPress={() => dispatch({ type: 'answer', choice: 'fact', answer: question.answer })}
+                    disabled={state.busy}
+                    dim={state.busy}
+                    onPress={() => choose('fact')}
                   />
                 </View>
-                <PressScale onPress={takeHint} disabled={state.hinted || spLeft < HINT_COST} accessibilityLabel={`Hint for ${HINT_COST} SP`}>
-                  <View style={[s.hintBtn, { opacity: state.hinted || spLeft < HINT_COST ? 0.45 : 1 }]}>
+                <PressScale onPress={takeHint} disabled={!canHint} accessibilityLabel={`Hint for ${hintCost} SP`}>
+                  <View style={[s.hintBtn, { opacity: canHint ? 1 : 0.45 }]}>
                     <Icon d={SPARKLE} size={14} color={q.gold} fill />
                     <Text style={{ fontSize: 11.5, fontWeight: '700', color: c.textSecondary }}>
-                      {state.hinted ? 'Hint used' : `Hint · ${HINT_COST} SP`}
+                      {state.hinted ? 'Hint used' : `Hint · ${hintCost} SP`}
                     </Text>
                   </View>
                 </PressScale>
@@ -483,7 +538,7 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
             ) : (
               <View style={{ marginTop: 16 }}>
                 <Feedback
-                  state={state}
+                  state={view}
                   question={question}
                   isLast={state.round + 1 >= state.total}
                   reduceMotion={reduceMotion}
@@ -499,6 +554,7 @@ export default function QuizPlay({ open, topic, level, questions, balance, reduc
             state={state}
             level={level}
             topic={topic}
+            hasNext={hasNext}
             reduceMotion={reduceMotion}
             onReplay={() => dispatch({ type: 'restart' })}
             onNextLevel={onNextLevel}
@@ -541,6 +597,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 14,
   },
+  errorBox: { borderWidth: 1, borderRadius: 14, padding: 12, marginTop: 14 },
   secondary: { height: 50, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
 });
 

@@ -1,66 +1,92 @@
 import {
-  ageOn,
-  isTopicLocked,
-  levelCost,
-  buildLevels,
+  splitTitle,
   topicStatus,
+  toCards,
+  toGroups,
+  toLevel,
+  toPick,
   sheetModeFor,
   initialPlay,
   playReducer,
-  starsFor,
   resultTitle,
   feedbackTitle,
+  friendlyError,
 } from './quizLogic.js';
-import { SAMPLE_QUESTIONS, TOPICS } from './sampleQuiz.js';
+import * as quizApi from '../../shared/api/quiz.js';
+import { apiRequest } from '../../shared/api/client.js';
 
-const Q = SAMPLE_QUESTIONS;
+jest.mock('../../shared/api/client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
 
-function play(answers) {
-  let s = playReducer(playReducer(initialPlay(Q), { type: 'start' }), { type: 'go' });
-  answers.forEach((choice, i) => {
-    s = playReducer(s, { type: 'answer', choice, answer: Q[i].answer });
-    s = playReducer(s, { type: 'next' });
-  });
-  return s;
-}
-
-describe('ageOn', () => {
-  it('counts a birthday that has not come yet this year', () => {
-    expect(ageOn('2010-06-15', '2026-06-14')).toBe(15);
-    expect(ageOn('2010-06-15', '2026-06-15')).toBe(16);
-  });
-  it('returns null without a date of birth', () => {
-    expect(ageOn('', '2026-01-01')).toBeNull();
-  });
+const card = over => ({
+  id: 'my-cycle',
+  name: 'My Cycle',
+  groupId: 'body',
+  tone: 'pink',
+  minAge: 13,
+  locked: false,
+  started: true,
+  currentLevel: 2,
+  levelCount: 3,
+  levelsCleared: 1,
+  ready: true,
+  ...over,
 });
 
-describe('isTopicLocked', () => {
-  const adult = TOPICS.find(t => t.minAge === 18);
-  const teen = TOPICS.find(t => t.minAge === 13);
-  it('locks 18+ topics for teens and unknown ages', () => {
-    expect(isTopicLocked(adult, 16)).toBe(true);
-    expect(isTopicLocked(adult, null)).toBe(true);
-    expect(isTopicLocked(adult, 18)).toBe(false);
-  });
-  it('never locks 13+ topics', () => {
-    expect(isTopicLocked(teen, 13)).toBe(false);
-  });
+const attempt = {
+  attemptId: 'a1',
+  rounds: [
+    { round: 0, statement: 'A' },
+    { round: 1, statement: 'B' },
+  ],
+  lives: 3,
+};
+const result = over => ({
+  round: 0,
+  right: true,
+  answer: 'fact',
+  explanation: 'Because',
+  funFact: null,
+  lives: 3,
+  streak: 1,
+  bestStreak: 1,
+  correct: 1,
+  status: 'playing',
+  stars: 0,
+  nextLevelOpened: null,
+  ...over,
 });
 
-describe('levels', () => {
-  it('keeps levels 1 to 3 free and prices the rest', () => {
-    expect([1, 2, 3, 4, 5].map(levelCost)).toEqual([0, 0, 0, 30, 40]);
+describe('mapping server data', () => {
+  it('splits a level name for the two-colour headline', () => {
+    expect(splitTitle('When you ovulate')).toEqual({ titleA: 'When you ', titleB: 'ovulate' });
+    expect(splitTitle('Basics')).toEqual({ titleA: '', titleB: 'Basics' });
   });
-  it('marks cleared, current and locked levels', () => {
-    const levels = buildLevels({ current: 2, stars: { 1: 3 } });
-    expect(levels[0]).toMatchObject({ state: 'cleared', stars: 3 });
-    expect(levels[1].state).toBe('current');
-    expect(levels[2].state).toBe('locked');
-    expect(levels).toHaveLength(10);
+  it('describes each topic state', () => {
+    expect(topicStatus(card())).toEqual({ label: 'Level 2 of 3', pct: 33 });
+    expect(topicStatus(card({ locked: true })).label).toBe('Opens at 18');
+    expect(topicStatus(card({ ready: false })).label).toBe('Coming soon');
+    expect(topicStatus(card({ started: false, levelsCleared: 0 })).label).toBe('Start playing');
+    expect(topicStatus(card({ levelsCleared: 3, ready: false })).label).toBe('All levels cleared');
   });
-  it('describes topic progress', () => {
-    expect(topicStatus(undefined)).toEqual({ label: 'Free to start', pct: 0 });
-    expect(topicStatus({ current: 3 }).label).toBe('Level 3 of 10');
+  it('builds cards, groups, levels and the pick', () => {
+    expect(toCards([card()])[0].topic).toEqual({ id: 'my-cycle', name: 'My Cycle', group: 'body', tone: 'pink', minAge: 13 });
+    expect(toGroups({ groups: [{ id: 'body', label: 'Body basics', tone: 'pink', topics: [card()] }] })[0]).toMatchObject({
+      key: 'body',
+      items: [{ locked: false }],
+    });
+    expect(toGroups(null)).toEqual([]);
+    expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({ n: 2, cost: 30 });
+    const pick = toPick({
+      topicId: 'my-cycle',
+      topicName: 'My Cycle',
+      groupId: 'body',
+      tone: 'pink',
+      level: 1,
+      levelName: 'Your period basics',
+      cost: 0,
+    });
+    expect(pick).toMatchObject({ free: true, titleB: 'basics', level: { n: 1 } });
+    expect(toPick(null)).toBeNull();
   });
   it('picks the right sheet', () => {
     expect(sheetModeFor({ cost: 0 }, 0)).toBe('start');
@@ -70,41 +96,80 @@ describe('levels', () => {
 });
 
 describe('playReducer', () => {
-  it('clears a level with three stars when every answer is right', () => {
-    const s = play(Q.map(q => q.answer));
-    expect(s.phase).toBe('cleared');
-    expect(s.correct).toBe(5);
-    expect(s.best).toBe(5);
-    expect(starsFor(s)).toBe(3);
+  it('runs a game from start to a cleared level', () => {
+    let s = playReducer(playReducer(initialPlay(), { type: 'loading' }), { type: 'started', attempt });
+    expect(s).toMatchObject({ phase: 'countdown', total: 2, lives: 3, busy: false });
+    s = playReducer(s, { type: 'go' });
+    s = playReducer(s, { type: 'answered', result: result() });
+    expect(s.phase).toBe('feedback');
+    s = playReducer(s, { type: 'next' });
+    expect(s).toMatchObject({ phase: 'question', round: 1, feedback: null });
+    s = playReducer(s, { type: 'answered', result: result({ round: 1, status: 'cleared', stars: 3, nextLevelOpened: 2, correct: 2 }) });
+    s = playReducer(s, { type: 'next' });
+    expect(s).toMatchObject({ phase: 'cleared', stars: 3, nextLevel: 2, correct: 2 });
   });
-  it('runs out of hearts after three wrong answers', () => {
-    const wrong = Q.map(q => (q.answer === 'myth' ? 'fact' : 'myth'));
-    const s = play(wrong.slice(0, 3));
-    expect(s.phase).toBe('out');
-    expect(s.lives).toBe(0);
-    expect(starsFor(s)).toBe(0);
+  it('ends when the hearts run out', () => {
+    let s = playReducer(playReducer(initialPlay(), { type: 'started', attempt }), { type: 'go' });
+    s = playReducer(s, { type: 'answered', result: result({ right: false, lives: 0, status: 'out' }) });
+    expect(playReducer(s, { type: 'next' }).phase).toBe('out');
   });
-  it('charges a hint once per round', () => {
-    let s = playReducer(playReducer(initialPlay(Q), { type: 'start' }), { type: 'go' });
-    s = playReducer(s, { type: 'hint' });
-    s = playReducer(s, { type: 'hint' });
-    expect(s.hintsSpent).toBe(5);
+  it('keeps a hint for the round and clears it on the next', () => {
+    let s = playReducer(playReducer(initialPlay(), { type: 'started', attempt }), { type: 'go' });
+    s = playReducer(s, { type: 'hinted', hint: 'Think' });
+    expect(s).toMatchObject({ hinted: true, hint: 'Think' });
+    s = playReducer(playReducer(s, { type: 'answered', result: result() }), { type: 'next' });
+    expect(s).toMatchObject({ hinted: false, hint: null });
   });
-  it('ignores answers outside a question', () => {
-    const s = initialPlay(Q);
-    expect(playReducer(s, { type: 'answer', choice: 'myth', answer: 'myth' })).toBe(s);
+  it('shows errors and ignores steps out of order', () => {
+    const s = playReducer(initialPlay(), { type: 'failed', message: 'Oops' });
+    expect(s).toMatchObject({ error: 'Oops', busy: false });
+    expect(playReducer(s, { type: 'go' })).toBe(s);
+    expect(playReducer(s, { type: 'next' })).toBe(s);
+    expect(playReducer(s, { type: 'restart' })).toEqual(initialPlay());
+    expect(playReducer(s, { type: 'other' })).toBe(s);
   });
 });
 
-describe('titles', () => {
-  it('grows with the streak', () => {
+describe('words', () => {
+  it('titles follow the streak and stars', () => {
     expect(feedbackTitle(true, 1)).toBe('Nailed it!');
     expect(feedbackTitle(true, 2)).toBe('Spot on!');
     expect(feedbackTitle(true, 4)).toBe('On fire!');
     expect(feedbackTitle(false, 0)).toBe('Not quite!');
-  });
-  it('follows the stars', () => {
     expect(resultTitle(3)).toBe('You aced it!');
+    expect(resultTitle(2)).toBe('Nicely done!');
     expect(resultTitle(1)).toBe('You made it!');
+  });
+  it('turns server errors into friendly words', () => {
+    expect(friendlyError({ status: 402 })).toMatch(/SpotPoints/);
+    expect(friendlyError({ status: 409 })).toMatch(/isn’t ready/);
+    expect(friendlyError({ status: 403 })).toMatch(/isn’t open/);
+    expect(friendlyError({ message: 'Network' })).toBe('Network');
+    expect(friendlyError(null)).toMatch(/went wrong/);
+  });
+});
+
+describe('quiz api', () => {
+  beforeEach(() => jest.clearAllMocks());
+  it('calls the quiz endpoints', () => {
+    quizApi.getHome('t');
+    quizApi.getTopics('t');
+    quizApi.getTopic('my cycle', 't');
+    quizApi.startLevel({ topicId: 'my-cycle', level: 2 }, 't');
+    quizApi.takeHint('a1', 0, 't');
+    quizApi.answer('a1', 0, 'myth', 't');
+    expect(apiRequest).toHaveBeenNthCalledWith(1, '/quiz/home', { token: 't' });
+    expect(apiRequest).toHaveBeenNthCalledWith(3, '/quiz/topics/my%20cycle', { token: 't' });
+    expect(apiRequest).toHaveBeenNthCalledWith(4, '/quiz/attempts', {
+      method: 'POST',
+      body: { topicId: 'my-cycle', level: 2 },
+      token: 't',
+    });
+    expect(apiRequest).toHaveBeenNthCalledWith(5, '/quiz/attempts/a1/hint', { method: 'POST', body: { round: 0 }, token: 't' });
+    expect(apiRequest).toHaveBeenNthCalledWith(6, '/quiz/attempts/a1/answers', {
+      method: 'POST',
+      body: { round: 0, choice: 'myth' },
+      token: 't',
+    });
   });
 });

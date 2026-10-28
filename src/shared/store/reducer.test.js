@@ -644,3 +644,15 @@ describe('partner love', () => {
     expect(reducer(INIT, { type: A.PARTNER_LOVE_REPLIED, date: '2026-01-01', id: 1 })).toBe(INIT);
   });
 });
+
+describe('points spent', () => {
+  it('keeps lifetime points when SpotPoints are spent', () => {
+    let s = reducer(INIT, { type: A.REWARDS_HYDRATED, points: 200, streak: 1, longestStreak: 2, lifetimePoints: 260 });
+    expect(s.pointsSpent).toBe(60);
+    s = reducer(s, { type: A.POINTS_SPENT, newBalance: 170 });
+    expect(s.femPoints).toBe(170);
+    expect(s.femPoints + s.pointsSpent).toBe(260);
+    s = reducer(s, { type: A.REWARDS_HYDRATED, points: 170, streak: 1, longestStreak: 2 });
+    expect(s.pointsSpent).toBe(0);
+  });
+});

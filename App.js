@@ -78,6 +78,7 @@ function AppContent() {
     periodLength,
     today,
     femPoints,
+    pointsSpent,
     levels,
     accountType,
     partnerState,
@@ -90,7 +91,7 @@ function AppContent() {
   const partnerEnded = isPartner && partnerState === 'ended';
   const appReady = authDone && onboarded;
   const dataReady = appReady && !partnerEnded;
-  const levelIdx = levels.length ? levelInfo(femPoints, levels).idx : null;
+  const levelIdx = levels.length ? levelInfo(femPoints + (pointsSpent || 0), levels).idx : null;
   const prevLevelIdx = useRef(null);
   useEffect(() => {
     const before = prevLevelIdx.current;
