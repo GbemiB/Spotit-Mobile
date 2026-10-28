@@ -1,6 +1,5 @@
 import { View, Animated, Easing, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../shared/styles/index.js';
 import { useAnimatedValue } from './HeroCardFx.jsx';
 
@@ -89,35 +88,44 @@ export function GreetingLine({ greeting, name, greetingStyle, nameStyle, reduceM
   );
 }
 
-export function AvatarRing({ size, ring = 3, reduceMotion, children }) {
-  const spin = useAnimatedValue(0);
+export function AvatarRing({ size, ring = 2, gap = 1.5, color = '#F2A0AE', reduceMotion, children }) {
+  const glow = useAnimatedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
     if (reduceMotion) return undefined;
-    const anim = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 4000, easing: Easing.linear, useNativeDriver: true }));
+    const anim = Animated.timing(glow, { toValue: 1, duration: 1400, delay: 600, easing: Easing.out(Easing.quad), useNativeDriver: true });
     anim.start();
     return () => anim.stop();
-  }, [reduceMotion, spin]);
-  const outer = size + ring * 2;
+  }, [reduceMotion, glow]);
+  const outer = size + (ring + gap) * 2;
   return (
-    <View
-      style={{ width: outer, height: outer, borderRadius: outer / 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <Animated.View
+    <View style={{ width: outer, height: outer, alignItems: 'center', justifyContent: 'center' }}>
+      {!reduceMotion && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            width: outer,
+            height: outer,
+            borderRadius: outer / 2,
+            backgroundColor: color,
+            opacity: glow.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.45, 0] }),
+            transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }],
+          }}
+        />
+      )}
+      <View
         style={{
-          position: 'absolute',
           width: outer,
           height: outer,
-          transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }],
+          borderRadius: outer / 2,
+          borderWidth: ring,
+          borderColor: color,
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        <LinearGradient
-          colors={['#E5383B', '#D6A24E', '#5FA98C', '#DC5A74']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </Animated.View>
-      {children}
+        {children}
+      </View>
     </View>
   );
 }
