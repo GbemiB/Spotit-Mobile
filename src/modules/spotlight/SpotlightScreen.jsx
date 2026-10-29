@@ -1,11 +1,9 @@
-import { View, ScrollView, BackHandler, StyleSheet } from 'react-native';
+import { View, BackHandler, StyleSheet } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { SparkleIcon } from '../../components/ui/icons.jsx';
+import { Text } from '../../shared/styles/index.js';
 import * as quizApi from '../../shared/api/quiz.js';
 import { useReduceMotion } from '../dashboard/HeroCardFx.jsx';
 import HubView from './HubView.jsx';
@@ -16,37 +14,6 @@ import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
 import { toCards, toGroups, toLevel, toPick, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
 
 const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
-
-function PartnerSoon() {
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Spotlight</Text>
-          <Text style={[styles.headerSub, { color: colors.textMuted }]}>Play, learn and shine</Text>
-        </View>
-        <View style={{ paddingHorizontal: 24 }}>
-          <LinearGradient
-            colors={isDark ? ['#241319', '#2A1610'] : ['#FFF0F2', '#FBF1E0']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.6, y: 1 }}
-            style={[styles.hero, { borderColor: colors.border }]}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
-              <SparkleIcon size={26} color={colors.primary} />
-            </View>
-            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>Games are on the way</Text>
-            <Text style={[styles.heroBody, { color: colors.textSecondary }]}>
-              Quizzes and games to play with your SpotPoints are coming to Spotlight soon.
-            </Text>
-          </LinearGradient>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
 
 function QuizSpotlight() {
   const { state, dispatch } = useApp();
@@ -268,19 +235,10 @@ function QuizSpotlight() {
 }
 
 export default function SpotlightScreen() {
-  const { state } = useApp();
-  return state.accountType === 'partner' ? <PartnerSoon /> : <QuizSpotlight />;
+  return <QuizSpotlight />;
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 18 },
-  headerTitle: { fontSize: 24, fontWeight: '700', letterSpacing: -0.4 },
-  headerSub: { fontSize: 11, marginTop: 4 },
-  hero: { borderRadius: 28, padding: 24, borderWidth: 1, alignItems: 'center', gap: 10 },
-  iconCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  heroTitle: { fontFamily: FONT.serif, fontSize: 24, lineHeight: 30, textAlign: 'center' },
-  heroBody: { fontSize: 11, lineHeight: 18, textAlign: 'center' },
   waiting: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   waitingTx: { fontSize: 12, textAlign: 'center' },
 });
