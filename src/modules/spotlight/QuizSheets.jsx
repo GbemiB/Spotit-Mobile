@@ -26,9 +26,9 @@ function Rule({ icon, color, children }) {
   );
 }
 
-function Rules({ settings }) {
+function Rules({ settings, levelLives }) {
   const rounds = settings?.rounds ?? 5;
-  const lives = settings?.lives ?? 3;
+  const lives = levelLives || settings?.lives || 3;
   const hintCost = settings?.hintCost ?? 5;
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
@@ -38,7 +38,7 @@ function Rules({ settings }) {
         {rounds} quick rounds: is it a myth or a fact?
       </Rule>
       <Rule icon={HEART} color={c.primary}>
-        {lives} hearts. A wrong answer costs one.
+        {lives === 1 ? '1 heart. One wrong answer ends the game.' : `${lives} hearts. A wrong answer costs one.`}
       </Rule>
       <Rule icon={SPARKLE} color={q.gold}>
         Stuck? A hint costs {hintCost} SP.
@@ -85,7 +85,7 @@ export function LevelSheet({ open, mode, level, topic, balance, settings, reduce
         <>
           <Text style={[styles.free, { color: q.green, backgroundColor: q.greenSoft }]}>{replay ? 'Replay · free' : 'Free level'}</Text>
           <View style={[styles.box, { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Rules settings={settings} />
+            <Rules settings={settings} levelLives={level?.lives} />
           </View>
           <GradientButton colors={q.button} reduceMotion={reduceMotion} onPress={onStart} label={<Text style={styles.btnTx}>Start</Text>} />
         </>

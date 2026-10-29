@@ -4,6 +4,7 @@ import {
   toCards,
   toGroups,
   toLevel,
+  heartsLabel,
   toPick,
   sheetModeFor,
   initialPlay,
@@ -75,7 +76,10 @@ describe('mapping server data', () => {
       items: [{ locked: false }],
     });
     expect(toGroups(null)).toEqual([]);
-    expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({ n: 2, cost: 30 });
+    expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({ n: 2, cost: 30, lives: null });
+    expect(toLevel({ number: 5, name: 'N', cost: 40, state: 'locked', stars: 0, ready: true, lives: 1 }).lives).toBe(1);
+    expect(heartsLabel(1)).toBe('1 heart');
+    expect(heartsLabel(2)).toBe('2 hearts');
     const pick = toPick({
       topicId: 'my-cycle',
       topicName: 'My Cycle',

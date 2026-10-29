@@ -7,7 +7,7 @@ import LivingBackground from '../../components/ui/LivingBackground.jsx';
 import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
 import { GradientButton, PressScale, Icon, Pop, Rise, Flicker, Blob, Twinkle, HEART, STAR, FLAME, SPARKLE } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
-import { initialPlay, playReducer, resultTitle, feedbackTitle, friendlyError } from './quizLogic.js';
+import { initialPlay, playReducer, resultTitle, feedbackTitle, friendlyError, heartsLabel } from './quizLogic.js';
 
 const BURST = Array.from({ length: 14 }, (_, i) => ({
   angle: (i / 14) * Math.PI * 2,
@@ -379,7 +379,7 @@ export default function QuizPlay({ open, topic, level, hasNext, settings, balanc
   const s = useMemo(() => createStyles(c), [c]);
   if (!topic || !level) return null;
   const hintCost = settings?.hintCost ?? 5;
-  const lives = state.startLives || settings?.lives || 3;
+  const lives = state.startLives || level.lives || settings?.lives || 3;
   const rounds = state.total || settings?.rounds || 5;
   const round = state.attempt?.rounds?.[state.round];
   const question = round
@@ -479,7 +479,7 @@ export default function QuizPlay({ open, topic, level, hasNext, settings, balanc
               <View style={s.introStats}>
                 <Text style={s.introStat}>{rounds} rounds</Text>
                 <Text style={s.dot}>·</Text>
-                <Text style={s.introStat}>{lives} hearts</Text>
+                <Text style={s.introStat}>{heartsLabel(lives)}</Text>
                 <Text style={s.dot}>·</Text>
                 <Text style={s.introStat}>up to 3 stars</Text>
               </View>

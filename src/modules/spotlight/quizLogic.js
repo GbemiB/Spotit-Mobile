@@ -30,7 +30,11 @@ export function toGroups(response) {
 }
 
 export function toLevel(view) {
-  return { n: view.number, name: view.name, cost: view.cost, state: view.state, stars: view.stars, ready: view.ready };
+  return { n: view.number, name: view.name, cost: view.cost, state: view.state, stars: view.stars, ready: view.ready, lives: view.lives || null };
+}
+
+export function heartsLabel(n) {
+  return n === 1 ? '1 heart' : `${n} hearts`;
 }
 
 export function toPick(pick) {

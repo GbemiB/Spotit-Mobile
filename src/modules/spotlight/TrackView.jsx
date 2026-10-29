@@ -7,6 +7,7 @@ import { Rise, PressScale, GradientButton, Icon, Bob, Blob, STAR } from './Spotl
 import { SpChip } from './HubView.jsx';
 import { BackRow } from './TopicsView.jsx';
 import { quizColors, tone, GROUP_ICONS } from './quizTheme.js';
+import { heartsLabel } from './quizLogic.js';
 
 function Stars({ count, size = 12 }) {
   const { colors: c, isDark } = useTheme();
@@ -56,7 +57,7 @@ function LevelCard({ level, t, balance, settings, reduceMotion, onPress }) {
           <Text style={[styles.tag, { color: q.gold }]}>{level.cost === 0 ? 'Free · Up next' : `Up next · ${level.cost} SP`}</Text>
           <Text style={[styles.name, { color: c.textPrimary }]}>{level.name}</Text>
           <Text style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>
-            {settings?.rounds ?? 5} rounds · {settings?.lives ?? 3} hearts · myth or fact
+            {settings?.rounds ?? 5} rounds · {heartsLabel(level.lives || settings?.lives || 3)} · myth or fact
           </Text>
           {level.ready === false ? (
             <Text style={{ fontSize: 11, fontWeight: '700', color: q.goldDeep, marginTop: 12 }}>
