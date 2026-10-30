@@ -246,7 +246,7 @@ export function Shine({ width, reduceMotion }) {
 export function GradientButton({ label, onPress, colors, reduceMotion, icon, style, disabled, small }) {
   const [w, setW] = useState(0);
   return (
-    <PressScale onPress={onPress} disabled={disabled} style={style} accessibilityLabel={label}>
+    <PressScale onPress={onPress} disabled={disabled} style={style} accessibilityLabel={typeof label === 'string' ? label : undefined}>
       <LinearGradient
         colors={colors}
         start={{ x: 0, y: 0 }}
