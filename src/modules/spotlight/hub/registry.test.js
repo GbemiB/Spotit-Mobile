@@ -1,8 +1,8 @@
 import { moduleFor, blockedReason, CHALLENGE_MODULES } from './registry.js';
 
 jest.mock('../quiz/QuizModule.jsx', () => () => null);
-jest.mock('../games/padbank/PadBankModule.jsx', () => () => null);
-jest.mock('../games/giveday/GiveDayModule.jsx', () => () => null);
+jest.mock('../v2/padbank/PadBankV2.jsx', () => () => null);
+jest.mock('../v2/giveday/GiveDayV2.jsx', () => () => null);
 
 describe('challenge registry', () => {
   const quiz = { id: 'know-yourself', status: 'live', locked: false };

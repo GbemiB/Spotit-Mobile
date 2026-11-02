@@ -15,7 +15,7 @@ import {
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
-import { Newsreader_400Regular } from '@expo-google-fonts/newsreader';
+import { Newsreader_400Regular, Newsreader_400Regular_Italic, Newsreader_500Medium } from '@expo-google-fonts/newsreader';
 import * as SplashScreenNative from 'expo-splash-screen';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppProvider, useApp } from './src/shared/store/AppContext.jsx';
@@ -370,6 +370,8 @@ export default function App() {
     Manrope_700Bold,
     Manrope_800ExtraBold,
     Newsreader_400Regular,
+    Newsreader_400Regular_Italic,
+    Newsreader_500Medium,
   });
   if (!fontsLoaded) return null;
   return (

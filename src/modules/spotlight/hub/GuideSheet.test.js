@@ -18,13 +18,25 @@ describe('moveStep', () => {
 });
 
 describe('guideSteps', () => {
-  it('has three steps using the server settings', () => {
-    const steps = guideSteps({ topicCount: 10, lives: 1, hintCost: 5, freeLevels: 2 });
-    expect(steps.map(s => s.key)).toEqual(['topics', 'levels', 'play']);
-    expect(steps[0].body).toContain('10 topics');
-    expect(steps[2].body).toContain('1 heart.');
-    expect(steps[2].body).toContain('5 SP');
-    expect(steps[1].body).toContain('Levels 1 to 2');
+  it('builds the three steps from the server data', () => {
+    const steps = guideSteps({
+      freeLevels: 2,
+      freeTries: 1,
+      games: ['Pad Bank Run', 'Give Day'],
+      ranks: [{ name: 'Curious' }, { name: 'Explorer' }, { name: 'Myth Buster' }, { name: 'Know-It-All' }],
+    });
+    expect(steps.map(s => s.key)).toEqual(['ways', 'free', 'stars']);
+    expect(steps[0].title).toBe('Three ways to play');
+    expect(steps[0].body).toContain('two pretend games: Pad Bank Run and Give Day');
+    expect(steps[1].body).toContain('Levels 1 to 2 of every quiz topic are free');
+    expect(steps[1].body).toContain('one free try');
+    expect(steps[2].body).toContain('from Curious to Explorer, Myth Buster and Know-It-All');
+  });
+  it('copes with no games, no free tries and one rank', () => {
+    const steps = guideSteps({ freeLevels: 0, freeTries: 0, games: [], ranks: [{ name: 'Curious' }] });
+    expect(steps[0].title).toBe('One way to play');
+    expect(steps[1].body).toBe('Every quiz level costs SP. After that, you use SpotPoints.');
+    expect(steps[2].body).toBe('Every win earns stars.');
   });
 });
 

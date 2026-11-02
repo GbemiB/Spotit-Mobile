@@ -17,7 +17,15 @@ export function topicStatus(card) {
 }
 
 export function toCards(cards = []) {
-  return cards.map(card => ({ topic: toTopic(card), status: topicStatus(card), locked: card.locked, ready: card.ready }));
+  return cards.map(card => ({
+    topic: toTopic(card),
+    status: topicStatus(card),
+    locked: card.locked,
+    ready: card.ready,
+    started: !!card.started,
+    cleared: card.levelsCleared || 0,
+    count: card.levelCount || 0,
+  }));
 }
 
 export function toGroups(response) {
@@ -85,6 +93,7 @@ export function initialPlay() {
     nextLevel: null,
     busy: false,
     error: null,
+    results: [],
   };
 }
 
@@ -121,6 +130,7 @@ export function playReducer(state, action) {
         streak: r.streak,
         best: r.bestStreak,
         correct: r.correct,
+        results: [...(state.results || []), !!r.right],
         stars: r.stars,
         nextLevel: r.nextLevelOpened ?? null,
       };
@@ -160,5 +170,12 @@ export function friendlyError(e) {
 
 export function quizSettings(home) {
   if (!home) return null;
-  return { rounds: home.rounds, lives: home.lives, hintCost: home.hintCost, freeLevels: home.freeLevels, topicCount: home.topicCount };
+  return {
+    rounds: home.rounds,
+    lives: home.lives,
+    hintCost: home.hintCost,
+    freeLevels: home.freeLevels,
+    topicCount: home.topicCount,
+    titles: home.titles || null,
+  };
 }

@@ -2,17 +2,20 @@ import { View, BackHandler, StyleSheet } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../../shared/store/AppContext.jsx';
 import { A } from '../../../shared/store/actions.js';
-import { Text } from '../../../shared/styles/index.js';
 import * as quizApi from '../../../shared/api/quiz.js';
 import { PointsSheet } from '../common/Sheets.jsx';
-import TopicsView from './TopicsView.jsx';
-import TrackView from './TrackView.jsx';
-import QuizPlay from './QuizPlay.jsx';
-import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
+import { InfoSheet } from './QuizSheets.jsx';
+import QuizTopicsV2 from '../v2/quiz/QuizTopicsV2.jsx';
+import QuizTrackV2, { LevelSheetV2, levelLook } from '../v2/quiz/QuizTrackV2.jsx';
+import QuizPlayV2 from '../v2/quiz/QuizPlayV2.jsx';
+import { spotTokens } from '../v2/tokens.js';
+import { useTheme, Text } from '../../../shared/styles/index.js';
 import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
 export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) {
   const { state, dispatch } = useApp();
+  const { isDark } = useTheme();
+  const t = spotTokens(isDark);
   const token = state.accessToken;
   const balance = state.femPoints || 0;
   const [view, setView] = useState('topics');
@@ -118,7 +121,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
   }
 
   function startFromSheet() {
-    if (!sheet || sheet.mode === 'short') return;
+    if (!sheet || sheet.mode === 'short' || levelLook(sheet.level, settings).locked) return;
     const { topic, level, hasNext } = sheet;
     setSheet(null);
     setPlaying({ topic, level, hasNext });
@@ -163,10 +166,14 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
   const detailTopic = detail?.topic ? toTopic(detail.topic) : null;
   const levels = (detail?.levels || []).map(toLevel);
 
+  const groupOf = id => (topicsData?.allGroups || []).find(g => g.id === id) || {};
+  const trackGroup = detailTopic ? groupOf(detailTopic.group) : {};
+
   return (
-    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
       {view === 'topics' && (
-        <TopicsView
+        <QuizTopicsV2
+          t={t}
           insets={insets}
           balance={balance}
           groups={groups}
@@ -177,38 +184,36 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
           loadingMore={loadingMore}
           loading={(loading || !topicsData) && !error}
           onLoadMore={loadMoreTopics}
-          freeLevels={settings.freeLevels}
-          isTeen={!!topicsData?.underAge}
-          total={topicsData?.topicCount ?? 0}
+          settings={settings}
           reduceMotion={reduceMotion}
           onBack={onExit}
           onOpenTopic={openTopic}
-          onLocked={t => setInfo({ kind: 'locked', topic: t })}
+          onLocked={topic => setInfo({ kind: 'locked', topic })}
           onOpenPoints={() => setPoints(true)}
         />
       )}
       {view === 'track' && detailTopic && (
-        <TrackView
+        <QuizTrackV2
+          t={t}
           insets={insets}
-          balance={balance}
           topic={detailTopic}
+          group={trackGroup.label || ''}
+          tone={trackGroup.tone || detailTopic.tone || 'pink'}
           levels={levels}
           settings={settings}
           reduceMotion={reduceMotion}
           onBack={showAllTopics}
           onPlayLevel={level => openLevel(detailTopic, level, levels.length)}
-          onHowItWorks={() => setInfo({ kind: 'how' })}
-          onOpenPoints={() => setPoints(true)}
         />
       )}
       {view === 'track' && !detailTopic && (
         <View style={styles.waiting}>
-          <Text style={styles.waitingTx}>{error || 'Loading levels…'}</Text>
+          <Text style={[styles.waitingTx, { color: t.text2 }]}>{error || 'Loading levels…'}</Text>
         </View>
       )}
-      <LevelSheet
+      <LevelSheetV2
+        t={t}
         open={!!sheet}
-        mode={sheet?.mode}
         level={sheet?.level}
         topic={sheet?.topic}
         balance={balance}
@@ -231,7 +236,8 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
         }}
       />
       <PointsSheet open={points} balance={balance} onClose={() => setPoints(false)} />
-      <QuizPlay
+      <QuizPlayV2
+        t={t}
         open={!!playing}
         topic={playing?.topic}
         level={playing?.level}

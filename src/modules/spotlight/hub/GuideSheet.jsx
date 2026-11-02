@@ -1,33 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, PanResponder, Pressable, View, StyleSheet } from 'react-native';
 import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
-import { LinearGradient } from 'expo-linear-gradient';
 import BottomSheet from '../../../components/ui/BottomSheet.jsx';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
-import { GradientButton, PressScale, Icon } from '../common/SpotlightFx.jsx';
-import { quizColors } from '../common/theme.js';
-import GuideArt from './GuideArt.jsx';
-import { freeLevelsText } from '../common/wording.js';
+import { PressScale, Icon } from '../common/SpotlightFx.jsx';
+import GuideArtV2 from '../v2/GuideArtV2.jsx';
+import { spotTokens } from '../v2/tokens.js';
+import { ds } from '../v2/motion.jsx';
 
-export function guideSteps({ topicCount, lives, hintCost, freeLevels }) {
+function listWords(names) {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+function countWord(n) {
+  return ['no', 'one', 'two', 'three', 'four', 'five'][n] || String(n);
+}
+
+export function guideSteps({ freeLevels, freeTries, games = [], ranks = [] }) {
+  const ways = countWord(games.length + 1);
+  const gameText = games.length ? `, and ${countWord(games.length)} pretend ${games.length === 1 ? 'game' : 'games'}: ${listWords(games)}` : '';
+  const levels = freeLevels > 0 ? (freeLevels === 1 ? 'Level 1 of every quiz topic is free' : `Levels 1 to ${freeLevels} of every quiz topic are free`) : 'Every quiz level costs SP';
+  const tries = freeTries > 0 ? `, and each game gives you ${countWord(freeTries)} free ${freeTries === 1 ? 'try' : 'tries'}` : '';
+  const rankNames = ranks.map(r => r.name);
+  const ladder = rankNames.length > 1 ? ` Collect them to grow from ${rankNames[0]} to ${listWords(rankNames.slice(1))}.` : '';
   return [
-    {
-      key: 'topics',
-      title: 'Pick a topic',
-      body: topicCount
-        ? `Choose from ${topicCount} topics, from your cycle to skin, sleep and more.`
-        : 'Choose a topic you’re curious about, from your cycle to skin, sleep and more.',
-    },
-    {
-      key: 'levels',
-      title: 'Free to start',
-      body: `${freeLevelsText(freeLevels)} Higher levels cost SP to unlock.`,
-    },
-    {
-      key: 'play',
-      title: 'Hearts, hints and stars',
-      body: `You start with ${lives === 1 ? '1 heart' : `${lives} hearts`}. A hint costs ${hintCost} SP. Finish with hearts left to win stars.`,
-    },
+    { key: 'ways', title: `${ways.charAt(0).toUpperCase()}${ways.slice(1)} ${games.length ? 'ways' : 'way'} to play`, body: `A myth-or-fact quiz about your body${gameText}.` },
+    { key: 'free', title: 'Free to start', body: `${levels}${tries}. After that, you use SpotPoints.` },
+    { key: 'stars', title: 'Win stars, level up', body: `Every win earns stars.${ladder}` },
   ];
 }
 
@@ -48,25 +48,24 @@ export function releaseTarget(index, dx, vx, width, count) {
   const far = Math.abs(dx) > width * SWIPE_SHARE || (Math.abs(vx) > FLICK_SPEED && Math.abs(dx) > 20);
   return far ? moveStep(index, dx < 0 ? 1 : -1, count) : index;
 }
-const STEP_COUNT = guideSteps({}).length;
+const STEP_COUNT = 3;
 
 const BACK = 'M15 5l-7 7 7 7';
 const NEXT = 'M9 5l7 7-7 7';
 
-function RoundButton({ label, icon, onPress, filled }) {
-  const { colors: c, isDark } = useTheme();
-  const q = quizColors(c, isDark);
+function RoundButton({ t, label, icon, onPress, filled, faded, text }) {
   return (
-    <PressScale onPress={onPress} accessibilityLabel={label}>
-      {filled ? (
-        <LinearGradient colors={q.button} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.round}>
-          <Icon d={icon} size={20} color="#FFFFFF" width={2.4} />
-        </LinearGradient>
-      ) : (
-        <View style={[styles.round, { borderWidth: 1.5, borderColor: c.border, backgroundColor: c.surface }]}>
-          <Icon d={icon} size={20} color={c.primaryDark} width={2.4} />
-        </View>
-      )}
+    <PressScale onPress={onPress} accessibilityLabel={label} disabled={faded}>
+      <View
+        style={[
+          styles.round,
+          filled ? { backgroundColor: t.pink, paddingHorizontal: text ? 16 : 0, minWidth: 48 } : { borderWidth: 1.5, borderColor: t.border },
+          faded && { opacity: 0.35 },
+        ]}
+      >
+        {text ? <Text style={styles.btnTx}>{text}</Text> : null}
+        <Icon d={icon} size={18} color={filled ? '#FFFFFF' : t.pinkInk} width={2.4} />
+      </View>
     </PressScale>
   );
 }
@@ -96,13 +95,15 @@ function makeSwipe(now, pos, setIndex) {
   });
 }
 
-export default function GuideSheet({ open, topicCount, settings, reduceMotion, onDone }) {
-  const { colors: c, isDark } = useTheme();
-  const q = quizColors(c, isDark);
+export default function GuideSheet({ open, settings, challenges = [], ranks = [], reduceMotion, onDone }) {
+  const { isDark } = useTheme();
+  const t = spotTokens(isDark);
   const [index, setIndex] = useState(0);
   const [width, setWidth] = useState(0);
   const pos = useAnimatedValue(0);
-  const steps = guideSteps({ topicCount, lives: settings?.lives, hintCost: settings?.hintCost, freeLevels: settings?.freeLevels });
+  const games = challenges.filter(c => c.kind !== 'quiz');
+  const freeTries = games.length ? Math.min(...games.map(g => g.freePlaysLeft || 0)) : 0;
+  const steps = guideSteps({ freeLevels: settings?.freeLevels, freeTries, games: games.map(g => g.name), ranks });
   const first = index === 0;
   const last = index === steps.length - 1;
 
@@ -127,11 +128,9 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
   return (
     <BottomSheet open={open} onClose={onDone}>
       <View style={styles.skipRow}>
-        {last ? null : (
-          <PressScale onPress={onDone} accessibilityLabel="Skip">
-            <Text style={[styles.skip, { color: c.textMuted }]}>Skip</Text>
-          </PressScale>
-        )}
+        <PressScale onPress={onDone} accessibilityLabel="Skip">
+          <Text style={[styles.skip, { color: t.text3 }]}>Skip</Text>
+        </PressScale>
       </View>
       <View style={styles.viewport} onLayout={e => setWidth(e.nativeEvent.layout.width)} {...swipe.panHandlers}>
         {width ? (
@@ -143,64 +142,54 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
                 accessibilityElementsHidden={i !== index}
                 importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
               >
-                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} freeLevels={settings?.freeLevels} />
-                <Text style={[styles.kicker, { color: c.primaryDark }]}>
-                  How Spotlight works · {i + 1} of {steps.length}
-                </Text>
-                <Text style={[styles.title, { color: c.textPrimary }]}>{step.title}</Text>
-                <Text style={[styles.body, { color: c.textSecondary }]}>{step.body}</Text>
+                {open && Math.abs(i - index) <= 1 ? (
+                  <GuideArtV2 step={step.key} t={t} isDark={isDark} challenges={challenges} ranks={ranks} reduceMotion={reduceMotion || i !== index} />
+                ) : (
+                  <View style={{ height: 188 }} />
+                )}
+                <Text style={[styles.title, { color: t.text }]}>{step.title}</Text>
+                <Text style={[styles.body, { color: t.text2 }]}>{step.body}</Text>
               </View>
             ))}
           </Animated.View>
         ) : null}
       </View>
       <View style={styles.nav}>
-        <View style={[styles.side, { alignItems: 'flex-start' }]}>
-          {first ? null : <RoundButton label="Back" icon={BACK} onPress={() => go(index - 1)} />}
-        </View>
+        <RoundButton t={t} label="Back" icon={BACK} faded={first} onPress={() => go(index - 1)} />
         <View style={styles.dots}>
           {steps.map((step, i) => (
             <Pressable
               key={step.key}
               onPress={() => go(i)}
-              hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
+              style={styles.dotHit}
               accessibilityRole="button"
               accessibilityLabel={`Step ${i + 1} of ${steps.length}`}
               accessibilityState={{ selected: i === index }}
             >
-              <View style={[styles.dot, { width: i === index ? 18 : 6, backgroundColor: i === index ? c.primary : c.border }]} />
+              <View style={[styles.dot, { width: i === index ? 22 : 7, backgroundColor: i === index ? t.pink : t.track }]} />
             </Pressable>
           ))}
         </View>
-        <View style={[styles.side, { alignItems: 'flex-end' }]}>
-          {last ? (
-            <GradientButton
-              small
-              colors={q.button}
-              reduceMotion={reduceMotion}
-              onPress={onDone}
-              label={<Text style={styles.btnTx}>Let’s go</Text>}
-            />
-          ) : (
-            <RoundButton filled label="Next" icon={NEXT} onPress={() => go(index + 1)} />
-          )}
-        </View>
+        {last ? (
+          <RoundButton t={t} filled label="Close the guide and start" icon={NEXT} text="Let’s play" onPress={onDone} />
+        ) : (
+          <RoundButton t={t} filled label="Next" icon={NEXT} onPress={() => go(index + 1)} />
+        )}
       </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  viewport: { overflow: 'hidden' },
-  kicker: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginTop: 14 },
-  title: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 6 },
-  body: { fontSize: 11.5, lineHeight: 18, textAlign: 'center', marginTop: 8, minHeight: 36 },
-  skipRow: { height: 28, flexDirection: 'row', justifyContent: 'flex-end', marginTop: -6 },
-  skip: { fontSize: 12, fontWeight: '600', paddingVertical: 6, paddingHorizontal: 4 },
-  nav: { flexDirection: 'row', alignItems: 'center', marginTop: 22, marginBottom: 10 },
-  side: { width: 104 },
-  round: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  dots: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
-  dot: { height: 6, borderRadius: 3 },
-  btnTx: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  viewport: { overflow: 'hidden', marginTop: 8 },
+  title: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 14 },
+  body: { fontSize: ds(12), lineHeight: 19, textAlign: 'center', marginTop: 6, minHeight: 38, paddingHorizontal: 4 },
+  skipRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: -8 },
+  skip: { fontSize: ds(12), fontWeight: '700', paddingVertical: 6, paddingHorizontal: 4 },
+  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 10 },
+  round: { height: 48, minWidth: 48, borderRadius: 24, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  dotHit: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  dot: { height: 7, borderRadius: 999 },
+  btnTx: { color: '#FFFFFF', fontSize: ds(13), fontWeight: '800' },
 });

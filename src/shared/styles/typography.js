@@ -5,6 +5,8 @@ export const FONT = {
   bold: 'PlusJakartaSans_700Bold',
   extraBold: 'PlusJakartaSans_800ExtraBold',
   serif: 'Newsreader_400Regular',
+  serifItalic: 'Newsreader_400Regular_Italic',
+  serifMedium: 'Newsreader_500Medium',
 };
 export const ONBOARDING_FONT = {
   regular: 'Manrope_400Regular',

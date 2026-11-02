@@ -238,7 +238,10 @@ describe('quiz settings', () => {
       hintCost: 6,
       freeLevels: 1,
       topicCount: 10,
+      titles: null,
     });
+    const titles = { won: 'Level won!', perfect: 'Brilliant!', lost: 'Out of hearts' };
+    expect(quizSettings({ rounds: 5, titles }).titles).toEqual(titles);
     expect(quizSettings(null)).toBeNull();
   });
 });

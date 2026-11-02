@@ -5,3 +5,6 @@ export function startRun(day, token) {
 export function serve(runId, round, pack, route, token) {
   return apiRequest(`/padbank/runs/${encodeURIComponent(runId)}/serve`, { method: 'POST', body: { round, pack, route }, token });
 }
+export function getRules(token) {
+  return apiRequest('/padbank/rules', { token });
+}

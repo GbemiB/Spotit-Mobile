@@ -8,12 +8,10 @@ import { todayISO } from '../../../shared/utils/cycle.js';
 import { useReduceMotion } from '../../dashboard/HeroCardFx.jsx';
 import { PointsSheet, MessageSheet } from '../common/Sheets.jsx';
 import { friendlyError, quizSettings } from '../quiz/quizLogic.js';
-import HubView from './HubView.jsx';
+import HubV2 from '../v2/HubV2.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
 import { moduleFor, blockedReason } from './registry.js';
-
-const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
 
 function blockedMessage(reason, challenge) {
   if (reason === 'locked') {
@@ -104,12 +102,12 @@ export default function SpotlightScreen() {
       {Module ? (
         <Module insets={insets} reduceMotion={reduceMotion} challenge={active.challenge} onExit={exitModule} onChanged={loadHome} />
       ) : (
-        <HubView
+        <HubV2
           insets={insets}
           balance={balance}
-          stats={home?.stats || NO_STATS}
+          stats={home?.stats || null}
           challenges={home?.challenges || []}
-          userId={userId}
+          freeLevels={guideSettings?.freeLevels ?? 0}
           loading={!home}
           error={error}
           onRetry={loadHome}
@@ -129,8 +127,9 @@ export default function SpotlightScreen() {
       <PointsSheet open={points} balance={balance} onClose={() => setPoints(false)} />
       <GuideSheet
         open={guide && !!guideSettings && !Module && !message && !points}
-        topicCount={guideSettings?.topicCount}
         settings={guideSettings}
+        challenges={home?.challenges || []}
+        ranks={home?.ranks || []}
         reduceMotion={reduceMotion}
         onDone={closeGuide}
       />
