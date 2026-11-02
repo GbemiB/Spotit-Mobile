@@ -11,6 +11,9 @@ import TopicsView from './TopicsView.jsx';
 import TrackView from './TrackView.jsx';
 import QuizPlay from './QuizPlay.jsx';
 import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
+import GuideSheet from './GuideSheet.jsx';
+import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
+import { todayISO } from '../../shared/utils/cycle.js';
 import { toCards, toGroups, toLevel, toPick, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
 
 const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
@@ -30,6 +33,8 @@ function QuizSpotlight() {
   const [sheet, setSheet] = useState(null);
   const [info, setInfo] = useState(null);
   const [playing, setPlaying] = useState(null);
+  const [guide, setGuide] = useState(false);
+  const userId = state.userId;
 
   const settings = useMemo(
     () => ({ rounds: home?.rounds ?? 5, lives: home?.lives ?? 3, hintCost: home?.hintCost ?? 5 }),
@@ -58,6 +63,27 @@ function QuizSpotlight() {
       .then(setHome)
       .catch(e => setError(friendlyError(e)));
   }, [token]);
+
+  useEffect(() => {
+    updateInvite(userId, r => afterVisit(r, todayISO()));
+  }, [userId]);
+
+  const homeReady = !!home;
+  useEffect(() => {
+    if (!homeReady) return undefined;
+    let cancelled = false;
+    wasGuideSeen(userId).then(seen => {
+      if (!seen && !cancelled) setGuide(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [homeReady, userId]);
+
+  function closeGuide() {
+    setGuide(false);
+    markGuideSeen(userId);
+  }
 
   useEffect(() => {
     if (view === 'hub') return undefined;
@@ -216,6 +242,13 @@ function QuizSpotlight() {
           setInfo(null);
           openTopics();
         }}
+      />
+      <GuideSheet
+        open={guide && !playing && !sheet && !info}
+        topicCount={home?.topicCount ?? 0}
+        settings={settings}
+        reduceMotion={reduceMotion}
+        onDone={closeGuide}
       />
       <QuizPlay
         open={!!playing}

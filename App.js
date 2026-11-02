@@ -41,6 +41,9 @@ import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx'
 import { setCrashContext, flushCrashes } from './src/shared/utils/crashReporter.js';
 import WelcomeTour from './src/modules/tour/WelcomeTour.jsx';
 import LivingBackground from './src/components/ui/LivingBackground.jsx';
+import SpotlightInvite from './src/modules/spotlight/SpotlightInvite.jsx';
+import useSpotlightInvite from './src/modules/spotlight/useSpotlightInvite.js';
+import { useReduceMotion } from './src/modules/dashboard/HeroCardFx.jsx';
 import { tourCards, wasTourSeen, markTourSeen } from './src/shared/utils/tour.js';
 import * as appApi from './src/shared/api/app.js';
 import { currentBuild, requiredUpdate } from './src/shared/utils/appVersion.js';
@@ -148,6 +151,18 @@ function AppContent() {
     setShowTour(false);
     markTourSeen(userId);
     dispatch({ type: A.TOUR_DONE });
+  }
+  const reduceMotion = useReduceMotion();
+  const spotlight = useSpotlightInvite({
+    ready: dataReady && !tourPending && !showTour && !askReminders && screen === 'home',
+    userId,
+    token: accessToken,
+    today,
+    resumedAt,
+  });
+  function playSpotlight() {
+    spotlight.accept();
+    dispatch({ type: A.GO, screen: 'spotlight' });
   }
   async function answerReminderPrompt(accepted) {
     setAskReminders(false);
@@ -282,8 +297,16 @@ function AppContent() {
       {periodPickerOpen && <PeriodPickerSheet />}
       {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
       <WelcomeTour visible={showTour} cards={cards} partnerName={partnerName} onDone={finishTour} />
+      <SpotlightInvite
+        visible={!!spotlight.invite && !showTour}
+        balance={femPoints || 0}
+        pick={spotlight.invite?.pick}
+        reduceMotion={reduceMotion}
+        onPlay={playSpotlight}
+        onLater={spotlight.later}
+      />
       <ConfirmModal
-        visible={askReminders && !showTour}
+        visible={askReminders && !showTour && !spotlight.invite}
         title="Turn on reminders?"
         message={
           isPartner
