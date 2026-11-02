@@ -895,6 +895,118 @@ function BowlIcon({ s, p, tap, rm }) {
   );
 }
 
+function PadIcon({ s, p, tap, rm }) {
+  const T = 900;
+  const spin = useLoopValue(6000, rm, { linear: true });
+  const wing = 'M15 19c-6-1-9 2-9 5s3 6 9 5z';
+  const wingR = 'M33 19c6-1 9 2 9 5s-3 6-9 5z';
+  return (
+    <>
+      <Part s={s} o={[24, 24]} style={{ transform: [{ scale: pop(tap, T, 0) }] }}>
+        <Path d={wing} fill={p.mid} />
+        <Path d={wing} {...line(p)} />
+        <Path d={wingR} fill={p.mid} />
+        <Path d={wingR} {...line(p)} />
+        <Rect x={14} y={6} width={20} height={36} rx={10} fill={p.soft} />
+        <Rect x={14} y={6} width={20} height={36} rx={10} {...line(p)} />
+        <Rect x={19} y={12} width={10} height={24} rx={5} fill={p.mid} />
+        <Path d="M17.5 13v6" {...line(p, 1.8, p.hl)} />
+      </Part>
+      <Part s={s} o={[37, 38]} style={{ transform: [{ rotate: wave(spin, '0deg', '360deg') }] }}>
+        <Circle cx={37} cy={38} r={6} fill={p.ink} />
+        <Path d="M37 30.5v3M37 42.5v3M29.5 38h3M41.5 38h3" stroke={p.ink} strokeWidth={3} strokeLinecap="round" />
+        <Circle cx={37} cy={38} r={2.2} fill={p.surface} />
+      </Part>
+    </>
+  );
+}
+
+function BagIcon({ s, p, tap, rm }) {
+  const T = 900;
+  const sway = useLoopValue(4500, rm);
+  const body = 'M10.5 18h27l-2.2 22.5a3 3 0 0 1-3 2.5H15.7a3 3 0 0 1-3-2.5z';
+  return (
+    <Part s={s} o={[24, 12]} style={{ transform: [{ rotate: wave(sway, '-3deg', '3deg') }, { scale: pop(tap, T, 0) }] }}>
+      <Path d="M18 18v-3a6 6 0 0 1 12 0v3" {...line(p)} />
+      <Path d={body} fill={p.soft} />
+      <Path d={body} {...line(p)} />
+      <Path d="M11.2 24h25.6l-.4 4H11.6z" fill={p.mid} />
+      <Path d="M24 39s-5.4-3.2-5.4-6.8a3 3 0 0 1 5.4-1.8 3 3 0 0 1 5.4 1.8c0 3.6-5.4 6.8-5.4 6.8z" fill={p.ink} />
+      <Path d="M14.5 30.5l.5 5.5" {...line(p, 1.8, p.hl)} />
+    </Part>
+  );
+}
+
+function PinIcon({ s, p, tap, rm }) {
+  const T = 900;
+  const u = s / 48;
+  const bob = useLoopValue(3600, rm);
+  const pin = 'M24 42s-13-11.5-13-22a13 13 0 0 1 26 0c0 10.5-13 22-13 22z';
+  return (
+    <>
+      <Part s={s}>
+        <Ellipse cx={24} cy={44} rx={8} ry={2} fill={p.ink} opacity={0.15} />
+      </Part>
+      <Part s={s} o={[24, 42]} style={{ transform: [{ translateY: wave(bob, 0, -2.5 * u) }, { scale: pop(tap, T, 0) }] }}>
+        <Path d={pin} fill={p.soft} />
+        <Path d={pin} {...line(p)} />
+        <Circle cx={24} cy={20} r={7.5} fill={p.surface} />
+        <Rect x={19.5} y={18.5} width={9} height={6.5} fill={p.mid} />
+        <Path d="M19.5 18.5h9v6.5h-9zM24 18.5V25M18.5 16.5h11v2h-11z" {...line(p, 1.6)} />
+        <Path d="M24 16.5c-1.6-2.6-4.6-2.8-4.6-1 0 1.5 2.8 1 4.6 1 1.8 0 4.6.5 4.6-1 0-1.8-3-1.6-4.6 1" {...line(p, 1.6)} />
+        <Path d="M15 15a9 9 0 0 1 4-4.5" {...line(p, 1.8, p.hl)} />
+      </Part>
+    </>
+  );
+}
+
+function SpoolIcon({ s, p, tap, rm }) {
+  const T = 900;
+  const wiggle = useLoopValue(3200, rm);
+  return (
+    <>
+      <Part s={s} o={[22, 24]} style={{ transform: [{ scale: pop(tap, T, 0) }] }}>
+        <Rect x={12} y={8} width={20} height={5} rx={2} fill={p.mid} />
+        <Rect x={12} y={8} width={20} height={5} rx={2} {...line(p)} />
+        <Rect x={12} y={35} width={20} height={5} rx={2} fill={p.mid} />
+        <Rect x={12} y={35} width={20} height={5} rx={2} {...line(p)} />
+        <Rect x={15} y={13} width={14} height={22} fill={p.soft} />
+        <Path d="M15 13v22M29 13v22" {...line(p)} />
+        <Path d="M15 17l14 3M15 22l14 3M15 27l14 3M29 30c4 1 6 4 4 7" {...line(p, 1.6)} />
+        <Path d="M17.5 15.5v4" {...line(p, 1.8, p.hl)} />
+      </Part>
+      <Part s={s} o={[33, 39]} style={{ transform: [{ rotate: wave(wiggle, '0deg', '-6deg') }] }}>
+        <Path d="M33 39L44 10" stroke={p.ink} strokeWidth={2.4} strokeLinecap="round" />
+        <Ellipse cx={43} cy={12.5} rx={0.9} ry={2} fill={p.surface} />
+      </Part>
+    </>
+  );
+}
+
+function StethIcon({ s, p, tap, rm }) {
+  const T = 900;
+  const beat = useLoopValue(1600, rm, { linear: true });
+  return (
+    <>
+      <Part s={s} o={[26, 24]} style={{ transform: [{ scale: pop(tap, T, 0) }] }}>
+        <Path d="M13 6v10a9 9 0 0 0 18 0V6M22 25v6a8 8 0 0 0 16 0v-3" {...line(p)} />
+        <Circle cx={13} cy={6} r={2.2} fill={p.mid} />
+        <Circle cx={31} cy={6} r={2.2} fill={p.mid} />
+        <Circle cx={38} cy={24} r={5.5} fill={p.soft} />
+        <Circle cx={38} cy={24} r={5.5} {...line(p)} />
+        <Circle cx={38} cy={24} r={2} fill={p.ink} />
+      </Part>
+      <Part
+        s={s}
+        o={[15, 39]}
+        style={{ transform: [{ scale: beat.interpolate({ inputRange: [0, 0.2, 0.4, 0.6, 1], outputRange: [1, 1.15, 0.97, 1, 1] }) }] }}
+      >
+        <Path d="M15 44s-6-3.6-6-7.6a3.3 3.3 0 0 1 6-1.9 3.3 3.3 0 0 1 6 1.9c0 4-6 7.6-6 7.6z" fill={p.ink} />
+      </Part>
+    </>
+  );
+}
+
 export const TOPIC_ICONS = {
   cycle: { T: 1100, C: CycleIcon },
   myth: { T: 1600, C: MythIcon },
@@ -906,6 +1018,11 @@ export const TOPIC_ICONS = {
   moon: { T: 1900, C: MoonIcon },
   box: { T: 1500, C: BoxIcon },
   bowl: { T: 800, C: BowlIcon },
+  pad: { T: 900, C: PadIcon },
+  bag: { T: 900, C: BagIcon },
+  pin: { T: 900, C: PinIcon },
+  spool: { T: 900, C: SpoolIcon },
+  steth: { T: 900, C: StethIcon },
 };
 
 export default function TopicIcon({ icon, size, palette, play, reduceMotion }) {

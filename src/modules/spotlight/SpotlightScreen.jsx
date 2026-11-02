@@ -14,7 +14,7 @@ import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
 import { todayISO } from '../../shared/utils/cycle.js';
-import { toCards, toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
+import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
 
 const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
 
@@ -129,6 +129,18 @@ function QuizSpotlight() {
     loadTopics('all');
   }
 
+  function openChallenge(challenge) {
+    if (challenge.locked) {
+      setInfo({ kind: 'lockedGame', topic: { name: challenge.name } });
+      return;
+    }
+    if (challenge.kind === 'quiz' && challenge.status === 'live') {
+      openTopics();
+      return;
+    }
+    setInfo({ kind: 'soon', topic: { name: challenge.name } });
+  }
+
   function filterTopics(filter) {
     if (filter === topicFilter) return;
     setTopicFilter(filter);
@@ -187,7 +199,6 @@ function QuizSpotlight() {
     }
   }
 
-  const cards = toCards(home?.topics);
   const groups = toGroups(topicsData);
   const detailTopic = detail?.topic ? toTopic(detail.topic) : null;
   const levels = (detail?.levels || []).map(toLevel);
@@ -199,15 +210,13 @@ function QuizSpotlight() {
           insets={insets}
           balance={balance}
           stats={home?.stats || NO_STATS}
-          cards={cards}
-          topicCount={home?.topicCount ?? 0}
+          challenges={home?.challenges || []}
           userId={userId}
           loading={loading || !home}
           error={error}
           onRetry={loadHome}
           reduceMotion={reduceMotion}
-          onOpenTopics={openTopics}
-          onOpenTopic={openTopic}
+          onOpenChallenge={openChallenge}
           onOpenPoints={() => setInfo({ kind: 'points' })}
         />
       )}

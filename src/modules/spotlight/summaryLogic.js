@@ -56,3 +56,14 @@ export async function saveSeenRank(userId, rankId) {
     return;
   }
 }
+
+export function challengeTag(c) {
+  if (c.locked) return { text: 'Opens at 18', muted: true };
+  if (c.status !== 'live') return { text: 'Coming soon', muted: true };
+  if (c.kind === 'quiz' || c.cost == null) return { text: 'Play', muted: false };
+  return { text: `Game · ${c.costFrom ? 'from ' : ''}${c.cost} SP`, muted: false };
+}
+
+export function splitChallenges(list = []) {
+  return { quiz: list.find(c => c.kind === 'quiz') || null, games: list.filter(c => c.kind === 'game') };
+}

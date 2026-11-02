@@ -146,6 +146,25 @@ export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, 
           <Ghost label="Got it" onPress={onClose} />
         </>
       )}
+      {(kind === 'soon' || kind === 'lockedGame') && (
+        <>
+          <Pop reduceMotion={reduceMotion} trigger={open} style={{ alignItems: 'center' }}>
+            <View style={[styles.badge, { backgroundColor: c.primarySoft }]}>
+              {kind === 'soon' ? <Icon d={SPARKLE} size={26} color={c.primary} fill /> : <LockIcon size={24} color={c.primaryDark} />}
+            </View>
+          </Pop>
+          <Text style={[styles.title, { color: c.textPrimary }]}>
+            {kind === 'soon' ? `${topic?.name} is coming soon` : `${topic?.name} opens at 18`}
+          </Text>
+          <Text style={[styles.body, { color: c.textSecondary }]}>
+            {kind === 'soon'
+              ? 'We’re still building this one. It will show up here, with its price, as soon as it’s ready.'
+              : 'This game is for adults. It opens by itself on your 18th birthday. Until then, there is plenty more to play.'}
+          </Text>
+          <View style={{ height: 16 }} />
+          <Ghost label="Got it" onPress={onClose} />
+        </>
+      )}
       {kind === 'how' && (
         <>
           <Text style={[styles.title, { color: c.textPrimary, marginTop: 0 }]}>How it works</Text>

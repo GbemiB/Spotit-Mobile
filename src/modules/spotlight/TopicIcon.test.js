@@ -40,9 +40,25 @@ describe('kf keyframes', () => {
 });
 
 describe('topic icon set', () => {
-  it('has a drawing for every icon key the content script sets', () => {
+  it('has a drawing for every topic and game icon key the content script sets', () => {
     expect(Object.keys(TOPIC_ICONS).sort()).toEqual(
-      ['bottle', 'bowl', 'box', 'cycle', 'molecule', 'mirror', 'mood', 'moon', 'myth', 'sprout'].sort(),
+      [
+        'bottle',
+        'bowl',
+        'box',
+        'cycle',
+        'molecule',
+        'mirror',
+        'mood',
+        'moon',
+        'myth',
+        'sprout',
+        'pad',
+        'bag',
+        'pin',
+        'spool',
+        'steth',
+      ].sort(),
     );
     Object.values(TOPIC_ICONS).forEach(entry => {
       expect(entry.T).toBeGreaterThan(0);

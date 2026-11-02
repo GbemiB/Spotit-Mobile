@@ -1,11 +1,12 @@
-import { Animated, Easing, View, StyleSheet } from 'react-native';
-import { useEffect, useState } from 'react';
+import { Animated, Easing, PanResponder, Pressable, View, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
 import Svg, { Circle, Path, Ellipse, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { todayISO } from '../../shared/utils/cycle.js';
 import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
 import { Blob, Flicker, Icon, useLoopValue, FLAME, STAR } from './SpotlightFx.jsx';
 import { tone, quizColors } from './quizTheme.js';
+import { moveStep, dragOffset, releaseTarget } from './GuideSheet.jsx';
 import { rankProgress, weekDays, streakLabel, summaryLine, isRankUp, readSeenRank, saveSeenRank } from './summaryLogic.js';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -15,6 +16,9 @@ const CIRC = 2 * Math.PI * R;
 const SPRING = Easing.out(Easing.back(1.5));
 const TROPHY = 'M8 4h8v4a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 12v4M9 20h6M10 16h4v4h-4z';
 const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
+const ALL_PAGES = ['level', 'wins', 'week'];
+const NO_RANK_PAGES = ['wins', 'week'];
+const PAGE_LABELS = { level: 'Your level', wins: 'Your wins', week: 'This week' };
 
 function useIn(reduceMotion, delay, duration = 550, easing = SPRING) {
   const v = useAnimatedValue(reduceMotion ? 1 : 0);
@@ -224,93 +228,179 @@ export default function SpotlightCard({ stats, userId, reduceMotion }) {
   }, [rankId, userId]);
 
   const tag = useIn(reduceMotion || !celebrate, 900, 500);
+  const pages = rank ? ALL_PAGES : NO_RANK_PAGES;
+  const [index, setIndex] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [shown, setShown] = useState({ wins: 0, week: 0 });
+  const pos = useAnimatedValue(0);
+  const count = pages.length;
+  const at = Math.min(index, count - 1);
+
+  useEffect(() => {
+    if (!width) return undefined;
+    const to = -at * width;
+    if (reduceMotion) {
+      pos.setValue(to);
+      return undefined;
+    }
+    const anim = Animated.spring(pos, { toValue: to, speed: 16, bounciness: 4, useNativeDriver: true });
+    anim.start();
+    return () => anim.stop();
+  }, [at, width, reduceMotion, pos]);
+
+  function go(target) {
+    const next = moveStep(target, 0, count);
+    if (next === at) return;
+    setIndex(next);
+    const key = pages[next];
+    if (key === 'wins' || key === 'week') setShown(v => ({ ...v, [key]: v[key] + 1 }));
+  }
+
+  const swipe = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: () => pos.stopAnimation(),
+        onPanResponderMove: (_, g) => pos.setValue(-at * width + dragOffset(at, g.dx, count)),
+        onPanResponderRelease: (_, g) => {
+          const target = releaseTarget(at, g.dx, g.vx, width, count);
+          if (target !== at) {
+            setIndex(target);
+            const key = pages[target];
+            if (key === 'wins' || key === 'week') setShown(v => ({ ...v, [key]: v[key] + 1 }));
+            return;
+          }
+          Animated.spring(pos, { toValue: -at * width, speed: 16, bounciness: 6, useNativeDriver: !reduceMotion }).start();
+        },
+        onPanResponderTerminate: () => Animated.spring(pos, { toValue: -at * width, speed: 16, useNativeDriver: true }).start(),
+      }),
+    [at, width, count, pos, reduceMotion, pages],
+  );
 
   return (
     <View style={[styles.card, { backgroundColor: c.surface, borderColor: p.line }]}>
       <Blob size={150} color={p.bg} duration={9000} reduceMotion={reduceMotion} style={{ top: -55, right: -45 }} />
-      {rank ? (
-        <View style={styles.rankRow}>
-          <View style={{ width: RING, height: RING, alignItems: 'center', justifyContent: 'center' }}>
-            <Ring pct={progress.pct} reduceMotion={reduceMotion} />
-            <View style={[styles.medalWell, { backgroundColor: p.bg, borderColor: p.line }]}>
-              <Medal size={46} reduceMotion={reduceMotion} celebrate={celebrate} />
-            </View>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[styles.label, { color: c.primaryDark }]}>Your level</Text>
-            <Text style={[styles.rankName, { color: c.primary }]} numberOfLines={1}>
-              {rank.name}
-            </Text>
-            {celebrate ? (
-              <Animated.View style={[styles.newTag, { backgroundColor: p.bg, borderColor: p.line }, popStyle(tag, 0.6)]}>
-                <Text style={{ fontSize: 10, fontWeight: '700', color: c.primaryDark }}>New level!</Text>
-              </Animated.View>
-            ) : null}
-            {progress.line ? (
-              <Text style={[styles.next, { color: c.textSecondary }]}>
-                {progress.top ? (
-                  progress.line
+      <View style={styles.viewport} onLayout={e => setWidth(e.nativeEvent.layout.width)} {...swipe.panHandlers}>
+        {width ? (
+          <Animated.View style={{ flexDirection: 'row', width: width * pages.length, transform: [{ translateX: pos }] }}>
+            {pages.map((key, i) => (
+              <View key={key} style={[styles.page, { width }]} importantForAccessibility={i === at ? 'auto' : 'no-hide-descendants'}>
+                {key === 'level' ? (
+                  <View style={styles.rankRow}>
+                    <View style={{ width: RING, height: RING, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ring pct={progress.pct} reduceMotion={reduceMotion} />
+                      <View style={[styles.medalWell, { backgroundColor: p.bg, borderColor: p.line }]}>
+                        <Medal size={46} reduceMotion={reduceMotion} celebrate={celebrate} />
+                      </View>
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.label, { color: c.primaryDark }]}>Your level</Text>
+                      <Text style={[styles.rankName, { color: c.primary }]} numberOfLines={1}>
+                        {rank.name}
+                      </Text>
+                      {celebrate ? (
+                        <Animated.View style={[styles.newTag, { backgroundColor: p.bg, borderColor: p.line }, popStyle(tag, 0.6)]}>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: c.primaryDark }}>New level!</Text>
+                        </Animated.View>
+                      ) : null}
+                      {progress.line ? (
+                        <Text style={[styles.next, { color: c.textSecondary }]}>
+                          {progress.top ? (
+                            progress.line
+                          ) : (
+                            <>
+                              <Text style={{ fontWeight: '700', color: c.textPrimary }}>
+                                {progress.need} more {progress.need === 1 ? 'star' : 'stars'}
+                              </Text>{' '}
+                              to {progress.next}
+                            </>
+                          )}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : key === 'wins' ? (
+                  <View key={`wins-${shown.wins}`} style={{ gap: 10 }}>
+                    <Text style={[styles.label, { color: c.primaryDark }]}>Your wins</Text>
+                    <View style={styles.wins}>
+                      <Win value={stats?.levelsDone || 0} label="levels won" bg={p.bg} index={0} reduceMotion={reduceMotion}>
+                        <Icon d={TROPHY} size={16} color={p.ink} width={2} />
+                      </Win>
+                      <Win value={stats?.stars || 0} label="stars" bg={g.bg} index={1} reduceMotion={reduceMotion}>
+                        <Icon d={STAR} size={16} color={g.mid} fill />
+                      </Win>
+                      <Win value={stats?.rightAnswers || 0} label="right answers" bg={gr.bg} index={2} reduceMotion={reduceMotion}>
+                        <Icon d="M5 12.5l4.2 4.2L19 7" size={16} color={gr.ink} width={2.4} />
+                      </Win>
+                    </View>
+                  </View>
                 ) : (
-                  <>
-                    <Text style={{ fontWeight: '700', color: c.textPrimary }}>
-                      {progress.need} more {progress.need === 1 ? 'star' : 'stars'}
-                    </Text>{' '}
-                    to {progress.next}
-                  </>
+                  <View key={`week-${shown.week}`} style={{ gap: 10 }}>
+                    <Text style={[styles.label, { color: c.primaryDark }]}>This week</Text>
+                    <View style={styles.summary}>
+                      <View style={styles.streakRow}>
+                        <View style={styles.streakLeft}>
+                          <View style={[styles.flame, { backgroundColor: q.peachSoft }]}>
+                            <Flicker reduceMotion={reduceMotion}>
+                              <Icon d={FLAME} size={16} color={q.peach} fill />
+                            </Flicker>
+                          </View>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: c.textPrimary }} numberOfLines={1}>
+                            {streakLabel(stats?.streak || 0)}
+                          </Text>
+                        </View>
+                        <View style={styles.week} accessible accessibilityLabel={`Played on ${played} of the last 7 days`}>
+                          {days.map((day, i) => (
+                            <DayDot key={day.key} day={day} index={i} reduceMotion={reduceMotion} />
+                          ))}
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 11, color: c.textSecondary }}>
+                        {summary ? (
+                          <>
+                            Best run: <Text style={{ fontWeight: '700', color: c.textPrimary }}>{summary.run}</Text> ·{' '}
+                            <Text style={{ fontWeight: '700', color: c.textPrimary }}>{summary.topics}</Text>
+                          </>
+                        ) : (
+                          'Play your first level to start your summary.'
+                        )}
+                      </Text>
+                    </View>
+                  </View>
                 )}
-              </Text>
-            ) : null}
-          </View>
+              </View>
+            ))}
+          </Animated.View>
+        ) : null}
+      </View>
+      {pages.length > 1 ? (
+        <View style={styles.dots}>
+          {pages.map((key, i) => (
+            <Pressable
+              key={key}
+              onPress={() => go(i)}
+              hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={PAGE_LABELS[key]}
+              accessibilityState={{ selected: i === at }}
+            >
+              <View style={[styles.pageDot, { width: i === at ? 18 : 6, backgroundColor: i === at ? c.primary : c.border }]} />
+            </Pressable>
+          ))}
         </View>
       ) : null}
-
-      <View style={styles.wins}>
-        <Win value={stats?.levelsDone || 0} label="levels won" bg={p.bg} index={0} reduceMotion={reduceMotion}>
-          <Icon d={TROPHY} size={16} color={p.ink} width={2} />
-        </Win>
-        <Win value={stats?.stars || 0} label="stars" bg={g.bg} index={1} reduceMotion={reduceMotion}>
-          <Icon d={STAR} size={16} color={g.mid} fill />
-        </Win>
-        <Win value={stats?.rightAnswers || 0} label="right answers" bg={gr.bg} index={2} reduceMotion={reduceMotion}>
-          <Icon d="M5 12.5l4.2 4.2L19 7" size={16} color={gr.ink} width={2.4} />
-        </Win>
-      </View>
-
-      <View style={[styles.summary, { borderTopColor: c.border }]}>
-        <View style={styles.streakRow}>
-          <View style={styles.streakLeft}>
-            <View style={[styles.flame, { backgroundColor: q.peachSoft }]}>
-              <Flicker reduceMotion={reduceMotion}>
-                <Icon d={FLAME} size={16} color={q.peach} fill />
-              </Flicker>
-            </View>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: c.textPrimary }} numberOfLines={1}>
-              {streakLabel(stats?.streak || 0)}
-            </Text>
-          </View>
-          <View style={styles.week} accessible accessibilityLabel={`Played on ${played} of the last 7 days`}>
-            {days.map((day, i) => (
-              <DayDot key={day.key} day={day} index={i} reduceMotion={reduceMotion} />
-            ))}
-          </View>
-        </View>
-        <Text style={{ fontSize: 11, color: c.textSecondary }}>
-          {summary ? (
-            <>
-              Best run: <Text style={{ fontWeight: '700', color: c.textPrimary }}>{summary.run}</Text> ·{' '}
-              <Text style={{ fontWeight: '700', color: c.textPrimary }}>{summary.topics}</Text>
-            </>
-          ) : (
-            'Play your first level to start your summary.'
-          )}
-        </Text>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 28, borderWidth: 1.5, padding: 18, gap: 16, overflow: 'hidden' },
+  card: { borderRadius: 28, borderWidth: 1.5, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12, gap: 10, overflow: 'hidden' },
+  viewport: { overflow: 'hidden' },
+  page: { minHeight: 112, justifyContent: 'center', paddingHorizontal: 2 },
+  dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  pageDot: { height: 6, borderRadius: 3 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   medalWell: { width: 68, height: 68, borderRadius: 34, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
@@ -321,7 +411,7 @@ const styles = StyleSheet.create({
   win: { flex: 1, borderWidth: 1.5, borderRadius: 18, padding: 10, gap: 6 },
   winIcon: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   winValue: { fontSize: 18, fontWeight: '800', lineHeight: 21, fontVariant: ['tabular-nums'] },
-  summary: { borderTopWidth: 1, paddingTop: 14, gap: 10 },
+  summary: { gap: 10 },
   streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   streakLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   flame: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },

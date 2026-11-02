@@ -4,7 +4,8 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { Rise, Bob, PressScale } from './SpotlightFx.jsx';
 import SpotlightCard from './SpotlightCard.jsx';
-import { TopicGrid } from './TopicTile.jsx';
+import { QuizCard, GameGrid } from './ChallengeTiles.jsx';
+import { splitChallenges } from './summaryLogic.js';
 import { quizColors } from './quizTheme.js';
 
 export function SpChip({ balance, onPress, reduceMotion }) {
@@ -25,23 +26,20 @@ export function SpChip({ balance, onPress, reduceMotion }) {
   );
 }
 
-const HUB_TILES = 4;
-
 export default function HubView({
   insets,
   balance,
   stats,
   userId,
-  cards,
-  topicCount,
+  challenges,
   loading,
   error,
   onRetry,
   reduceMotion,
-  onOpenTopics,
-  onOpenTopic,
+  onOpenChallenge,
   onOpenPoints,
 }) {
+  const { quiz, games } = splitChallenges(challenges);
   const { colors: c } = useTheme();
   const s = useMemo(() => createStyles(c), [c]);
   return (
@@ -61,11 +59,11 @@ export default function HubView({
         <SpotlightCard stats={stats} userId={userId} reduceMotion={reduceMotion} />
       </Rise>
 
-      <Rise index={3} reduceMotion={reduceMotion} style={s.sectionHead}>
-        <Text style={s.sectionTitle}>Know Yourself</Text>
-        <PressScale onPress={onOpenTopics} accessibilityLabel={`All ${topicCount} topics`}>
-          <Text style={s.link}>All {topicCount} topics ›</Text>
-        </PressScale>
+      <Rise index={2} reduceMotion={reduceMotion} style={s.sectionHead}>
+        <Text style={s.sectionTitle}>Challenges</Text>
+        {challenges.length ? (
+          <Text style={s.count}>{challenges.length === 1 ? '1 way to play' : `${challenges.length} ways to play`}</Text>
+        ) : null}
       </Rise>
 
       {error ? (
@@ -76,18 +74,19 @@ export default function HubView({
           </PressScale>
         </View>
       ) : null}
-      {loading && cards.length === 0 && !error ? <Text style={s.note}>Loading topics…</Text> : null}
+      {loading && challenges.length === 0 && !error ? <Text style={s.note}>Loading challenges…</Text> : null}
 
-      <Rise index={4} reduceMotion={reduceMotion} style={s.section}>
-        <TopicGrid items={cards.slice(0, HUB_TILES)} reduceMotion={reduceMotion} onOpen={item => onOpenTopic(item.topic.id)} />
-        {topicCount > 0 ? (
-          <PressScale onPress={onOpenTopics} accessibilityLabel={`See all ${topicCount} topics`}>
-            <View style={[s.more, { borderColor: c.border }]}>
-              <Text style={s.moreTx}>See all {topicCount} topics</Text>
-            </View>
-          </PressScale>
-        ) : null}
-      </Rise>
+      {quiz ? (
+        <Rise index={3} reduceMotion={reduceMotion} style={[s.section, { marginBottom: 10 }]}>
+          <QuizCard quiz={quiz} levelsWon={stats?.levelsDone || 0} reduceMotion={reduceMotion} onOpen={() => onOpenChallenge(quiz)} />
+        </Rise>
+      ) : null}
+      {games.length ? (
+        <Rise index={4} reduceMotion={reduceMotion} style={s.section}>
+          <GameGrid games={games} reduceMotion={reduceMotion} onOpen={onOpenChallenge} />
+        </Rise>
+      ) : null}
+      {games.length ? <Text style={s.note}>All games are pretend: no real products, doctors or money change hands.</Text> : null}
 
       <Text style={s.note}>For learning only. Not medical advice.</Text>
     </ScrollView>
@@ -116,12 +115,11 @@ function createStyles(c) {
     sub: { fontSize: 11, color: c.textMuted, marginTop: 4 },
     section: { paddingHorizontal: 24, marginBottom: 14 },
     sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 6 },
+    count: { fontSize: 10.5, color: c.textMuted },
     sectionTitle: { fontFamily: FONT.serif, fontSize: 20, color: c.textPrimary },
     link: { fontSize: 11, fontWeight: '700', color: c.primaryDark, paddingVertical: 10 },
     notice: { borderWidth: 1.5, borderRadius: 18, padding: 14, alignItems: 'center', gap: 2 },
     noticeTx: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
-    more: { marginTop: 10, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', alignItems: 'center' },
-    moreTx: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
     note: { fontSize: 10, color: c.textMuted, textAlign: 'center', marginTop: 14, paddingHorizontal: 24 },
   });
 }

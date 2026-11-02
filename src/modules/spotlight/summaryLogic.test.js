@@ -1,5 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { rankProgress, weekDays, streakLabel, summaryLine, isRankUp, readSeenRank, saveSeenRank } from './summaryLogic.js';
+import {
+  rankProgress,
+  weekDays,
+  streakLabel,
+  summaryLine,
+  isRankUp,
+  readSeenRank,
+  saveSeenRank,
+  challengeTag,
+  splitChallenges,
+} from './summaryLogic.js';
 
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
@@ -51,5 +61,27 @@ describe('rank up', () => {
     await saveSeenRank('u1', 'explorer');
     expect(await readSeenRank('u1')).toBe('explorer');
     expect(await readSeenRank('u2')).toBeNull();
+  });
+});
+
+describe('challenges', () => {
+  const game = { id: 'pad-factory', kind: 'game', cost: 10, costFrom: true, status: 'live', locked: false };
+  it('shows the price from the server for a live game', () => {
+    expect(challengeTag(game)).toEqual({ text: 'Game · from 10 SP', muted: false });
+    expect(challengeTag({ ...game, costFrom: false, cost: 15 }).text).toBe('Game · 15 SP');
+  });
+  it('shows coming soon or the age lock instead of a price', () => {
+    expect(challengeTag({ ...game, status: 'soon' })).toEqual({ text: 'Coming soon', muted: true });
+    expect(challengeTag({ ...game, locked: true }).text).toBe('Opens at 18');
+  });
+  it('splits the quiz from the games, keeping server order', () => {
+    const list = [
+      { id: 'q', kind: 'quiz' },
+      { id: 'a', kind: 'game' },
+      { id: 'b', kind: 'game' },
+    ];
+    expect(splitChallenges(list).quiz.id).toBe('q');
+    expect(splitChallenges(list).games.map(g => g.id)).toEqual(['a', 'b']);
+    expect(splitChallenges(undefined)).toEqual({ quiz: null, games: [] });
   });
 });
