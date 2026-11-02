@@ -5,7 +5,8 @@ import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { HeroFrame } from '../dashboard/HeroCardFx.jsx';
 import { Rise, Blob, Waves, Beat, Flicker, Bob, PressScale, GradientButton, Icon, HEART, STAR, FLAME } from './SpotlightFx.jsx';
 import QuizArt from './QuizArt.jsx';
-import { quizColors, tone, GROUP_ICONS } from './quizTheme.js';
+import { TopicGrid } from './TopicTile.jsx';
+import { quizColors } from './quizTheme.js';
 
 export function SpChip({ balance, onPress, reduceMotion }) {
   const { colors: c, isDark } = useTheme();
@@ -40,34 +41,7 @@ function Stat({ value, label, bg, children }) {
   );
 }
 
-export function TopicCard({ topic, status, onPress, reduceMotion, index }) {
-  const { colors: c, isDark } = useTheme();
-  const t = tone(topic.tone, isDark);
-  return (
-    <PressScale onPress={onPress} accessibilityLabel={`${topic.name}, ${status.label}`}>
-      <View style={[styles.topicCard, { backgroundColor: t.bg, borderColor: t.line }]}>
-        <Bob
-          distance={4}
-          duration={3400}
-          delay={(index % 2) * 1100}
-          reduceMotion={reduceMotion}
-          style={[styles.topicIcon, { backgroundColor: c.surface }]}
-        >
-          <Icon d={GROUP_ICONS[topic.group]} color={t.ink} />
-        </Bob>
-        <Text style={[styles.topicName, { color: c.textPrimary }]} numberOfLines={2}>
-          {topic.name}
-        </Text>
-        <View style={{ marginTop: 'auto' }}>
-          <Text style={{ fontSize: 9.5, fontWeight: '600', color: t.ink }}>{status.label}</Text>
-          <View style={[styles.bar, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.8)' }]}>
-            <View style={{ width: `${Math.max(status.pct, 3)}%`, height: '100%', borderRadius: 99, backgroundColor: t.ink }} />
-          </View>
-        </View>
-      </View>
-    </PressScale>
-  );
-}
+const HUB_TILES = 4;
 
 export default function HubView({
   insets,
@@ -184,23 +158,15 @@ export default function HubView({
       ) : null}
       {loading && cards.length === 0 && !error ? <Text style={s.note}>Loading topics…</Text> : null}
 
-      <Rise index={4} reduceMotion={reduceMotion}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, gap: 12, paddingBottom: 6 }}
-        >
-          {cards.map((card, i) => (
-            <TopicCard
-              key={card.topic.id}
-              index={i}
-              topic={card.topic}
-              status={card.status}
-              reduceMotion={reduceMotion}
-              onPress={() => onOpenTopic(card.topic.id)}
-            />
-          ))}
-        </ScrollView>
+      <Rise index={4} reduceMotion={reduceMotion} style={s.section}>
+        <TopicGrid items={cards.slice(0, HUB_TILES)} reduceMotion={reduceMotion} onOpen={item => onOpenTopic(item.topic.id)} />
+        {topicCount > 0 ? (
+          <PressScale onPress={onOpenTopics} accessibilityLabel={`See all ${topicCount} topics`}>
+            <View style={[s.more, { borderColor: c.border }]}>
+              <Text style={s.moreTx}>See all {topicCount} topics</Text>
+            </View>
+          </PressScale>
+        ) : null}
       </Rise>
 
       <Text style={s.note}>For learning only. Not medical advice.</Text>
@@ -221,10 +187,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   statIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  topicCard: { width: 132, height: 150, padding: 14, borderRadius: 22, borderWidth: 1.5 },
-  topicIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  topicName: { fontFamily: FONT.serif, fontSize: 17, lineHeight: 20, marginTop: 12 },
-  bar: { height: 5, borderRadius: 99, overflow: 'hidden', marginTop: 6 },
 });
 
 function createStyles(c) {
@@ -246,6 +208,8 @@ function createStyles(c) {
     link: { fontSize: 11, fontWeight: '700', color: c.primaryDark, paddingVertical: 10 },
     notice: { borderWidth: 1.5, borderRadius: 18, padding: 14, alignItems: 'center', gap: 2 },
     noticeTx: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
+    more: { marginTop: 10, paddingVertical: 12, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', alignItems: 'center' },
+    moreTx: { fontSize: 11, fontWeight: '700', color: c.primaryDark },
     note: { fontSize: 10, color: c.textMuted, textAlign: 'center', marginTop: 14, paddingHorizontal: 24 },
   });
 }

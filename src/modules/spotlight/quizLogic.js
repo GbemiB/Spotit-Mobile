@@ -4,7 +4,7 @@ export function splitTitle(name = '') {
 }
 
 export function toTopic(card) {
-  return { id: card.id, name: card.name, group: card.groupId, tone: card.tone, minAge: card.minAge };
+  return { id: card.id, name: card.name, group: card.groupId, tone: card.tone, minAge: card.minAge, icon: card.icon || null };
 }
 
 export function topicStatus(card) {

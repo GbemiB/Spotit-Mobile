@@ -4,7 +4,8 @@ import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import { Rise, PressScale, Icon } from './SpotlightFx.jsx';
 import { SpChip } from './HubView.jsx';
-import { tone, GROUP_ICONS } from './quizTheme.js';
+import { tone } from './quizTheme.js';
+import { TopicGrid } from './TopicTile.jsx';
 
 export function BackRow({ label, onPress }) {
   const { colors: c } = useTheme();
@@ -34,43 +35,6 @@ function Chip({ label, active, onPress }) {
         }}
       >
         <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#FFFFFF' : c.textSecondary }}>{label}</Text>
-      </View>
-    </PressScale>
-  );
-}
-
-function TopicRow({ item, onPress }) {
-  const { colors: c, isDark } = useTheme();
-  const t = tone(item.locked ? 'locked' : item.topic.tone, isDark);
-  return (
-    <PressScale
-      onPress={onPress}
-      accessibilityLabel={item.locked ? `${item.topic.name}, opens at 18` : `${item.topic.name}, ${item.status.label}`}
-    >
-      <View style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <View style={[styles.rowIcon, { backgroundColor: t.bg, borderColor: t.line }]}>
-          {item.locked ? <LockIcon size={18} color={t.ink} /> : <Icon d={GROUP_ICONS[item.topic.group]} color={t.ink} />}
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.rowName, { color: item.locked ? c.textMuted : c.textPrimary }]} numberOfLines={1}>
-            {item.topic.name}
-          </Text>
-          {item.locked ? (
-            <Text style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>Opens at 18</Text>
-          ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
-              <View style={[styles.bar, { backgroundColor: c.border }]}>
-                <View style={{ width: `${Math.max(item.status.pct, 3)}%`, height: '100%', borderRadius: 99, backgroundColor: t.ink }} />
-              </View>
-              <Text style={{ fontSize: 9.5, fontWeight: '600', color: t.ink }}>{item.status.label}</Text>
-            </View>
-          )}
-        </View>
-        {item.locked ? (
-          <Text style={[styles.age, { color: c.textMuted, borderColor: c.border }]}>18+</Text>
-        ) : (
-          <Icon d="M9 5l7 7-7 7" size={16} color={c.primaryDark} width={2} />
-        )}
       </View>
     </PressScale>
   );
@@ -120,24 +84,16 @@ export default function TopicsView({ insets, balance, groups, isTeen, total, red
             <Text style={s.groupTitle}>{g.label}</Text>
             <Text style={s.count}>{g.items.length}</Text>
           </View>
-          <View style={{ gap: 10 }}>
-            {g.items.map(item => (
-              <TopicRow key={item.topic.id} item={item} onPress={() => (item.locked ? onLocked(item.topic) : onOpenTopic(item.topic.id))} />
-            ))}
-          </View>
+          <TopicGrid
+            items={g.items}
+            reduceMotion={reduceMotion}
+            onOpen={item => (item.locked ? onLocked(item.topic) : onOpenTopic(item.topic.id))}
+          />
         </Rise>
       ))}
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 20, borderWidth: 1.5 },
-  rowIcon: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  rowName: { fontFamily: FONT.serif, fontSize: 17, lineHeight: 21 },
-  bar: { flex: 1, maxWidth: 90, height: 5, borderRadius: 99, overflow: 'hidden' },
-  age: { fontSize: 9.5, fontWeight: '700', borderWidth: 1, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3 },
-});
 
 function createStyles(c) {
   return StyleSheet.create({

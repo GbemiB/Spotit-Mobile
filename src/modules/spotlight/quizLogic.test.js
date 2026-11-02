@@ -70,12 +70,14 @@ describe('mapping server data', () => {
     expect(topicStatus(card({ levelsCleared: 3, ready: false })).label).toBe('All levels cleared');
   });
   it('builds cards, groups, levels and the pick', () => {
-    expect(toCards([card()])[0].topic).toEqual({ id: 'my-cycle', name: 'My Cycle', group: 'body', tone: 'pink', minAge: 13 });
+    expect(toCards([card()])[0].topic).toEqual({ id: 'my-cycle', name: 'My Cycle', group: 'body', tone: 'pink', minAge: 13, icon: null });
     expect(toGroups({ groups: [{ id: 'body', label: 'Body basics', tone: 'pink', topics: [card()] }] })[0]).toMatchObject({
       key: 'body',
       items: [{ locked: false }],
     });
     expect(toGroups(null)).toEqual([]);
+    expect(toCards([{ id: 'pcos', name: 'PCOS', groupId: 'conditions', tone: 'peach', icon: 'box' }])[0].topic.icon).toBe('box');
+    expect(toCards([{ id: 'x', name: 'X', groupId: 'body', tone: 'pink' }])[0].topic.icon).toBeNull();
     expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({ n: 2, cost: 30, lives: null });
     expect(toLevel({ number: 5, name: 'N', cost: 40, state: 'locked', stars: 0, ready: true, lives: 1 }).lives).toBe(1);
     expect(heartsLabel(1)).toBe('1 heart');
