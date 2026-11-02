@@ -11,7 +11,7 @@ import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { Icon, HEART, STAR } from '../../common/SpotlightFx.jsx';
 import { tone } from '../../common/theme.js';
 import { friendlyError } from '../../quiz/quizLogic.js';
-import { avatarXml } from './avatars.js';
+import { avatarXml } from '../../common/avatars.js';
 import { PACK_MARKS, RESULTS, CLUE_TONES, moodFor, clueIcon, packColor, endTitle, goalLabels, nextLabel, canPick } from './padbankLogic.js';
 
 const BACK = 'M15 5l-7 7 7 7';

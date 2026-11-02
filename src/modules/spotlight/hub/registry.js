@@ -1,9 +1,11 @@
 import QuizModule from '../quiz/QuizModule.jsx';
 import PadBankModule from '../games/padbank/PadBankModule.jsx';
+import GiveDayModule from '../games/giveday/GiveDayModule.jsx';
 
 export const CHALLENGE_MODULES = {
   'know-yourself': QuizModule,
   'pad-bank-run': PadBankModule,
+  'give-day': GiveDayModule,
 };
 
 export function moduleFor(challenge) {

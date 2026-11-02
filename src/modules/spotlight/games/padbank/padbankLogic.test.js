@@ -1,5 +1,5 @@
 import { moodFor, clueIcon, packColor, endTitle, goalLabels, nextLabel, canPick, CLUE_ICONS, PACK_COLORS } from './padbankLogic.js';
-import { avatarXml, LOOK_NAMES, MOODS } from './avatars.js';
+import { avatarXml, LOOK_NAMES, MOODS } from '../../common/avatars.js';
 
 describe('pad bank rules in the app', () => {
   it('shows the visitor happy or sad only on the result', () => {
