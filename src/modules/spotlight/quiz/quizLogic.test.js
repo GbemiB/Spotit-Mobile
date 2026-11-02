@@ -1,5 +1,6 @@
 import {
   splitTitle,
+  quizSettings,
   toChips,
   mergeTopicPages,
   topicStatus,
@@ -15,10 +16,10 @@ import {
   feedbackTitle,
   friendlyError,
 } from './quizLogic.js';
-import * as quizApi from '../../shared/api/quiz.js';
-import { apiRequest } from '../../shared/api/client.js';
+import * as quizApi from '../../../shared/api/quiz.js';
+import { apiRequest } from '../../../shared/api/client.js';
 
-jest.mock('../../shared/api/client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
+jest.mock('../../../shared/api/client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
 
 const card = over => ({
   id: 'my-cycle',
@@ -80,7 +81,11 @@ describe('mapping server data', () => {
     expect(toGroups(null)).toEqual([]);
     expect(toCards([{ id: 'pcos', name: 'PCOS', groupId: 'conditions', tone: 'peach', icon: 'box' }])[0].topic.icon).toBe('box');
     expect(toCards([{ id: 'x', name: 'X', groupId: 'body', tone: 'pink' }])[0].topic.icon).toBeNull();
-    expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({ n: 2, cost: 30, lives: null });
+    expect(toLevel({ number: 2, name: 'N', cost: 30, state: 'current', stars: 0, ready: true })).toMatchObject({
+      n: 2,
+      cost: 30,
+      lives: null,
+    });
     expect(toLevel({ number: 5, name: 'N', cost: 40, state: 'locked', stars: 0, ready: true, lives: 1 }).lives).toBe(1);
     expect(heartsLabel(1)).toBe('1 heart');
     expect(heartsLabel(2)).toBe('2 hearts');
@@ -189,7 +194,10 @@ describe('topic pages', () => {
   const page1 = {
     underAge: false,
     topicCount: 10,
-    allGroups: [{ id: 'body', label: 'Body basics' }, { id: 'hormones', label: 'Hormones' }],
+    allGroups: [
+      { id: 'body', label: 'Body basics' },
+      { id: 'hormones', label: 'Hormones' },
+    ],
     groups: [{ id: 'body', label: 'Body basics', tone: 'pink', topics: [{ id: 'a' }, { id: 'b' }] }],
     nextCursor: 'c1',
   };
@@ -219,5 +227,18 @@ describe('topic pages', () => {
   });
   it('starts fresh without a previous page', () => {
     expect(mergeTopicPages(null, page1)).toBe(page1);
+  });
+});
+
+describe('quiz settings', () => {
+  it('reads the quiz home with safe defaults', () => {
+    expect(quizSettings({ rounds: 4, lives: 2, hintCost: 6, freeLevels: 1, topicCount: 10 })).toEqual({
+      rounds: 4,
+      lives: 2,
+      hintCost: 6,
+      freeLevels: 1,
+      topicCount: 10,
+    });
+    expect(quizSettings(null)).toEqual({ rounds: 5, lives: 3, hintCost: 5, freeLevels: 2, topicCount: 0 });
   });
 });

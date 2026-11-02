@@ -2,11 +2,24 @@ import { Modal, View, ScrollView, Animated, Easing, StyleSheet } from 'react-nat
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import LivingBackground from '../../components/ui/LivingBackground.jsx';
-import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
-import { GradientButton, PressScale, Icon, Pop, Rise, Flicker, Blob, Twinkle, HEART, STAR, FLAME, SPARKLE } from './SpotlightFx.jsx';
-import { quizColors } from './quizTheme.js';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import LivingBackground from '../../../components/ui/LivingBackground.jsx';
+import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
+import {
+  GradientButton,
+  PressScale,
+  Icon,
+  Pop,
+  Rise,
+  Flicker,
+  Blob,
+  Twinkle,
+  HEART,
+  STAR,
+  FLAME,
+  SPARKLE,
+} from '../common/SpotlightFx.jsx';
+import { quizColors } from '../common/theme.js';
 import { initialPlay, playReducer, resultTitle, feedbackTitle, friendlyError, heartsLabel } from './quizLogic.js';
 
 const BURST = Array.from({ length: 14 }, (_, i) => ({

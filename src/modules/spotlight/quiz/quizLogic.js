@@ -156,3 +156,13 @@ export function friendlyError(e) {
   if (e?.status === 403) return 'This level isn’t open yet.';
   return e?.message || 'Something went wrong. Please try again.';
 }
+
+export function quizSettings(home) {
+  return {
+    rounds: home?.rounds ?? 5,
+    lives: home?.lives ?? 3,
+    hintCost: home?.hintCost ?? 5,
+    freeLevels: home?.freeLevels ?? 2,
+    topicCount: home?.topicCount ?? 0,
+  };
+}

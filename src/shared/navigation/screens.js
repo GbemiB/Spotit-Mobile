@@ -10,7 +10,7 @@ import CalendarScreen from '../../modules/calender/CalendarScreen.jsx';
 import InsightsScreen from '../../modules/insights/InsightsScreen.jsx';
 import RewardsScreen from '../../modules/rewards/RewardsScreen.jsx';
 import SettingsScreen from '../../modules/dashboard/SettingsScreen.jsx';
-import SpotlightScreen from '../../modules/spotlight/SpotlightScreen.jsx';
+import SpotlightScreen from '../../modules/spotlight/hub/SpotlightScreen.jsx';
 export const AUTH_SCREENS = {
   splash: SplashScreen,
   welcome: WelcomeScreen,

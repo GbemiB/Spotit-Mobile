@@ -1,10 +1,10 @@
 import { View, StyleSheet } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { PressScale } from './SpotlightFx.jsx';
-import TopicIcon from './TopicIcon.jsx';
-import { TopicWell, iconPalette, OPEN_DELAY_MS } from './TopicTile.jsx';
-import { tone } from './quizTheme.js';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { PressScale } from '../common/SpotlightFx.jsx';
+import TopicIcon from '../common/TopicIcon.jsx';
+import { TopicWell, iconPalette, OPEN_DELAY_MS } from '../common/TopicTile.jsx';
+import { tone } from '../common/theme.js';
 import { challengeTag } from './summaryLogic.js';
 
 function useTapThenOpen(reduceMotion, onOpen) {

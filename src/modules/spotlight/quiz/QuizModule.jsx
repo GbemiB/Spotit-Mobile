@@ -1,30 +1,21 @@
 import { View, BackHandler, StyleSheet } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useApp } from '../../shared/store/AppContext.jsx';
-import { A } from '../../shared/store/actions.js';
-import { Text } from '../../shared/styles/index.js';
-import * as quizApi from '../../shared/api/quiz.js';
-import { useReduceMotion } from '../dashboard/HeroCardFx.jsx';
-import HubView from './HubView.jsx';
+import { useApp } from '../../../shared/store/AppContext.jsx';
+import { A } from '../../../shared/store/actions.js';
+import { Text } from '../../../shared/styles/index.js';
+import * as quizApi from '../../../shared/api/quiz.js';
+import { PointsSheet } from '../common/Sheets.jsx';
 import TopicsView from './TopicsView.jsx';
 import TrackView from './TrackView.jsx';
 import QuizPlay from './QuizPlay.jsx';
 import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
-import GuideSheet from './GuideSheet.jsx';
-import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
-import { todayISO } from '../../shared/utils/cycle.js';
-import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
+import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
-const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
-
-function QuizSpotlight() {
+export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) {
   const { state, dispatch } = useApp();
   const token = state.accessToken;
   const balance = state.femPoints || 0;
-  const insets = useSafeAreaInsets();
-  const reduceMotion = useReduceMotion();
-  const [view, setView] = useState('hub');
+  const [view, setView] = useState('topics');
   const [home, setHome] = useState(null);
   const [topicsData, setTopicsData] = useState(null);
   const [topicFilter, setTopicFilter] = useState('all');
@@ -34,14 +25,10 @@ function QuizSpotlight() {
   const [error, setError] = useState(null);
   const [sheet, setSheet] = useState(null);
   const [info, setInfo] = useState(null);
+  const [points, setPoints] = useState(false);
   const [playing, setPlaying] = useState(null);
-  const [guide, setGuide] = useState(false);
-  const userId = state.userId;
 
-  const settings = useMemo(
-    () => ({ rounds: home?.rounds ?? 5, lives: home?.lives ?? 3, hintCost: home?.hintCost ?? 5, freeLevels: home?.freeLevels ?? 2 }),
-    [home?.rounds, home?.lives, home?.hintCost, home?.freeLevels],
-  );
+  const settings = useMemo(() => quizSettings(home), [home]);
 
   const load = useCallback(async (work, apply) => {
     setLoading(true);
@@ -55,7 +42,6 @@ function QuizSpotlight() {
     }
   }, []);
 
-  const loadHome = useCallback(() => load(() => quizApi.getHome(token), setHome), [load, token]);
   const loadTopics = useCallback(
     filter => {
       setTopicsData(null);
@@ -77,44 +63,28 @@ function QuizSpotlight() {
       setLoadingMore(false);
     }
   }, [topicsData?.nextCursor, loadingMore, topicFilter, token]);
+
   const loadDetail = useCallback(id => load(() => quizApi.getTopic(id, token), setDetail), [load, token]);
 
   useEffect(() => {
     quizApi
       .getHome(token)
       .then(setHome)
+      .catch(() => {});
+    quizApi
+      .getTopics({}, token)
+      .then(setTopicsData)
       .catch(e => setError(friendlyError(e)));
   }, [token]);
 
   useEffect(() => {
-    updateInvite(userId, r => afterVisit(r, todayISO()));
-  }, [userId]);
-
-  const homeReady = !!home;
-  useEffect(() => {
-    if (!homeReady) return undefined;
-    let cancelled = false;
-    wasGuideSeen(userId).then(seen => {
-      if (!seen && !cancelled) setGuide(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [homeReady, userId]);
-
-  function closeGuide() {
-    setGuide(false);
-    markGuideSeen(userId);
-  }
-
-  useEffect(() => {
-    if (view === 'hub') return undefined;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setView(view === 'track' ? 'topics' : 'hub');
+      if (view === 'track') setView('topics');
+      else onExit();
       return true;
     });
     return () => sub.remove();
-  }, [view]);
+  }, [view, onExit]);
 
   const spent = useCallback(
     newBalance => {
@@ -123,22 +93,12 @@ function QuizSpotlight() {
     [dispatch],
   );
 
-  function openTopics() {
+  function showAllTopics() {
     setView('topics');
-    setTopicFilter('all');
-    loadTopics('all');
-  }
-
-  function openChallenge(challenge) {
-    if (challenge.locked) {
-      setInfo({ kind: 'lockedGame', topic: { name: challenge.name } });
-      return;
+    if (topicFilter !== 'all' || !topicsData) {
+      setTopicFilter('all');
+      loadTopics('all');
     }
-    if (challenge.kind === 'quiz' && challenge.status === 'live') {
-      openTopics();
-      return;
-    }
-    setInfo({ kind: 'soon', topic: { name: challenge.name } });
   }
 
   function filterTopics(filter) {
@@ -183,7 +143,7 @@ function QuizSpotlight() {
 
   function finish() {
     if (view === 'track' && detail?.topic?.id) loadDetail(detail.topic.id);
-    loadHome();
+    onChanged?.();
   }
 
   async function nextLevel() {
@@ -205,21 +165,6 @@ function QuizSpotlight() {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-      {view === 'hub' && (
-        <HubView
-          insets={insets}
-          balance={balance}
-          stats={home?.stats || NO_STATS}
-          challenges={home?.challenges || []}
-          userId={userId}
-          loading={loading || !home}
-          error={error}
-          onRetry={loadHome}
-          reduceMotion={reduceMotion}
-          onOpenChallenge={openChallenge}
-          onOpenPoints={() => setInfo({ kind: 'points' })}
-        />
-      )}
       {view === 'topics' && (
         <TopicsView
           insets={insets}
@@ -230,16 +175,16 @@ function QuizSpotlight() {
           onFilter={filterTopics}
           hasMore={!!topicsData?.nextCursor}
           loadingMore={loadingMore}
-          loading={loading && !topicsData}
+          loading={(loading || !topicsData) && !error}
           onLoadMore={loadMoreTopics}
           freeLevels={settings.freeLevels}
           isTeen={!!topicsData?.underAge}
           total={topicsData?.topicCount ?? 0}
           reduceMotion={reduceMotion}
-          onBack={() => setView('hub')}
+          onBack={onExit}
           onOpenTopic={openTopic}
           onLocked={t => setInfo({ kind: 'locked', topic: t })}
-          onOpenPoints={() => setInfo({ kind: 'points' })}
+          onOpenPoints={() => setPoints(true)}
         />
       )}
       {view === 'track' && detailTopic && (
@@ -250,10 +195,10 @@ function QuizSpotlight() {
           levels={levels}
           settings={settings}
           reduceMotion={reduceMotion}
-          onBack={() => (topicsData ? setView('topics') : openTopics())}
+          onBack={showAllTopics}
           onPlayLevel={level => openLevel(detailTopic, level, levels.length)}
           onHowItWorks={() => setInfo({ kind: 'how' })}
-          onOpenPoints={() => setInfo({ kind: 'points' })}
+          onOpenPoints={() => setPoints(true)}
         />
       )}
       {view === 'track' && !detailTopic && (
@@ -282,16 +227,10 @@ function QuizSpotlight() {
         onClose={() => setInfo(null)}
         onShowMine={() => {
           setInfo(null);
-          openTopics();
+          showAllTopics();
         }}
       />
-      <GuideSheet
-        open={guide && !playing && !sheet && !info}
-        topicCount={home?.topicCount ?? 0}
-        settings={settings}
-        reduceMotion={reduceMotion}
-        onDone={closeGuide}
-      />
+      <PointsSheet open={points} balance={balance} onClose={() => setPoints(false)} />
       <QuizPlay
         open={!!playing}
         topic={playing?.topic}
@@ -307,10 +246,6 @@ function QuizSpotlight() {
       />
     </View>
   );
-}
-
-export default function SpotlightScreen() {
-  return <QuizSpotlight />;
 }
 
 const styles = StyleSheet.create({

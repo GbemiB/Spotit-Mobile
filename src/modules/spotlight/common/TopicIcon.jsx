@@ -1,7 +1,7 @@
 import { Animated, Easing, View } from 'react-native';
 import { useEffect } from 'react';
 import Svg, { Path, Circle, Ellipse, Rect, Text as SvgText } from 'react-native-svg';
-import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
+import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
 import { useLoopValue } from './SpotlightFx.jsx';
 
 export function kf(v, T, frames) {

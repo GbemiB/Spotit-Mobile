@@ -2,11 +2,11 @@ import { Animated, Easing, View, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Ellipse, Rect, Text as SvgText } from 'react-native-svg';
-import { useTheme, Text } from '../../shared/styles/index.js';
-import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
-import { Icon, useLoopValue } from './SpotlightFx.jsx';
-import TopicIcon from './TopicIcon.jsx';
-import { iconPalette } from './TopicTile.jsx';
+import { useTheme, Text } from '../../../shared/styles/index.js';
+import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
+import { Icon, useLoopValue } from '../common/SpotlightFx.jsx';
+import TopicIcon from '../common/TopicIcon.jsx';
+import { iconPalette } from '../common/TopicTile.jsx';
 
 const ART_W = 220;
 const ART_H = 112;

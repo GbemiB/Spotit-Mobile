@@ -2,11 +2,11 @@ import { Animated, Platform, View, StyleSheet } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { LockIcon } from '../../components/ui/icons.jsx';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { LockIcon } from '../../../components/ui/icons.jsx';
 import { PressScale, Icon, useLoopValue } from './SpotlightFx.jsx';
 import TopicIcon, { TOPIC_ICONS, kf, useTap } from './TopicIcon.jsx';
-import { tone, GROUP_ICONS } from './quizTheme.js';
+import { tone, GROUP_ICONS } from './theme.js';
 
 export const OPEN_DELAY_MS = 450;
 const WELL_T = 900;

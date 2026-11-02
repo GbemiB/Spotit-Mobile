@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, PanResponder, Pressable, View, StyleSheet } from 'react-native';
-import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
+import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
 import { LinearGradient } from 'expo-linear-gradient';
-import BottomSheet from '../../components/ui/BottomSheet.jsx';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { GradientButton, PressScale, Icon } from './SpotlightFx.jsx';
-import { quizColors } from './quizTheme.js';
+import BottomSheet from '../../../components/ui/BottomSheet.jsx';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { GradientButton, PressScale, Icon } from '../common/SpotlightFx.jsx';
+import { quizColors } from '../common/theme.js';
 import GuideArt from './GuideArt.jsx';
-import { freeLevelsText } from './summaryLogic.js';
+import { freeLevelsText } from '../common/wording.js';
 
 export function guideSteps({ topicCount, lives, hintCost, freeLevels = 2 }) {
   return [

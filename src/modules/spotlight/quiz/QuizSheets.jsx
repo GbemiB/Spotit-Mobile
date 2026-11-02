@@ -1,21 +1,11 @@
 import { View, StyleSheet } from 'react-native';
-import BottomSheet from '../../components/ui/BottomSheet.jsx';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { LockIcon } from '../../components/ui/icons.jsx';
-import { GradientButton, PressScale, Icon, Pop, HEART, SPARKLE } from './SpotlightFx.jsx';
-import { quizColors } from './quizTheme.js';
-import { freeLevelsText } from './summaryLogic.js';
-
-function Ghost({ label, onPress }) {
-  const { colors: c } = useTheme();
-  return (
-    <PressScale onPress={onPress} accessibilityLabel={label}>
-      <View style={{ height: 46, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: c.textMuted }}>{label}</Text>
-      </View>
-    </PressScale>
-  );
-}
+import BottomSheet from '../../../components/ui/BottomSheet.jsx';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { LockIcon } from '../../../components/ui/icons.jsx';
+import { GradientButton, Icon, Pop, HEART, SPARKLE } from '../common/SpotlightFx.jsx';
+import { quizColors } from '../common/theme.js';
+import { Ghost } from '../common/Sheets.jsx';
+import { freeLevelsText } from '../common/wording.js';
 
 function Rule({ icon, color, children }) {
   const { colors: c } = useTheme();
@@ -147,25 +137,6 @@ export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, 
           <Ghost label="Got it" onPress={onClose} />
         </>
       )}
-      {(kind === 'soon' || kind === 'lockedGame') && (
-        <>
-          <Pop reduceMotion={reduceMotion} trigger={open} style={{ alignItems: 'center' }}>
-            <View style={[styles.badge, { backgroundColor: c.primarySoft }]}>
-              {kind === 'soon' ? <Icon d={SPARKLE} size={26} color={c.primary} fill /> : <LockIcon size={24} color={c.primaryDark} />}
-            </View>
-          </Pop>
-          <Text style={[styles.title, { color: c.textPrimary }]}>
-            {kind === 'soon' ? `${topic?.name} is coming soon` : `${topic?.name} opens at 18`}
-          </Text>
-          <Text style={[styles.body, { color: c.textSecondary }]}>
-            {kind === 'soon'
-              ? 'We’re still building this one. It will show up here, with its price, as soon as it’s ready.'
-              : 'This game is for adults. It opens by itself on your 18th birthday. Until then, there is plenty more to play.'}
-          </Text>
-          <View style={{ height: 16 }} />
-          <Ghost label="Got it" onPress={onClose} />
-        </>
-      )}
       {kind === 'how' && (
         <>
           <Text style={[styles.title, { color: c.textPrimary, marginTop: 0 }]}>How it works</Text>
@@ -175,17 +146,6 @@ export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, 
           <Text style={[styles.body, { color: c.textSecondary }]}>
             {freeLevelsText(settings?.freeLevels)} Higher levels cost SP to unlock. Challenges never pay SP back.
           </Text>
-          <Ghost label="Close" onPress={onClose} />
-        </>
-      )}
-      {kind === 'points' && (
-        <>
-          <Text style={[styles.title, { color: c.textPrimary, marginTop: 0 }]}>Your SpotPoints</Text>
-          <Text style={[styles.big, { color: c.textPrimary }]}>{balance.toLocaleString()} SP</Text>
-          <Text style={[styles.body, { color: c.textSecondary }]}>
-            Earn SP by logging, checking in and tracking your mood. Spend it on higher levels and hints.
-          </Text>
-          <Text style={[styles.fine, { color: c.textMuted }]}>Points packs are coming soon.</Text>
           <Ghost label="Close" onPress={onClose} />
         </>
       )}

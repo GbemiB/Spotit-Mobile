@@ -1,11 +1,11 @@
 import { Animated, Easing, PanResponder, Pressable, View, StyleSheet } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import Svg, { Circle, Path, Ellipse, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { todayISO } from '../../shared/utils/cycle.js';
-import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
-import { Blob, Flicker, Icon, useLoopValue, FLAME, STAR } from './SpotlightFx.jsx';
-import { tone, quizColors } from './quizTheme.js';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { todayISO } from '../../../shared/utils/cycle.js';
+import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
+import { Blob, Flicker, Icon, useLoopValue, FLAME, STAR } from '../common/SpotlightFx.jsx';
+import { tone, quizColors } from '../common/theme.js';
 import { moveStep, dragOffset, releaseTarget } from './GuideSheet.jsx';
 import { rankProgress, weekDays, streakLabel, summaryLine, isRankUp, readSeenRank, saveSeenRank } from './summaryLogic.js';
 

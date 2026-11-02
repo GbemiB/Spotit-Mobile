@@ -1,12 +1,12 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { LockIcon } from '../../components/ui/icons.jsx';
-import { Rise, PressScale, Icon } from './SpotlightFx.jsx';
-import { SpChip } from './HubView.jsx';
-import { tone } from './quizTheme.js';
-import { TopicGrid } from './TopicTile.jsx';
-import { freeLevelsShort } from './summaryLogic.js';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { LockIcon } from '../../../components/ui/icons.jsx';
+import { Rise, PressScale, Icon } from '../common/SpotlightFx.jsx';
+import SpChip from '../common/SpChip.jsx';
+import { tone } from '../common/theme.js';
+import { TopicGrid } from '../common/TopicTile.jsx';
+import { freeLevelsShort } from '../common/wording.js';
 
 export function BackRow({ label, onPress }) {
   const { colors: c } = useTheme();

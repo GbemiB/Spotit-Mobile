@@ -41,8 +41,8 @@ import UpdateRequiredScreen from './src/modules/update/UpdateRequiredScreen.jsx'
 import { setCrashContext, flushCrashes } from './src/shared/utils/crashReporter.js';
 import WelcomeTour from './src/modules/tour/WelcomeTour.jsx';
 import LivingBackground from './src/components/ui/LivingBackground.jsx';
-import SpotlightInvite from './src/modules/spotlight/SpotlightInvite.jsx';
-import useSpotlightInvite from './src/modules/spotlight/useSpotlightInvite.js';
+import SpotlightInvite from './src/modules/spotlight/hub/SpotlightInvite.jsx';
+import useSpotlightInvite from './src/modules/spotlight/hub/useSpotlightInvite.js';
 import { useReduceMotion } from './src/modules/dashboard/HeroCardFx.jsx';
 import { tourCards, wasTourSeen, markTourSeen } from './src/shared/utils/tour.js';
 import * as appApi from './src/shared/api/app.js';

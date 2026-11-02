@@ -1,12 +1,12 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
-import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { LockIcon } from '../../components/ui/icons.jsx';
-import { HeroFrame } from '../dashboard/HeroCardFx.jsx';
-import { Rise, PressScale, GradientButton, Icon, Bob, Blob, STAR } from './SpotlightFx.jsx';
-import { SpChip } from './HubView.jsx';
+import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
+import { LockIcon } from '../../../components/ui/icons.jsx';
+import { HeroFrame } from '../../dashboard/HeroCardFx.jsx';
+import { Rise, PressScale, GradientButton, Icon, Bob, Blob, STAR } from '../common/SpotlightFx.jsx';
+import SpChip from '../common/SpChip.jsx';
 import { BackRow } from './TopicsView.jsx';
-import { quizColors, tone, GROUP_ICONS } from './quizTheme.js';
+import { quizColors, tone, GROUP_ICONS } from '../common/theme.js';
 import { heartsLabel } from './quizLogic.js';
 
 function Stars({ count, size = 12 }) {

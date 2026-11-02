@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import * as quizApi from '../../shared/api/quiz.js';
-import { toPick } from './quizLogic.js';
+import * as spotlightApi from '../../../shared/api/spotlight.js';
+import * as quizApi from '../../../shared/api/quiz.js';
+import { toPick } from '../quiz/quizLogic.js';
 import { readInvite, updateInvite, mightInvite, shouldInvite, afterShown, afterLater } from './inviteLogic.js';
 
 export default function useSpotlightInvite({ ready, userId, token, today, resumedAt }) {
@@ -13,13 +14,14 @@ export default function useSpotlightInvite({ ready, userId, token, today, resume
       if (!mightInvite(record, today)) return;
       let home;
       try {
-        home = await quizApi.getHome(token);
+        home = await spotlightApi.getHome(token);
       } catch {
         return;
       }
       if (cancelled || !shouldInvite(record, home?.invite, today)) return;
       await updateInvite(userId, r => afterShown(r, today));
-      if (!cancelled) setInvite({ pick: toPick(home.pick), freeLevels: home.freeLevels ?? 2 });
+      const quiz = await quizApi.getHome(token).catch(() => null);
+      if (!cancelled) setInvite({ pick: toPick(quiz?.pick), freeLevels: quiz?.freeLevels ?? 2 });
     })();
     return () => {
       cancelled = true;
