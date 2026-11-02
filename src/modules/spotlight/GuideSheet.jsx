@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, View, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Animated, PanResponder, Pressable, View, StyleSheet } from 'react-native';
 import { useAnimatedValue } from '../dashboard/HeroCardFx.jsx';
 import { LinearGradient } from 'expo-linear-gradient';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { GradientButton, PressScale, Icon, Pop, HEART, SPARKLE, STAR } from './SpotlightFx.jsx';
-import { GROUP_ICONS, quizColors } from './quizTheme.js';
+import { GradientButton, PressScale, Icon } from './SpotlightFx.jsx';
+import { quizColors } from './quizTheme.js';
+import GuideArt from './GuideArt.jsx';
 
 export function guideSteps({ topicCount, lives, hintCost }) {
   return [
@@ -33,7 +34,19 @@ export function moveStep(index, delta, count) {
   return Math.max(0, Math.min(count - 1, index + delta));
 }
 
-export const SWIPE_MIN = 40;
+export const SWIPE_SHARE = 0.25;
+export const FLICK_SPEED = 0.5;
+export const EDGE_PULL = 0.3;
+
+export function dragOffset(index, dx, count) {
+  const pastEdge = (index === 0 && dx > 0) || (index === count - 1 && dx < 0);
+  return pastEdge ? dx * EDGE_PULL : dx;
+}
+
+export function releaseTarget(index, dx, vx, width, count) {
+  const far = Math.abs(dx) > width * SWIPE_SHARE || (Math.abs(vx) > FLICK_SPEED && Math.abs(dx) > 20);
+  return far ? moveStep(index, dx < 0 ? 1 : -1, count) : index;
+}
 const STEP_COUNT = guideSteps({}).length;
 
 const BACK = 'M15 5l-7 7 7 7';
@@ -57,76 +70,58 @@ function RoundButton({ label, icon, onPress, filled }) {
   );
 }
 
-function StepArt({ step }) {
-  const { colors: c, isDark } = useTheme();
-  const q = quizColors(c, isDark);
-  if (step === 'topics') {
-    return (
-      <View style={[styles.badge, { backgroundColor: c.primarySoft }]}>
-        <Icon d={GROUP_ICONS.body} size={28} color={c.primary} />
-      </View>
-    );
-  }
-  if (step === 'levels') {
-    return (
-      <View style={[styles.badge, { backgroundColor: q.greenSoft }]}>
-        <Text style={[styles.badgeTx, { color: q.green }]}>1·2·3</Text>
-      </View>
-    );
-  }
-  return (
-    <View style={[styles.badge, { backgroundColor: q.goldSoft, flexDirection: 'row', gap: 3 }]}>
-      <Icon d={HEART} size={18} color={c.primary} fill />
-      <Icon d={SPARKLE} size={18} color={q.gold} fill />
-      <Icon d={STAR} size={18} color={q.gold} fill />
-    </View>
-  );
+function makeSwipe(now, pos, setIndex) {
+  const { index: at, width: w, reduceMotion: still } = now;
+  const sideways = (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2;
+  const finish = (_, g) => {
+    const target = releaseTarget(at, g.dx, g.vx, w, STEP_COUNT);
+    if (target !== at) {
+      setIndex(target);
+      return;
+    }
+    if (still) pos.setValue(-at * w);
+    else Animated.spring(pos, { toValue: -at * w, speed: 16, bounciness: 6, useNativeDriver: true }).start();
+  };
+  return PanResponder.create({
+    onMoveShouldSetPanResponderCapture: sideways,
+    onMoveShouldSetPanResponder: sideways,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: () => pos.stopAnimation(),
+    onPanResponderMove: (_, g) => {
+      pos.setValue(-at * w + dragOffset(at, g.dx, STEP_COUNT));
+    },
+    onPanResponderRelease: finish,
+    onPanResponderTerminate: finish,
+  });
 }
 
 export default function GuideSheet({ open, topicCount, settings, reduceMotion, onDone }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   const [index, setIndex] = useState(0);
-  const [dir, setDir] = useState(1);
-  const slide = useAnimatedValue(1);
+  const [width, setWidth] = useState(0);
+  const pos = useAnimatedValue(0);
   const steps = guideSteps({ topicCount, lives: settings?.lives ?? 3, hintCost: settings?.hintCost ?? 5 });
-  const step = steps[index];
   const first = index === 0;
   const last = index === steps.length - 1;
 
+  useEffect(() => {
+    if (!width) return undefined;
+    const to = -index * width;
+    if (reduceMotion) {
+      pos.setValue(to);
+      return undefined;
+    }
+    const anim = Animated.spring(pos, { toValue: to, speed: 16, bounciness: 4, useNativeDriver: true });
+    anim.start();
+    return () => anim.stop();
+  }, [index, width, reduceMotion, pos]);
+
   function go(target) {
-    if (target === index) return;
-    setDir(target > index ? 1 : -1);
     setIndex(moveStep(target, 0, STEP_COUNT));
   }
 
-  useEffect(() => {
-    if (reduceMotion) {
-      slide.setValue(1);
-      return undefined;
-    }
-    slide.setValue(0);
-    const anim = Animated.timing(slide, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true });
-    anim.start();
-    return () => anim.stop();
-  }, [index, reduceMotion, slide]);
-
-  const [swipe] = useState(() =>
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderRelease: (_, g) => {
-        if (Math.abs(g.dx) < SWIPE_MIN) return;
-        const delta = g.dx < 0 ? 1 : -1;
-        setDir(delta);
-        setIndex(i => moveStep(i, delta, STEP_COUNT));
-      },
-    }),
-  );
-
-  const moving = {
-    opacity: slide,
-    transform: [{ translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [dir * 28, 0] }) }],
-  };
+  const swipe = useMemo(() => makeSwipe({ index, width, reduceMotion }, pos, setIndex), [index, width, reduceMotion, pos]);
 
   return (
     <BottomSheet open={open} onClose={onDone}>
@@ -137,26 +132,35 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
           </PressScale>
         )}
       </View>
-      <View {...swipe.panHandlers}>
-        <Animated.View style={moving}>
-          <Pop reduceMotion={reduceMotion} trigger={step.key} style={{ alignItems: 'center' }}>
-            <StepArt step={step.key} />
-          </Pop>
-          <Text style={[styles.kicker, { color: q.gold }]}>
-            How Spotlight works · {index + 1} of {steps.length}
-          </Text>
-          <Text style={[styles.title, { color: c.textPrimary }]}>{step.title}</Text>
-          <Text style={[styles.body, { color: c.textSecondary }]}>{step.body}</Text>
-        </Animated.View>
+      <View style={styles.viewport} onLayout={e => setWidth(e.nativeEvent.layout.width)} {...swipe.panHandlers}>
+        {width ? (
+          <Animated.View style={{ flexDirection: 'row', width: width * steps.length, transform: [{ translateX: pos }] }}>
+            {steps.map((step, i) => (
+              <View
+                key={step.key}
+                style={{ width, alignItems: 'center' }}
+                accessibilityElementsHidden={i !== index}
+                importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
+              >
+                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} />
+                <Text style={[styles.kicker, { color: c.primaryDark }]}>
+                  How Spotlight works · {i + 1} of {steps.length}
+                </Text>
+                <Text style={[styles.title, { color: c.textPrimary }]}>{step.title}</Text>
+                <Text style={[styles.body, { color: c.textSecondary }]}>{step.body}</Text>
+              </View>
+            ))}
+          </Animated.View>
+        ) : null}
       </View>
       <View style={styles.nav}>
         <View style={[styles.side, { alignItems: 'flex-start' }]}>
           {first ? null : <RoundButton label="Back" icon={BACK} onPress={() => go(index - 1)} />}
         </View>
         <View style={styles.dots}>
-          {steps.map((s, i) => (
+          {steps.map((step, i) => (
             <Pressable
-              key={s.key}
+              key={step.key}
               onPress={() => go(i)}
               hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
               accessibilityRole="button"
@@ -186,8 +190,7 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
 }
 
 const styles = StyleSheet.create({
-  badge: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  badgeTx: { fontSize: 15, fontWeight: '800' },
+  viewport: { overflow: 'hidden' },
   kicker: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginTop: 14 },
   title: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 32, textAlign: 'center', marginTop: 6 },
   body: { fontSize: 11.5, lineHeight: 18, textAlign: 'center', marginTop: 8, minHeight: 36 },
