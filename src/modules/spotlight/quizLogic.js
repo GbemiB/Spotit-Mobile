@@ -29,6 +29,21 @@ export function toGroups(response) {
   }));
 }
 
+export function toChips(response) {
+  return (response?.allGroups || []).map(g => ({ key: g.id, label: g.label, count: g.topicCount ?? null }));
+}
+
+export function mergeTopicPages(prev, next) {
+  if (!prev) return next;
+  const groups = (prev.groups || []).map(g => ({ ...g, topics: [...(g.topics || [])] }));
+  (next.groups || []).forEach(g => {
+    const same = groups.find(x => x.id === g.id);
+    if (same) same.topics.push(...(g.topics || []).filter(t => !same.topics.some(o => o.id === t.id)));
+    else groups.push({ ...g, topics: [...(g.topics || [])] });
+  });
+  return { ...next, allGroups: next.allGroups || prev.allGroups, groups };
+}
+
 export function toLevel(view) {
   return { n: view.number, name: view.name, cost: view.cost, state: view.state, stars: view.stars, ready: view.ready, lives: view.lives || null };
 }

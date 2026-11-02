@@ -14,7 +14,7 @@ import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
 import { todayISO } from '../../shared/utils/cycle.js';
-import { toCards, toGroups, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
+import { toCards, toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
 
 const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
 
@@ -27,6 +27,8 @@ function QuizSpotlight() {
   const [view, setView] = useState('hub');
   const [home, setHome] = useState(null);
   const [topicsData, setTopicsData] = useState(null);
+  const [topicFilter, setTopicFilter] = useState('all');
+  const [loadingMore, setLoadingMore] = useState(false);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -54,7 +56,27 @@ function QuizSpotlight() {
   }, []);
 
   const loadHome = useCallback(() => load(() => quizApi.getHome(token), setHome), [load, token]);
-  const loadTopics = useCallback(() => load(() => quizApi.getTopics(token), setTopicsData), [load, token]);
+  const loadTopics = useCallback(
+    filter => {
+      setTopicsData(null);
+      return load(() => quizApi.getTopics({ group: filter === 'all' ? undefined : filter }, token), setTopicsData);
+    },
+    [load, token],
+  );
+
+  const loadMoreTopics = useCallback(async () => {
+    const cursor = topicsData?.nextCursor;
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await quizApi.getTopics({ cursor, group: topicFilter === 'all' ? undefined : topicFilter }, token);
+      setTopicsData(prev => mergeTopicPages(prev, page));
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [topicsData?.nextCursor, loadingMore, topicFilter, token]);
   const loadDetail = useCallback(id => load(() => quizApi.getTopic(id, token), setDetail), [load, token]);
 
   useEffect(() => {
@@ -103,7 +125,14 @@ function QuizSpotlight() {
 
   function openTopics() {
     setView('topics');
-    loadTopics();
+    setTopicFilter('all');
+    loadTopics('all');
+  }
+
+  function filterTopics(filter) {
+    if (filter === topicFilter) return;
+    setTopicFilter(filter);
+    loadTopics(filter);
   }
 
   function openTopic(id) {
@@ -187,6 +216,13 @@ function QuizSpotlight() {
           insets={insets}
           balance={balance}
           groups={groups}
+          chips={toChips(topicsData)}
+          filter={topicFilter}
+          onFilter={filterTopics}
+          hasMore={!!topicsData?.nextCursor}
+          loadingMore={loadingMore}
+          loading={loading && !topicsData}
+          onLoadMore={loadMoreTopics}
           isTeen={!!topicsData?.underAge}
           total={topicsData?.topicCount ?? 0}
           reduceMotion={reduceMotion}

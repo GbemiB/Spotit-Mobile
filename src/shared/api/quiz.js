@@ -2,8 +2,13 @@ import { apiRequest } from './client.js';
 export function getHome(token) {
   return apiRequest('/quiz/home', { token });
 }
-export function getTopics(token) {
-  return apiRequest('/quiz/topics', { token });
+export function getTopics({ limit, cursor, group } = {}, token) {
+  const params = new URLSearchParams();
+  if (limit) params.set('limit', limit);
+  if (cursor) params.set('cursor', cursor);
+  if (group) params.set('group', group);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return apiRequest(`/quiz/topics${query}`, { token });
 }
 export function getTopic(topicId, token) {
   return apiRequest(`/quiz/topics/${encodeURIComponent(topicId)}`, { token });

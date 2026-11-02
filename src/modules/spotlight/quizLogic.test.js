@@ -1,5 +1,7 @@
 import {
   splitTitle,
+  toChips,
+  mergeTopicPages,
   topicStatus,
   toCards,
   toGroups,
@@ -159,13 +161,16 @@ describe('quiz api', () => {
   beforeEach(() => jest.clearAllMocks());
   it('calls the quiz endpoints', () => {
     quizApi.getHome('t');
-    quizApi.getTopics('t');
+    quizApi.getTopics({}, 't');
     quizApi.getTopic('my cycle', 't');
     quizApi.startLevel({ topicId: 'my-cycle', level: 2 }, 't');
     quizApi.takeHint('a1', 0, 't');
     quizApi.answer('a1', 0, 'myth', 't');
     expect(apiRequest).toHaveBeenNthCalledWith(1, '/quiz/home', { token: 't' });
+    expect(apiRequest).toHaveBeenNthCalledWith(2, '/quiz/topics', { token: 't' });
     expect(apiRequest).toHaveBeenNthCalledWith(3, '/quiz/topics/my%20cycle', { token: 't' });
+    quizApi.getTopics({ limit: 8, cursor: 'c1', group: 'body' }, 't');
+    expect(apiRequest).toHaveBeenLastCalledWith('/quiz/topics?limit=8&cursor=c1&group=body', { token: 't' });
     expect(apiRequest).toHaveBeenNthCalledWith(4, '/quiz/attempts', {
       method: 'POST',
       body: { topicId: 'my-cycle', level: 2 },
@@ -177,5 +182,42 @@ describe('quiz api', () => {
       body: { round: 0, choice: 'myth' },
       token: 't',
     });
+  });
+});
+
+describe('topic pages', () => {
+  const page1 = {
+    underAge: false,
+    topicCount: 10,
+    allGroups: [{ id: 'body', label: 'Body basics' }, { id: 'hormones', label: 'Hormones' }],
+    groups: [{ id: 'body', label: 'Body basics', tone: 'pink', topics: [{ id: 'a' }, { id: 'b' }] }],
+    nextCursor: 'c1',
+  };
+  const page2 = {
+    underAge: false,
+    topicCount: 10,
+    allGroups: page1.allGroups,
+    groups: [
+      { id: 'body', label: 'Body basics', tone: 'pink', topics: [{ id: 'b' }, { id: 'c' }] },
+      { id: 'hormones', label: 'Hormones', tone: 'gold', topics: [{ id: 'd' }] },
+    ],
+    nextCursor: null,
+  };
+  it('lists every group as a filter chip', () => {
+    expect(toChips({ allGroups: [{ id: 'body', label: 'Body basics', topicCount: 4 }] })).toEqual([
+      { key: 'body', label: 'Body basics', count: 4 },
+    ]);
+    expect(toChips(page1)[1]).toEqual({ key: 'hormones', label: 'Hormones', count: null });
+    expect(toChips(null)).toEqual([]);
+  });
+  it('adds the next page under the right groups without repeats', () => {
+    const merged = mergeTopicPages(page1, page2);
+    expect(merged.groups.map(g => g.id)).toEqual(['body', 'hormones']);
+    expect(merged.groups[0].topics.map(t => t.id)).toEqual(['a', 'b', 'c']);
+    expect(merged.nextCursor).toBeNull();
+    expect(page1.groups[0].topics).toHaveLength(2);
+  });
+  it('starts fresh without a previous page', () => {
+    expect(mergeTopicPages(null, page1)).toBe(page1);
   });
 });

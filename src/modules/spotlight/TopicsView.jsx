@@ -1,5 +1,5 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import { Rise, PressScale, Icon } from './SpotlightFx.jsx';
@@ -40,15 +40,38 @@ function Chip({ label, active, onPress }) {
   );
 }
 
-export default function TopicsView({ insets, balance, groups, isTeen, total, reduceMotion, onBack, onOpenTopic, onLocked, onOpenPoints }) {
+const LOAD_AHEAD = 400;
+
+export default function TopicsView({
+  insets,
+  balance,
+  groups,
+  chips,
+  filter,
+  onFilter,
+  hasMore,
+  loading,
+  loadingMore,
+  onLoadMore,
+  isTeen,
+  total,
+  reduceMotion,
+  onBack,
+  onOpenTopic,
+  onLocked,
+  onOpenPoints,
+}) {
   const { colors: c, isDark } = useTheme();
   const s = useMemo(() => createStyles(c), [c]);
-  const [filter, setFilter] = useState('all');
-  const shown = filter === 'all' ? groups : groups.filter(g => g.key === filter);
+  function nearEnd({ nativeEvent: e }) {
+    if (hasMore && !loadingMore && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - LOAD_AHEAD) onLoadMore();
+  }
   return (
     <ScrollView
       contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: insets.bottom + 110 }}
       showsVerticalScrollIndicator={false}
+      onScroll={nearEnd}
+      scrollEventThrottle={100}
     >
       <Rise index={0} reduceMotion={reduceMotion} style={s.top}>
         <BackRow label="Spotlight" onPress={onBack} />
@@ -64,9 +87,9 @@ export default function TopicsView({ insets, balance, groups, isTeen, total, red
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 24, gap: 8, paddingBottom: 4 }}
         >
-          <Chip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
-          {groups.map(g => (
-            <Chip key={g.key} label={g.label} active={filter === g.key} onPress={() => setFilter(g.key)} />
+          <Chip label="All" active={filter === 'all'} onPress={() => onFilter('all')} />
+          {chips.map(g => (
+            <Chip key={g.key} label={g.label} active={filter === g.key} onPress={() => onFilter(g.key)} />
           ))}
         </ScrollView>
       </Rise>
@@ -78,11 +101,12 @@ export default function TopicsView({ insets, balance, groups, isTeen, total, red
           </View>
         </Rise>
       )}
-      {shown.map((g, gi) => (
+      {loading ? <Text style={s.more}>Loading topics…</Text> : null}
+      {groups.map((g, gi) => (
         <Rise key={g.key} index={4 + gi} reduceMotion={reduceMotion} style={s.section}>
           <View style={s.groupHead}>
             <Text style={s.groupTitle}>{g.label}</Text>
-            <Text style={s.count}>{g.items.length}</Text>
+            <Text style={s.count}>{chips.find(ch => ch.key === g.key)?.count ?? g.items.length}</Text>
           </View>
           <TopicGrid
             items={g.items}
@@ -91,6 +115,12 @@ export default function TopicsView({ insets, balance, groups, isTeen, total, red
           />
         </Rise>
       ))}
+      {loadingMore ? <Text style={s.more}>Loading more…</Text> : null}
+      {hasMore && !loadingMore && !loading ? (
+        <PressScale onPress={onLoadMore} accessibilityLabel="Show more topics">
+          <Text style={[s.more, { color: c.primaryDark, fontWeight: '700' }]}>Show more topics</Text>
+        </PressScale>
+      ) : null}
     </ScrollView>
   );
 }
@@ -114,5 +144,6 @@ function createStyles(c) {
     groupHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 10 },
     groupTitle: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
     count: { fontSize: 10, color: c.textMuted },
+    more: { fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: 18, paddingVertical: 8 },
   });
 }
