@@ -1,17 +1,13 @@
 import { moduleFor, blockedReason, CHALLENGE_MODULES } from './registry.js';
 
-jest.mock(
-  '../quiz/QuizModule.jsx',
-  () =>
-    function QuizModule() {
-      return null;
-    },
-);
+jest.mock('../quiz/QuizModule.jsx', () => () => null);
+jest.mock('../games/padbank/PadBankModule.jsx', () => () => null);
 
 describe('challenge registry', () => {
   const quiz = { id: 'know-yourself', status: 'live', locked: false };
   it('opens a live challenge that has a module in the app', () => {
     expect(moduleFor(quiz)).toBe(CHALLENGE_MODULES['know-yourself']);
+    expect(moduleFor({ id: 'pad-bank-run', status: 'live', locked: false })).toBe(CHALLENGE_MODULES['pad-bank-run']);
     expect(blockedReason(quiz)).toBeNull();
   });
   it('treats a live challenge without a module yet as coming soon', () => {

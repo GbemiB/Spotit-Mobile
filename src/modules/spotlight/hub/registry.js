@@ -1,7 +1,9 @@
 import QuizModule from '../quiz/QuizModule.jsx';
+import PadBankModule from '../games/padbank/PadBankModule.jsx';
 
 export const CHALLENGE_MODULES = {
   'know-yourself': QuizModule,
+  'pad-bank-run': PadBankModule,
 };
 
 export function moduleFor(challenge) {
