@@ -14,7 +14,7 @@ import { LevelSheet, InfoSheet } from './QuizSheets.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
 import { todayISO } from '../../shared/utils/cycle.js';
-import { toCards, toGroups, toLevel, toPick, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
+import { toCards, toGroups, toLevel, toTopic, sheetModeFor, friendlyError } from './quizLogic.js';
 
 const NO_STATS = { streak: 0, stars: 0, levelsDone: 0 };
 
@@ -158,8 +158,6 @@ function QuizSpotlight() {
     }
   }
 
-  const pick = toPick(home?.pick);
-  const pickCard = home?.topics?.find(t => t.id === home?.pick?.topicId);
   const cards = toCards(home?.topics);
   const groups = toGroups(topicsData);
   const detailTopic = detail?.topic ? toTopic(detail.topic) : null;
@@ -172,15 +170,13 @@ function QuizSpotlight() {
           insets={insets}
           balance={balance}
           stats={home?.stats || NO_STATS}
-          pick={pick}
           cards={cards}
           topicCount={home?.topicCount ?? 0}
-          settings={settings}
+          userId={userId}
           loading={loading || !home}
           error={error}
           onRetry={loadHome}
           reduceMotion={reduceMotion}
-          onPlayPick={() => pick && openLevel(pick.topic, pick.level, pickCard?.levelCount ?? 0)}
           onOpenTopics={openTopics}
           onOpenTopic={openTopic}
           onOpenPoints={() => setInfo({ kind: 'points' })}

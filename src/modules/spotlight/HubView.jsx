@@ -2,9 +2,8 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { useMemo } from 'react';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
-import { HeroFrame } from '../dashboard/HeroCardFx.jsx';
-import { Rise, Blob, Waves, Beat, Flicker, Bob, PressScale, GradientButton, Icon, HEART, STAR, FLAME } from './SpotlightFx.jsx';
-import QuizArt from './QuizArt.jsx';
+import { Rise, Bob, PressScale } from './SpotlightFx.jsx';
+import SpotlightCard from './SpotlightCard.jsx';
 import { TopicGrid } from './TopicTile.jsx';
 import { quizColors } from './quizTheme.js';
 
@@ -26,42 +25,24 @@ export function SpChip({ balance, onPress, reduceMotion }) {
   );
 }
 
-function Stat({ value, label, bg, children }) {
-  const { colors: c } = useTheme();
-  return (
-    <View style={[styles.stat, { backgroundColor: c.surface, borderColor: c.border }]}>
-      <View style={[styles.statIcon, { backgroundColor: bg }]}>{children}</View>
-      <View style={{ flexShrink: 1 }}>
-        <Text style={{ fontSize: 14, fontWeight: '800', color: c.textPrimary, lineHeight: 17 }}>{value}</Text>
-        <Text style={{ fontSize: 9, color: c.textMuted }} numberOfLines={1}>
-          {label}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const HUB_TILES = 4;
 
 export default function HubView({
   insets,
   balance,
   stats,
-  pick,
+  userId,
   cards,
   topicCount,
-  settings,
   loading,
   error,
   onRetry,
   reduceMotion,
-  onPlayPick,
   onOpenTopics,
   onOpenTopic,
   onOpenPoints,
 }) {
-  const { colors: c, isDark } = useTheme();
-  const q = quizColors(c, isDark);
+  const { colors: c } = useTheme();
   const s = useMemo(() => createStyles(c), [c]);
   return (
     <ScrollView
@@ -76,69 +57,8 @@ export default function HubView({
         <SpChip balance={balance} onPress={onOpenPoints} reduceMotion={reduceMotion} />
       </Rise>
 
-      <Rise index={1} reduceMotion={reduceMotion} style={s.section}>
-        <HeroFrame borderColor={c.border} radius={32} reduceMotion={reduceMotion}>
-          <View style={[s.hero, { backgroundColor: c.surface }]}>
-            <Blob size={180} color={q.blobA} reduceMotion={reduceMotion} style={{ top: -50, right: -40 }} />
-            <Blob size={170} color={q.blobB} duration={4250} delay={1800} reduceMotion={reduceMotion} style={{ bottom: -60, left: -50 }} />
-            <Waves isDark={isDark} reduceMotion={reduceMotion} />
-            <QuizArt reduceMotion={reduceMotion} />
-            {pick ? (
-              <View style={{ maxWidth: 196 }}>
-                <Text style={[s.label, { color: q.gold }]}>Today’s pick · {pick.topic.name}</Text>
-                <Text style={s.heroTitle}>
-                  {pick.titleA}
-                  <Text style={{ fontFamily: FONT.serif, color: c.primary }}>{pick.titleB}</Text>
-                </Text>
-                <View style={s.metaRow}>
-                  <Text style={s.meta}>
-                    Level {pick.level.n} · {settings.rounds} rounds
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${settings.lives} hearts`}>
-                    <Beat reduceMotion={reduceMotion}>
-                      <Icon d={HEART} size={11} color={c.primary} fill />
-                    </Beat>
-                    {Array.from({ length: Math.max(0, settings.lives - 1) }, (_, i) => (
-                      <Icon key={i} d={HEART} size={11} color={c.primary} fill />
-                    ))}
-                  </View>
-                </View>
-                <View style={s.ctaRow}>
-                  <GradientButton
-                    small
-                    colors={q.button}
-                    reduceMotion={reduceMotion}
-                    onPress={onPlayPick}
-                    label={<Text style={s.ctaTx}>{pick.free ? 'Play free' : `Play · ${pick.level.cost} SP`}</Text>}
-                    icon={<Icon d="M5 12h13M13 6l6 6-6 6" size={14} color="#FFFFFF" width={2.2} />}
-                  />
-                </View>
-              </View>
-            ) : (
-              <View style={{ maxWidth: 196 }}>
-                <Text style={[s.label, { color: q.gold }]}>Today’s pick</Text>
-                <Text style={s.heroTitle}>
-                  New questions <Text style={{ fontFamily: FONT.serif, color: c.primary }}>soon</Text>
-                </Text>
-                <Text style={[s.meta, { marginTop: 8 }]}>We’re getting fresh myth-or-fact rounds ready for you.</Text>
-              </View>
-            )}
-          </View>
-        </HeroFrame>
-      </Rise>
-
-      <Rise index={2} reduceMotion={reduceMotion} style={[s.section, s.stats]}>
-        <Stat value={stats.streak} label="day streak" bg={q.peachSoft}>
-          <Flicker reduceMotion={reduceMotion}>
-            <Icon d={FLAME} size={16} color={q.peach} fill />
-          </Flicker>
-        </Stat>
-        <Stat value={stats.stars} label="stars won" bg={q.goldSoft}>
-          <Icon d={STAR} size={16} color={q.gold} fill />
-        </Stat>
-        <Stat value={stats.levelsDone} label="levels done" bg={q.greenSoft}>
-          <Icon d="M5 12.5l4.2 4.2L19 7" size={16} color={q.green} width={2.4} />
-        </Stat>
+      <Rise index={1} reduceMotion={reduceMotion} style={[s.section, { marginBottom: 22 }]}>
+        <SpotlightCard stats={stats} userId={userId} reduceMotion={reduceMotion} />
       </Rise>
 
       <Rise index={3} reduceMotion={reduceMotion} style={s.sectionHead}>
@@ -195,14 +115,6 @@ function createStyles(c) {
     title: { fontSize: 24, fontWeight: '700', color: c.textPrimary, letterSpacing: -0.4 },
     sub: { fontSize: 11, color: c.textMuted, marginTop: 4 },
     section: { paddingHorizontal: 24, marginBottom: 14 },
-    hero: { borderRadius: 30.5, padding: 20, overflow: 'hidden', minHeight: 182 },
-    label: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-    heroTitle: { fontFamily: FONT.serif, fontSize: 28, lineHeight: 34, color: c.textPrimary, marginTop: 10 },
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-    meta: { fontSize: 10, color: c.textMuted },
-    ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
-    ctaTx: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '700' },
-    stats: { flexDirection: 'row', gap: 10, marginBottom: 22 },
     sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 6 },
     sectionTitle: { fontFamily: FONT.serif, fontSize: 20, color: c.textPrimary },
     link: { fontSize: 11, fontWeight: '700', color: c.primaryDark, paddingVertical: 10 },
