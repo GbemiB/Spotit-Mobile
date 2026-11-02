@@ -114,6 +114,8 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
   const token = state.accessToken;
   const balance = state.femPoints || 0;
   const cost = challenge?.cost ?? 0;
+  const [freeLeft, setFreeLeft] = useState(challenge?.freePlaysLeft ?? 0);
+  const free = freeLeft > 0;
   const [phase, setPhase] = useState('intro');
   const [run, setRun] = useState(null);
   const [round, setRound] = useState(0);
@@ -171,8 +173,9 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
     setError(null);
     setPhase('loading');
     try {
-      const data = await padbankApi.startRun(1, token);
+      const data = await padbankApi.startRun(null, token);
       if (typeof data.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: data.balance });
+      if (data.cost === 0) setFreeLeft(n => Math.max(0, n - 1));
       const s = {};
       data.packs.forEach(p => {
         s[p.id] = p.stock;
@@ -254,7 +257,7 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
   }
 
   const visitor = run?.visitors?.[Math.min(round, (run?.visitors?.length ?? 1) - 1)];
-  const total = run?.visitors?.length ?? 3;
+  const total = run?.visitors?.length ?? 0;
   const mood = moodFor(phase, res?.result);
   const result = res ? RESULTS[res.result] || RESULTS.great : null;
   const showVisitor = run && phase !== 'intro' && phase !== 'loading' && phase !== 'done';
@@ -366,15 +369,17 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
             </Text>
             <Chunky
               onPress={play}
-              disabled={phase === 'loading' || balance < cost}
+              disabled={phase === 'loading' || (!free && balance < cost)}
               colors={[c.primaryDark, c.primary]}
               shadow="#8E3048"
               style={{ marginTop: 18, minWidth: 220 }}
-              label={cost ? `Play for ${cost} SP` : 'Play'}
+              label={free ? 'Play your free try' : cost ? `Play for ${cost} SP` : 'Play'}
             >
-              <Text style={styles.chunkyTx}>{phase === 'loading' ? 'Opening…' : cost ? `PLAY · ${cost} SP` : 'PLAY'}</Text>
+              <Text style={styles.chunkyTx}>
+                {phase === 'loading' ? 'Opening…' : free ? 'PLAY · FREE TRY' : cost ? `PLAY · ${cost} SP` : 'PLAY'}
+              </Text>
             </Chunky>
-            {balance < cost ? (
+            {!free && balance < cost ? (
               <Text style={[styles.fine, { color: c.textMuted }]}>You need {cost - balance} more SP. Keep logging to earn it.</Text>
             ) : (
               <Text style={[styles.fine, { color: c.textMuted }]}>Pretend only: no real products or money change hands.</Text>
@@ -446,7 +451,7 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
           <View style={styles.center}>
             <View style={[styles.burst, { backgroundColor: result.bg, borderBottomColor: result.shadow }]}>
               <Icon d={result.icon} size={20} color="#FFFFFF" width={3} />
-              <Text style={styles.burstTx}>{result.word}</Text>
+              <Text style={styles.burstTx}>{res.title}</Text>
             </View>
             <Text style={[styles.body, { color: c.textSecondary }]}>{res.tip}</Text>
             <Chunky
@@ -498,9 +503,11 @@ export default function PadBankModule({ insets, reduceMotion, challenge, onExit,
                 colors={['#FFFFFF', '#FFF0F2']}
                 shadow={c.border}
                 style={{ flex: 1 }}
-                label={`Play again for ${cost} SP`}
+                label={free ? 'Play your free try' : `Play again for ${cost} SP`}
               >
-                <Text style={[styles.chunkyTx, { color: c.primaryDark }]}>{cost ? `Again · ${cost} SP` : 'Again'}</Text>
+                <Text style={[styles.chunkyTx, { color: c.primaryDark }]}>
+                  {free ? 'Again · FREE TRY' : cost ? `Again · ${cost} SP` : 'Again'}
+                </Text>
               </Chunky>
               <View style={{ width: 12 }} />
               <Chunky onPress={onExit} colors={['#A5D8BA', '#4E9E78']} shadow="#2F7454" style={{ flex: 1 }} label="Back to Spotlight">

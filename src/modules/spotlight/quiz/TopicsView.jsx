@@ -101,7 +101,9 @@ export default function TopicsView({
         <Rise index={3} reduceMotion={reduceMotion} style={s.section}>
           <View style={[s.teen, { backgroundColor: tone('gold', isDark).bg, borderColor: tone('gold', isDark).line }]}>
             <LockIcon size={16} color={tone('gold', isDark).ink} />
-            <Text style={[s.teenTx, { color: c.textSecondary }]}>Some topics open when you turn 18. Everything else is ready for you.</Text>
+            <Text style={[s.teenTx, { color: c.textSecondary }]}>
+              Some topics open when you’re older. Everything else is ready for you.
+            </Text>
           </View>
         </Rise>
       )}

@@ -172,7 +172,7 @@ function LevelsArt({ active, reduceMotion, freeLevels }) {
   const l4 = useEntrance(active, reduceMotion, 450);
   const tags = useEntrance(active, reduceMotion, 600, 450);
   const enters = [l1, l2, l3, l4];
-  const free = Math.max(0, Math.min(PATH_DOTS.length, freeLevels ?? 2));
+  const free = Math.max(0, Math.min(PATH_DOTS.length, freeLevels || 0));
   const vb = '0 0 210 96';
   const k2 = Math.min(ART_W / 210, ART_H / 96);
   const at = (x, y) => [(ART_W - 210 * k2) / 2 + x * k2, (ART_H - 96 * k2) / 2 + y * k2];

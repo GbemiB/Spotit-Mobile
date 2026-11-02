@@ -19,8 +19,8 @@ function blockedMessage(reason, challenge) {
   if (reason === 'locked') {
     return {
       icon: 'lock',
-      title: `${challenge.name} opens at 18`,
-      body: 'This one is for adults. It opens by itself on your 18th birthday. Until then, there is plenty more to play.',
+      title: `${challenge.name} opens at ${challenge.minAge}`,
+      body: `This one opens by itself when you turn ${challenge.minAge}. Until then, there is plenty more to play.`,
     };
   }
   return {
@@ -128,8 +128,8 @@ export default function SpotlightScreen() {
       />
       <PointsSheet open={points} balance={balance} onClose={() => setPoints(false)} />
       <GuideSheet
-        open={guide && !Module && !message && !points}
-        topicCount={guideSettings.topicCount}
+        open={guide && !!guideSettings && !Module && !message && !points}
+        topicCount={guideSettings?.topicCount}
         settings={guideSettings}
         reduceMotion={reduceMotion}
         onDone={closeGuide}

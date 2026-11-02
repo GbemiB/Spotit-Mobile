@@ -67,7 +67,7 @@ describe('mapping server data', () => {
   });
   it('describes each topic state', () => {
     expect(topicStatus(card())).toEqual({ label: 'Level 2 of 3', pct: 33 });
-    expect(topicStatus(card({ locked: true })).label).toBe('Opens at 18');
+    expect(topicStatus(card({ locked: true, minAge: 18 })).label).toBe('Opens at 18');
     expect(topicStatus(card({ ready: false })).label).toBe('Coming soon');
     expect(topicStatus(card({ started: false, levelsCleared: 0 })).label).toBe('Start playing');
     expect(topicStatus(card({ levelsCleared: 3, ready: false })).label).toBe('All levels cleared');
@@ -239,6 +239,6 @@ describe('quiz settings', () => {
       freeLevels: 1,
       topicCount: 10,
     });
-    expect(quizSettings(null)).toEqual({ rounds: 5, lives: 3, hintCost: 5, freeLevels: 2, topicCount: 0 });
+    expect(quizSettings(null)).toBeNull();
   });
 });

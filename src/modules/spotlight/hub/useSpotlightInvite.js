@@ -21,7 +21,7 @@ export default function useSpotlightInvite({ ready, userId, token, today, resume
       if (cancelled || !shouldInvite(record, home?.invite, today)) return;
       await updateInvite(userId, r => afterShown(r, today));
       const quiz = await quizApi.getHome(token).catch(() => null);
-      if (!cancelled) setInvite({ pick: toPick(quiz?.pick), freeLevels: quiz?.freeLevels ?? 2 });
+      if (!cancelled) setInvite({ pick: toPick(quiz?.pick), freeLevels: quiz?.freeLevels });
     })();
     return () => {
       cancelled = true;

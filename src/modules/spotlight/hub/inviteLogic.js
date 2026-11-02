@@ -17,8 +17,8 @@ export function daysSince(fromIso, toIso) {
 export function shouldInvite(record, invite, today) {
   if (!invite || invite.enabled === false) return false;
   const r = { ...EMPTY, ...record };
-  const maxDismissals = invite.maxDismissals > 0 ? invite.maxDismissals : 3;
-  const everyDays = invite.everyDays > 0 ? invite.everyDays : 3;
+  if (!(invite.maxDismissals > 0) || !(invite.everyDays > 0)) return false;
+  const { maxDismissals, everyDays } = invite;
   if (r.dismissals >= maxDismissals) return false;
   const latest = [r.lastShownOn, r.lastVisitOn].filter(Boolean).sort().pop();
   return !latest || daysSince(latest, today) >= everyDays;

@@ -72,7 +72,9 @@ describe('challenges', () => {
   });
   it('shows coming soon or the age lock instead of a price', () => {
     expect(challengeTag({ ...game, status: 'soon' })).toEqual({ text: 'Coming soon', muted: true });
-    expect(challengeTag({ ...game, locked: true }).text).toBe('Opens at 18');
+    expect(challengeTag({ ...game, locked: true, minAge: 18 }).text).toBe('Opens at 18');
+    expect(challengeTag({ ...game, freePlaysLeft: 1 }).text).toBe('Free try');
+    expect(challengeTag({ ...game, freePlaysLeft: 2 }).text).toBe('2 free tries left');
   });
   it('splits the quiz from the games, keeping server order', () => {
     const list = [

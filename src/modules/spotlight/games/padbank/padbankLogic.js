@@ -27,9 +27,9 @@ export const CLUE_ICONS = {
 export const CLUE_TONES = ['pink', 'peach', 'green'];
 
 export const RESULTS = {
-  great: { word: 'PERFECT!', bg: '#4E9E78', shadow: '#2F7454', icon: 'M5 12.5l4.5 4.5L19 7.5' },
-  ok: { word: 'GOOD!', bg: '#E07A4F', shadow: '#B85A33', icon: 'M12 7v6M12 17h.01' },
-  oops: { word: 'OOPS!', bg: '#C9604F', shadow: '#8E3A2E', icon: 'M7 7l10 10M17 7L7 17' },
+  great: { bg: '#4E9E78', shadow: '#2F7454', icon: 'M5 12.5l4.5 4.5L19 7.5' },
+  ok: { bg: '#E07A4F', shadow: '#B85A33', icon: 'M12 7v6M12 17h.01' },
+  oops: { bg: '#C9604F', shadow: '#8E3A2E', icon: 'M7 7l10 10M17 7L7 17' },
 };
 
 export function moodFor(phase, result) {

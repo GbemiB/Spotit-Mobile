@@ -49,8 +49,9 @@ describe('shouldInvite', () => {
     expect(shouldInvite({ lastShownOn: '2026-10-01', dismissals: 3 }, ON, '2026-11-02')).toBe(false);
     expect(shouldInvite({ lastShownOn: '2026-10-01', dismissals: 2 }, ON, '2026-11-02')).toBe(true);
   });
-  it('falls back to safe defaults for zero settings', () => {
-    expect(shouldInvite({ lastShownOn: '2026-11-01' }, { enabled: true, everyDays: 0, maxDismissals: 0 }, '2026-11-03')).toBe(false);
+  it('stays quiet without usable settings from the server', () => {
+    expect(shouldInvite({}, { enabled: true, everyDays: 0, maxDismissals: 3 }, '2026-11-03')).toBe(false);
+    expect(shouldInvite({}, { enabled: true, everyDays: 3 }, '2026-11-03')).toBe(false);
   });
 });
 

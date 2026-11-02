@@ -57,7 +57,7 @@ function LevelCard({ level, t, balance, settings, reduceMotion, onPress }) {
           <Text style={[styles.tag, { color: q.gold }]}>{level.cost === 0 ? 'Free · Up next' : `Up next · ${level.cost} SP`}</Text>
           <Text style={[styles.name, { color: c.textPrimary }]}>{level.name}</Text>
           <Text style={{ fontSize: 10, color: c.textMuted, marginTop: 2 }}>
-            {settings?.rounds ?? 5} rounds · {heartsLabel(level.lives || settings?.lives || 3)} · myth or fact
+            {settings ? `${settings.rounds} rounds · ${heartsLabel(level.lives || settings.lives)} · myth or fact` : ''}
           </Text>
           {level.ready === false ? (
             <Text style={{ fontSize: 11, fontWeight: '700', color: q.goldDeep, marginTop: 12 }}>

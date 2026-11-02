@@ -158,7 +158,7 @@ export default function TopicTile({ item, index, reduceMotion, onOpen }) {
       onOpen();
     }, OPEN_DELAY_MS);
   }
-  const label = item.locked ? `${item.topic.name}, opens at 18` : `${item.topic.name}, ${item.status.label}`;
+  const label = item.locked ? `${item.topic.name}, opens at ${item.topic.minAge}` : `${item.topic.name}, ${item.status.label}`;
   return (
     <View style={{ flex: 1 }}>
       <PressScale onPress={press} accessibilityLabel={label}>
@@ -172,7 +172,7 @@ export default function TopicTile({ item, index, reduceMotion, onOpen }) {
           </Text>
           <View style={{ marginTop: 'auto' }}>
             <Text style={{ fontSize: 9.5, fontWeight: '600', color: t.ink }} numberOfLines={1}>
-              {item.locked ? 'Opens at 18' : item.status.label}
+              {item.locked ? `Opens at ${item.topic.minAge}` : item.status.label}
             </Text>
             {!item.locked && (
               <View style={[styles.bar, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : c.border }]}>

@@ -9,7 +9,7 @@ export function toTopic(card) {
 
 export function topicStatus(card) {
   const pct = card.levelCount ? Math.round((card.levelsCleared / card.levelCount) * 100) : 0;
-  if (card.locked) return { label: 'Opens at 18', pct: 0 };
+  if (card.locked) return { label: `Opens at ${card.minAge}`, pct: 0 };
   if (!card.ready && card.levelsCleared < card.levelCount) return { label: 'Coming soon', pct };
   if (!card.started) return { label: 'Start playing', pct: 0 };
   if (card.levelsCleared >= card.levelCount) return { label: 'All levels cleared', pct: 100 };
@@ -103,6 +103,7 @@ export function playReducer(state, action) {
         total: a.rounds.length,
         lives: a.lives,
         startLives: a.lives,
+        hintCost: a.hintCost,
       };
     }
     case 'go':
@@ -158,11 +159,6 @@ export function friendlyError(e) {
 }
 
 export function quizSettings(home) {
-  return {
-    rounds: home?.rounds ?? 5,
-    lives: home?.lives ?? 3,
-    hintCost: home?.hintCost ?? 5,
-    freeLevels: home?.freeLevels ?? 2,
-    topicCount: home?.topicCount ?? 0,
-  };
+  if (!home) return null;
+  return { rounds: home.rounds, lives: home.lives, hintCost: home.hintCost, freeLevels: home.freeLevels, topicCount: home.topicCount };
 }

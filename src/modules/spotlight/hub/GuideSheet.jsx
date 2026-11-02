@@ -9,7 +9,7 @@ import { quizColors } from '../common/theme.js';
 import GuideArt from './GuideArt.jsx';
 import { freeLevelsText } from '../common/wording.js';
 
-export function guideSteps({ topicCount, lives, hintCost, freeLevels = 2 }) {
+export function guideSteps({ topicCount, lives, hintCost, freeLevels }) {
   return [
     {
       key: 'topics',
@@ -102,12 +102,7 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
   const [index, setIndex] = useState(0);
   const [width, setWidth] = useState(0);
   const pos = useAnimatedValue(0);
-  const steps = guideSteps({
-    topicCount,
-    lives: settings?.lives ?? 3,
-    hintCost: settings?.hintCost ?? 5,
-    freeLevels: settings?.freeLevels ?? 2,
-  });
+  const steps = guideSteps({ topicCount, lives: settings?.lives, hintCost: settings?.hintCost, freeLevels: settings?.freeLevels });
   const first = index === 0;
   const last = index === steps.length - 1;
 
@@ -148,7 +143,7 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
                 accessibilityElementsHidden={i !== index}
                 importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
               >
-                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} freeLevels={settings?.freeLevels ?? 2} />
+                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} freeLevels={settings?.freeLevels} />
                 <Text style={[styles.kicker, { color: c.primaryDark }]}>
                   How Spotlight works · {i + 1} of {steps.length}
                 </Text>

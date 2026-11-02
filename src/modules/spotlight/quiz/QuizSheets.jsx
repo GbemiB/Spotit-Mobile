@@ -18,11 +18,12 @@ function Rule({ icon, color, children }) {
 }
 
 function Rules({ settings, levelLives }) {
-  const rounds = settings?.rounds ?? 5;
-  const lives = levelLives || settings?.lives || 3;
-  const hintCost = settings?.hintCost ?? 5;
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
+  if (!settings) return null;
+  const rounds = settings.rounds;
+  const lives = levelLives || settings.lives;
+  const hintCost = settings.hintCost;
   return (
     <View style={{ gap: 10 }}>
       <Rule icon="M4 6h16M4 12h16M4 18h10" color={c.primaryDark}>
@@ -123,9 +124,11 @@ export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, 
               <LockIcon size={24} color={q.goldDeep} />
             </View>
           </Pop>
-          <Text style={[styles.title, { color: c.textPrimary }]}>{topic?.name} opens at 18</Text>
+          <Text style={[styles.title, { color: c.textPrimary }]}>
+            {topic?.name} opens at {topic?.minAge}
+          </Text>
           <Text style={[styles.body, { color: c.textSecondary }]}>
-            This topic is for adults. It opens by itself on your 18th birthday. Until then, there is plenty more to explore.
+            This topic opens by itself when you turn {topic?.minAge}. Until then, there is plenty more to explore.
           </Text>
           <View style={{ height: 16 }} />
           <GradientButton

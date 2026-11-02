@@ -391,9 +391,9 @@ export default function QuizPlay({ open, topic, level, hasNext, settings, balanc
   const go = useCallback(() => dispatch({ type: 'go' }), []);
   const s = useMemo(() => createStyles(c), [c]);
   if (!topic || !level) return null;
-  const hintCost = settings?.hintCost ?? 5;
-  const lives = state.startLives || level.lives || settings?.lives || 3;
-  const rounds = state.total || settings?.rounds || 5;
+  const hintCost = state.hintCost ?? settings?.hintCost;
+  const lives = state.startLives || level.lives || settings?.lives;
+  const rounds = state.total || settings?.rounds;
   const round = state.attempt?.rounds?.[state.round];
   const question = round
     ? {
