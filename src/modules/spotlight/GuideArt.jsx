@@ -132,7 +132,37 @@ function LevelDot({ cx, cy, n, p }) {
   );
 }
 
-function LevelsArt({ active, reduceMotion }) {
+const PATH_DOTS = [
+  [30, 58],
+  [78, 38],
+  [126, 62],
+  [178, 40],
+];
+
+function LockDot({ cx, cy, p, surface }) {
+  return (
+    <>
+      <Circle cx={cx} cy={cy} r={17} fill={p.soft} />
+      <Circle cx={cx} cy={cy} r={17} stroke={p.ink} strokeWidth={2.2} fill="none" />
+      <Path d={`M${cx - 4.5} ${cy - 2}v-3a4.5 4.5 0 0 1 9 0v3`} stroke={p.ink} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+      <Rect x={cx - 7} y={cy - 2.5} width={14} height={10} rx={3} fill={p.ink} />
+      <Circle cx={cx} cy={cy + 2.5} r={1.6} fill={surface} />
+    </>
+  );
+}
+
+function Pill({ cx, cy, w, text, p }) {
+  return (
+    <>
+      <Rect x={cx - w / 2} y={cy - 8} width={w} height={16} rx={8} fill={p.soft} />
+      <SvgText x={cx} y={cy + 3} fontSize={9} fontWeight="700" fill={p.ink} textAnchor="middle">
+        {text}
+      </SvgText>
+    </>
+  );
+}
+
+function LevelsArt({ active, reduceMotion, freeLevels }) {
   const { colors: c, isDark } = useTheme();
   const g = iconPalette('green', isDark, c);
   const k = iconPalette('pink', isDark, c);
@@ -141,9 +171,14 @@ function LevelsArt({ active, reduceMotion }) {
   const l3 = useEntrance(active, reduceMotion, 290);
   const l4 = useEntrance(active, reduceMotion, 450);
   const tags = useEntrance(active, reduceMotion, 600, 450);
+  const enters = [l1, l2, l3, l4];
+  const free = Math.max(0, Math.min(PATH_DOTS.length, freeLevels ?? 2));
   const vb = '0 0 210 96';
   const k2 = Math.min(ART_W / 210, ART_H / 96);
   const at = (x, y) => [(ART_W - 210 * k2) / 2 + x * k2, (ART_H - 96 * k2) / 2 + y * k2];
+  const freeDots = PATH_DOTS.slice(0, free);
+  const freeX = freeDots.length ? freeDots.reduce((sum, d) => sum + d[0], 0) / freeDots.length : null;
+  const firstPaid = free < PATH_DOTS.length ? PATH_DOTS[free] : null;
   return (
     <View style={styles.art}>
       <Layer origin={[0, 0]} viewBox={vb}>
@@ -156,31 +191,20 @@ function LevelsArt({ active, reduceMotion }) {
           fill="none"
         />
       </Layer>
-      <Layer origin={at(30, 58)} viewBox={vb} style={pop(l1)}>
-        <LevelDot cx={30} cy={58} n={1} p={g} />
-      </Layer>
-      <Layer origin={at(78, 38)} viewBox={vb} style={pop(l2)}>
-        <LevelDot cx={78} cy={38} n={2} p={g} />
-      </Layer>
-      <Layer origin={at(126, 62)} viewBox={vb} style={pop(l3)}>
-        <LevelDot cx={126} cy={62} n={3} p={g} />
-      </Layer>
-      <Layer origin={at(178, 40)} viewBox={vb} style={pop(l4)}>
-        <Circle cx={178} cy={40} r={17} fill={k.soft} />
-        <Circle cx={178} cy={40} r={17} stroke={k.ink} strokeWidth={2.2} fill="none" />
-        <Path d="M173.5 38v-3a4.5 4.5 0 0 1 9 0v3" stroke={k.ink} strokeWidth={1.6} strokeLinecap="round" fill="none" />
-        <Rect x={171} y={37.5} width={14} height={10} rx={3} fill={k.ink} />
-        <Circle cx={178} cy={42.5} r={1.6} fill={c.surface} />
-      </Layer>
-      <Layer origin={at(78, 86)} viewBox={vb} style={pop(tags)}>
-        <Rect x={52} y={78} width={52} height={16} rx={8} fill={g.soft} />
-        <SvgText x={78} y={89} fontSize={9} fontWeight="700" fill={g.ink} textAnchor="middle">
-          Free
-        </SvgText>
-        <Rect x={154} y={66} width={48} height={16} rx={8} fill={k.soft} />
-        <SvgText x={178} y={77} fontSize={9} fontWeight="700" fill={k.ink} textAnchor="middle">
-          20 SP
-        </SvgText>
+      {PATH_DOTS.map(([x, y], i) => (
+        <Layer key={x} origin={at(x, y)} viewBox={vb} style={pop(enters[i])}>
+          {i < free ? (
+            <LevelDot cx={x} cy={y} n={i + 1} p={g} />
+          ) : i === free ? (
+            <LockDot cx={x} cy={y} p={k} surface={c.surface} />
+          ) : (
+            <LevelDot cx={x} cy={y} n={i + 1} p={k} />
+          )}
+        </Layer>
+      ))}
+      <Layer origin={at(105, 86)} viewBox={vb} style={pop(tags)}>
+        {freeX != null ? <Pill cx={freeX} cy={86} w={52} text="Free" p={g} /> : null}
+        {firstPaid ? <Pill cx={firstPaid[0]} cy={Math.min(firstPaid[1] + 30, 87)} w={40} text="SP" p={k} /> : null}
       </Layer>
     </View>
   );
@@ -253,9 +277,9 @@ function KitArt({ active, reduceMotion }) {
   );
 }
 
-export default function GuideArt({ step, active, reduceMotion }) {
+export default function GuideArt({ step, active, reduceMotion, freeLevels }) {
   if (step === 'topics') return <TopicsArt active={active} reduceMotion={reduceMotion} />;
-  if (step === 'levels') return <LevelsArt active={active} reduceMotion={reduceMotion} />;
+  if (step === 'levels') return <LevelsArt active={active} reduceMotion={reduceMotion} freeLevels={freeLevels} />;
   return <KitArt active={active} reduceMotion={reduceMotion} />;
 }
 

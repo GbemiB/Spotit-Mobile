@@ -301,6 +301,7 @@ function AppContent() {
         visible={!!spotlight.invite && !showTour}
         balance={femPoints || 0}
         pick={spotlight.invite?.pick}
+        freeLevels={spotlight.invite?.freeLevels}
         reduceMotion={reduceMotion}
         onPlay={playSpotlight}
         onLater={spotlight.later}

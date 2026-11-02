@@ -6,6 +6,7 @@ import { Rise, PressScale, Icon } from './SpotlightFx.jsx';
 import { SpChip } from './HubView.jsx';
 import { tone } from './quizTheme.js';
 import { TopicGrid } from './TopicTile.jsx';
+import { freeLevelsShort } from './summaryLogic.js';
 
 export function BackRow({ label, onPress }) {
   const { colors: c } = useTheme();
@@ -54,6 +55,7 @@ export default function TopicsView({
   loadingMore,
   onLoadMore,
   isTeen,
+  freeLevels,
   total,
   reduceMotion,
   onBack,
@@ -79,7 +81,9 @@ export default function TopicsView({
       </Rise>
       <Rise index={1} reduceMotion={reduceMotion} style={s.head}>
         <Text style={s.title}>Know Yourself</Text>
-        <Text style={s.sub}>{total} topics · levels 1–3 of every topic are free</Text>
+        <Text style={s.sub}>
+          {total} topics · {freeLevelsShort(freeLevels)}
+        </Text>
       </Rise>
       <Rise index={2} reduceMotion={reduceMotion}>
         <ScrollView

@@ -19,7 +19,7 @@ export default function useSpotlightInvite({ ready, userId, token, today, resume
       }
       if (cancelled || !shouldInvite(record, home?.invite, today)) return;
       await updateInvite(userId, r => afterShown(r, today));
-      if (!cancelled) setInvite({ pick: toPick(home.pick) });
+      if (!cancelled) setInvite({ pick: toPick(home.pick), freeLevels: home.freeLevels ?? 2 });
     })();
     return () => {
       cancelled = true;

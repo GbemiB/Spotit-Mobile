@@ -2,8 +2,9 @@ import { Modal, View, StyleSheet } from 'react-native';
 import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { GradientButton, PressScale, Icon, Pop, Twinkle, SPARKLE, HEART } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
+import { freeLevelsText } from './summaryLogic.js';
 
-export default function SpotlightInvite({ visible, balance, pick, reduceMotion, onPlay, onLater }) {
+export default function SpotlightInvite({ visible, balance, pick, freeLevels, reduceMotion, onPlay, onLater }) {
   const { colors: c, isDark } = useTheme();
   const q = quizColors(c, isDark);
   return (
@@ -28,7 +29,7 @@ export default function SpotlightInvite({ visible, balance, pick, reduceMotion, 
             Use your SP points to try some <Text style={{ color: c.primary }}>challenges</Text>
           </Text>
           <Text style={[styles.body, { color: c.textSecondary }]}>
-            Quick myth-or-fact rounds on women’s health. Levels 1 to 3 of every topic are free.
+            Quick myth-or-fact rounds on women’s health. {freeLevelsText(freeLevels)}
           </Text>
           <View style={[styles.box, { backgroundColor: c.background, borderColor: c.border }]}>
             {pick && (

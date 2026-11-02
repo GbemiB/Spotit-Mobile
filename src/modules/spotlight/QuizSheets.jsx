@@ -4,6 +4,7 @@ import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import { GradientButton, PressScale, Icon, Pop, HEART, SPARKLE } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
+import { freeLevelsText } from './summaryLogic.js';
 
 function Ghost({ label, onPress }) {
   const { colors: c } = useTheme();
@@ -172,7 +173,7 @@ export function InfoSheet({ open, kind, topic, balance, settings, reduceMotion, 
             <Rules settings={settings} />
           </View>
           <Text style={[styles.body, { color: c.textSecondary }]}>
-            Levels 1 to 3 of every topic are free. Higher levels cost SP to unlock. Challenges never pay SP back.
+            {freeLevelsText(settings?.freeLevels)} Higher levels cost SP to unlock. Challenges never pay SP back.
           </Text>
           <Ghost label="Close" onPress={onClose} />
         </>

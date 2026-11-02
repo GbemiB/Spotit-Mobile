@@ -39,8 +39,8 @@ function QuizSpotlight() {
   const userId = state.userId;
 
   const settings = useMemo(
-    () => ({ rounds: home?.rounds ?? 5, lives: home?.lives ?? 3, hintCost: home?.hintCost ?? 5 }),
-    [home?.rounds, home?.lives, home?.hintCost],
+    () => ({ rounds: home?.rounds ?? 5, lives: home?.lives ?? 3, hintCost: home?.hintCost ?? 5, freeLevels: home?.freeLevels ?? 2 }),
+    [home?.rounds, home?.lives, home?.hintCost, home?.freeLevels],
   );
 
   const load = useCallback(async (work, apply) => {
@@ -232,6 +232,7 @@ function QuizSpotlight() {
           loadingMore={loadingMore}
           loading={loading && !topicsData}
           onLoadMore={loadMoreTopics}
+          freeLevels={settings.freeLevels}
           isTeen={!!topicsData?.underAge}
           total={topicsData?.topicCount ?? 0}
           reduceMotion={reduceMotion}

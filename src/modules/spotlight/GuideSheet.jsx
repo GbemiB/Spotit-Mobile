@@ -7,8 +7,9 @@ import { useTheme, Text, FONT } from '../../shared/styles/index.js';
 import { GradientButton, PressScale, Icon } from './SpotlightFx.jsx';
 import { quizColors } from './quizTheme.js';
 import GuideArt from './GuideArt.jsx';
+import { freeLevelsText } from './summaryLogic.js';
 
-export function guideSteps({ topicCount, lives, hintCost }) {
+export function guideSteps({ topicCount, lives, hintCost, freeLevels = 2 }) {
   return [
     {
       key: 'topics',
@@ -20,7 +21,7 @@ export function guideSteps({ topicCount, lives, hintCost }) {
     {
       key: 'levels',
       title: 'Free to start',
-      body: 'Levels 1 to 3 of every topic are free. Higher levels cost SP to unlock.',
+      body: `${freeLevelsText(freeLevels)} Higher levels cost SP to unlock.`,
     },
     {
       key: 'play',
@@ -101,7 +102,12 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
   const [index, setIndex] = useState(0);
   const [width, setWidth] = useState(0);
   const pos = useAnimatedValue(0);
-  const steps = guideSteps({ topicCount, lives: settings?.lives ?? 3, hintCost: settings?.hintCost ?? 5 });
+  const steps = guideSteps({
+    topicCount,
+    lives: settings?.lives ?? 3,
+    hintCost: settings?.hintCost ?? 5,
+    freeLevels: settings?.freeLevels ?? 2,
+  });
   const first = index === 0;
   const last = index === steps.length - 1;
 
@@ -142,7 +148,7 @@ export default function GuideSheet({ open, topicCount, settings, reduceMotion, o
                 accessibilityElementsHidden={i !== index}
                 importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
               >
-                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} />
+                <GuideArt step={step.key} active={open && i === index} reduceMotion={reduceMotion} freeLevels={settings?.freeLevels ?? 2} />
                 <Text style={[styles.kicker, { color: c.primaryDark }]}>
                   How Spotlight works · {i + 1} of {steps.length}
                 </Text>
