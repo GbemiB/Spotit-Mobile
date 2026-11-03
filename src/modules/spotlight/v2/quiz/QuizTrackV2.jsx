@@ -6,7 +6,7 @@ import BottomSheet from '../../../../components/ui/BottomSheet.jsx';
 import { toneOf } from '../tokens.js';
 import { ds, SlideIn, Pulse } from '../motion.jsx';
 import { CircleButton, AnimIcon, Glow, PinkButton } from '../ui.jsx';
-import { topicIcon, BACK, LOCK } from './quizArt.js';
+import { topicIcon, BACK, LOCK, CLOSE } from './quizArt.js';
 
 const STEP = 110;
 const LEFT = 0;
@@ -42,7 +42,10 @@ export default function QuizTrackV2({ t, insets, topic, group, tone, levels, set
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Glow t={t} />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: insets.bottom + 110 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <CircleButton t={t} icon={BACK} label="Back to topics" onPress={onBack} />
           <View style={[styles.iconTile, { backgroundColor: bg }]}>
@@ -56,20 +59,36 @@ export default function QuizTrackV2({ t, insets, topic, group, tone, levels, set
         <View style={{ marginHorizontal: 26, marginTop: 22, height }}>
           <Svg width={338} height={height} style={StyleSheet.absoluteFill}>
             <Path d={pathFor(levels.length)} stroke={t.track} strokeWidth={10} fill="none" strokeLinecap="round" />
-            <Path d={pathFor(levels.length)} stroke={t.pink} strokeWidth={3} strokeDasharray="2 10" strokeLinecap="round" fill="none" opacity={0.6} />
+            <Path
+              d={pathFor(levels.length)}
+              stroke={t.pink}
+              strokeWidth={3}
+              strokeDasharray="2 10"
+              strokeLinecap="round"
+              fill="none"
+              opacity={0.6}
+            />
           </Svg>
           {levels.map((level, i) => {
             const look = levelLook(level, settings);
             const isNext = level.state === 'current';
             return (
-              <SlideIn key={level.n} reduceMotion={reduceMotion} delay={100 + i * 80} style={{ position: 'absolute', left: i % 2 ? RIGHT : LEFT, top: 10 + i * STEP }}>
+              <SlideIn
+                key={level.n}
+                reduceMotion={reduceMotion}
+                delay={100 + i * 80}
+                style={{ position: 'absolute', left: i % 2 ? RIGHT : LEFT, top: 10 + i * STEP }}
+              >
                 <PressScale onPress={() => onPlayLevel(level)} accessibilityLabel={`Level ${level.n}, ${level.name}, ${look.price}`}>
                   <View style={styles.levelRow}>
                     <Pulse reduceMotion={reduceMotion || !isNext} scale={1.06} duration={2000}>
                       <View
                         style={[
                           styles.node,
-                          { backgroundColor: look.cleared ? t.pink : look.locked ? t.surface : t.pinkSoft, borderColor: look.locked ? t.border : t.pink },
+                          {
+                            backgroundColor: look.cleared ? t.pink : look.locked ? t.surface : t.pinkSoft,
+                            borderColor: look.locked ? t.border : t.pink,
+                          },
                         ]}
                       >
                         {look.locked ? (
@@ -110,14 +129,27 @@ export function LevelSheetV2({ t, open, level, topic, balance, settings, reduceM
   const facts = [
     { value: settings?.rounds ?? '', label: 'rounds', bg: t.pinkSoft, ink: t.pinkInk },
     { value: look.lives, label: look.lives === 1 ? 'heart' : 'hearts', bg: t.pinkSoft, ink: t.pinkInk },
-    { value: cost ? cost : 'Free', label: cost ? 'SP to play' : 'to play', bg: cost ? t.goldSoft : t.greenSoft, ink: cost ? t.goldInk : t.greenInk },
+    {
+      value: cost ? cost : 'Free',
+      label: cost ? 'SP to play' : 'to play',
+      bg: cost ? t.goldSoft : t.greenSoft,
+      ink: cost ? t.goldInk : t.greenInk,
+    },
   ];
   const note = look.locked
     ? `Win level ${level.n - 1} first to open this one.`
     : cost && !afford
       ? `You need ${cost - balance} more SP. Check in daily to earn more.`
       : `Answer myth or fact. A hint costs ${settings?.hintCost ?? ''} SP. Finish with hearts left to win stars.`;
-  const label = look.locked ? 'Locked for now' : cost ? (afford ? `${look.cleared ? 'Play again' : 'Play'} for ${cost} SP` : 'Not enough SP') : look.cleared ? 'Play again' : 'Play free';
+  const label = look.locked
+    ? 'Locked for now'
+    : cost
+      ? afford
+        ? `${look.cleared ? 'Play again' : 'Play'} for ${cost} SP`
+        : 'Not enough SP'
+      : look.cleared
+        ? 'Play again'
+        : 'Play free';
   return (
     <BottomSheet open={open} onClose={onClose}>
       <View style={styles.sheetHead}>
@@ -128,6 +160,7 @@ export function LevelSheetV2({ t, open, level, topic, balance, settings, reduceM
           <Text style={[styles.kicker, { color: t.pinkInk }]}>{topic.name}</Text>
           <Text style={[styles.sheetTitle, { color: t.text }]}>{level.name}</Text>
         </View>
+        <CircleButton t={t} icon={CLOSE} size={38} iconSize={14} color={t.text2} label="Close" onPress={onClose} />
       </View>
       <View style={styles.facts}>
         {facts.map(f => (
@@ -138,7 +171,14 @@ export function LevelSheetV2({ t, open, level, topic, balance, settings, reduceM
         ))}
       </View>
       <Text style={[styles.note, { color: t.text2 }]}>{note}</Text>
-      <PinkButton t={t} label={label} disabled={blocked} reduceMotion={reduceMotion} onPress={onStart} style={{ marginTop: 14, marginBottom: 10 }} />
+      <PinkButton
+        t={t}
+        label={label}
+        disabled={blocked}
+        reduceMotion={reduceMotion}
+        onPress={onStart}
+        style={{ marginTop: 14, marginBottom: 10 }}
+      />
     </BottomSheet>
   );
 }
@@ -151,7 +191,16 @@ const styles = StyleSheet.create({
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   node: { width: 62, height: 62, borderRadius: 31, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
   nodeNum: { fontFamily: FONT.serif, fontSize: 26 },
-  bubble: { paddingVertical: 8, paddingHorizontal: 11, borderRadius: 16, borderWidth: 1, maxWidth: 190, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 18 },
+  bubble: {
+    paddingVertical: 8,
+    paddingHorizontal: 11,
+    borderRadius: 16,
+    borderWidth: 1,
+    maxWidth: 190,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 18,
+  },
   levelName: { fontSize: ds(12), fontWeight: '700' },
   price: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
   priceText: { fontSize: ds(9.5), fontWeight: '800' },

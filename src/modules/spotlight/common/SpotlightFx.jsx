@@ -1,4 +1,4 @@
-import { Animated, Easing, Pressable, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
@@ -199,9 +199,25 @@ export function Waves({ isDark, reduceMotion }) {
   );
 }
 
+const OUTER_KEYS =
+  /^(flex|flexGrow|flexShrink|flexBasis|alignSelf|width|minWidth|maxWidth|margin.*|position|top|bottom|left|right|zIndex)$/;
+
+export function splitPressStyle(style) {
+  const flat = StyleSheet.flatten(style) || {};
+  const outer = {};
+  const inner = {};
+  Object.keys(flat).forEach(k => {
+    if (OUTER_KEYS.test(k)) outer[k] = flat[k];
+    else inner[k] = flat[k];
+  });
+  if (outer.flex != null || outer.flexGrow != null) inner.flexGrow = 1;
+  return { outer, inner };
+}
+
 export function PressScale({ onPress, disabled, style, children, accessibilityLabel, accessibilityRole = 'button' }) {
   const v = useAnimatedValue(1);
   const to = toValue => Animated.spring(v, { toValue, speed: 40, bounciness: 8, useNativeDriver: true }).start();
+  const { outer, inner } = splitPressStyle(style);
   return (
     <Pressable
       onPress={onPress}
@@ -210,8 +226,9 @@ export function PressScale({ onPress, disabled, style, children, accessibilityLa
       onPressOut={() => to(1)}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
+      style={outer}
     >
-      <Animated.View style={[style, { transform: [{ scale: v }] }]}>{children}</Animated.View>
+      <Animated.View style={[inner, { transform: [{ scale: v }] }]}>{children}</Animated.View>
     </Pressable>
   );
 }

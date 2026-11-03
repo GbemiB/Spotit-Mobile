@@ -151,13 +151,17 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
 
   async function nextLevel() {
     const { topic, level } = playing;
-    setPlaying(null);
     try {
       const fresh = await quizApi.getTopic(topic.id, token);
       setDetail(fresh);
       const next = fresh.levels.map(toLevel).find(l => l.n === level.n + 1);
-      if (next) setTimeout(() => openLevel(topic, next, fresh.levels.length), 350);
+      if (next && !levelLook(next, settings).locked && balance >= (next.cost || 0)) {
+        setPlaying({ topic, level: next, hasNext: fresh.levels.length > next.n });
+      } else {
+        setPlaying(null);
+      }
     } catch (e) {
+      setPlaying(null);
       setError(friendlyError(e));
     }
   }
@@ -165,6 +169,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
   const groups = toGroups(topicsData);
   const detailTopic = detail?.topic ? toTopic(detail.topic) : null;
   const levels = (detail?.levels || []).map(toLevel);
+  const upNext = playing ? levels.find(l => l.n === playing.level.n + 1) : null;
 
   const groupOf = id => (topicsData?.allGroups || []).find(g => g.id === id) || {};
   const trackGroup = detailTopic ? groupOf(detailTopic.group) : {};
@@ -242,6 +247,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
         topic={playing?.topic}
         level={playing?.level}
         hasNext={!!playing?.hasNext}
+        nextCost={upNext?.cost || 0}
         settings={settings}
         balance={balance}
         api={api}

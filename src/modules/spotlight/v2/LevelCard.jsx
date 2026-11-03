@@ -1,5 +1,5 @@
-import { Animated, Pressable, View, StyleSheet } from 'react-native';
-import { useState } from 'react';
+import { Animated, Pressable, ScrollView, View, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
 import Svg, { Defs, RadialGradient, Stop, Circle, Path } from 'react-native-svg';
 import { Text, FONT } from '../../../shared/styles/index.js';
 import { useLoopValue } from '../common/SpotlightFx.jsx';
@@ -123,6 +123,8 @@ function WinTile({ value, label, icon, bg, ink, t, index, reduceMotion, restart 
 export default function LevelCard({ t, stats, isNew, reduceMotion }) {
   const [page, setPage] = useState(0);
   const [restart, setRestart] = useState(0);
+  const [width, setWidth] = useState(0);
+  const scroller = useRef(null);
   const stars = stats?.stars || 0;
   const rank = stats?.rank;
   const prog = rankProgress(rank, stars);
@@ -135,12 +137,25 @@ export default function LevelCard({ t, stats, isNew, reduceMotion }) {
   const weekLine = played
     ? `You played ${played} ${played === 1 ? 'day' : 'days'} this week.${stats?.bestRun ? ` Best run: ${stats.bestRun} right in a row.` : ''}`
     : 'Play today to start your streak.';
-  function go(i) {
+  function show(i) {
+    if (i === page) return;
     setPage(i);
     setRestart(r => r + 1);
   }
+  function go(i) {
+    scroller.current?.scrollTo({ x: i * (width + 40), animated: !reduceMotion });
+    show(i);
+  }
+  function settle(e) {
+    show(Math.round(e.nativeEvent.contentOffset.x / (width + 40)));
+  }
   return (
-    <SlideIn reduceMotion={reduceMotion} delay={80} distance={22} style={[styles.card, { backgroundColor: t.surface, borderColor: t.border, shadowColor: t.cardShadow }]}>
+    <SlideIn
+      reduceMotion={reduceMotion}
+      delay={80}
+      distance={22}
+      style={[styles.card, { backgroundColor: t.surface, borderColor: t.border, shadowColor: t.cardShadow }]}
+    >
       <Glow t={t} reduceMotion={reduceMotion} />
       <Avatar t={t} reduceMotion={reduceMotion} />
       {isNew ? (
@@ -154,51 +169,89 @@ export default function LevelCard({ t, stats, isNew, reduceMotion }) {
         </View>
       ) : (
         <View>
-          <View style={{ minHeight: 128 }}>
-            {page === 0 ? (
-              <SlideIn key="level" reduceMotion={reduceMotion} axis="x" distance={18}>
-                <View style={{ paddingRight: 66 }}>
-                  <Text style={[styles.kicker, { color: t.pinkInk }]}>Your level</Text>
-                  <RankTitle name={rank?.name || ''} t={t} reduceMotion={reduceMotion} />
+          <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ minHeight: 128 }}>
+            {width ? (
+              <ScrollView
+                ref={scroller}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={settle}
+                style={{ marginHorizontal: -20 }}
+              >
+                <View style={{ width: width + 40, paddingHorizontal: 20 }}>
+                  <View style={{ paddingRight: 66 }}>
+                    <Text style={[styles.kicker, { color: t.pinkInk }]}>Your level</Text>
+                    <RankTitle name={rank?.name || ''} t={t} reduceMotion={reduceMotion} />
+                  </View>
+                  <StarBar t={t} pct={pct} reduceMotion={reduceMotion} />
+                  <Text style={[styles.line, { color: t.text2 }]}>{line}</Text>
                 </View>
-                <StarBar t={t} pct={pct} reduceMotion={reduceMotion} />
-                <Text style={[styles.line, { color: t.text2 }]}>{line}</Text>
-              </SlideIn>
-            ) : null}
-            {page === 1 ? (
-              <SlideIn key="wins" reduceMotion={reduceMotion} axis="x" distance={18} style={{ paddingRight: 66 }}>
-                <Text style={[styles.kicker, { color: t.pinkInk }]}>Your wins</Text>
-                <View style={styles.winRow}>
-                  <WinTile value={stats?.levelsDone || 0} label="levels won" icon={FLAG} bg={t.pinkSoft} ink={t.pinkInk} t={t} index={0} reduceMotion={reduceMotion} restart={restart} />
-                  <WinTile value={stars} label="stars" icon={STAR_PATH} bg={t.goldSoft} ink={t.goldInk} t={t} index={1} reduceMotion={reduceMotion} restart={restart} />
-                  <WinTile value={stats?.rightAnswers || 0} label="right answers" icon={CHECK} bg={t.greenSoft} ink={t.greenInk} t={t} index={2} reduceMotion={reduceMotion} restart={restart} />
+                <View style={{ width: width + 40, paddingLeft: 20, paddingRight: 86 }}>
+                  <Text style={[styles.kicker, { color: t.pinkInk }]}>Your wins</Text>
+                  <View style={styles.winRow}>
+                    <WinTile
+                      value={stats?.levelsDone || 0}
+                      label="levels won"
+                      icon={FLAG}
+                      bg={t.pinkSoft}
+                      ink={t.pinkInk}
+                      t={t}
+                      index={0}
+                      reduceMotion={reduceMotion}
+                      restart={restart}
+                    />
+                    <WinTile
+                      value={stars}
+                      label="stars"
+                      icon={STAR_PATH}
+                      bg={t.goldSoft}
+                      ink={t.goldInk}
+                      t={t}
+                      index={1}
+                      reduceMotion={reduceMotion}
+                      restart={restart}
+                    />
+                    <WinTile
+                      value={stats?.rightAnswers || 0}
+                      label="right answers"
+                      icon={CHECK}
+                      bg={t.greenSoft}
+                      ink={t.greenInk}
+                      t={t}
+                      index={2}
+                      reduceMotion={reduceMotion}
+                      restart={restart}
+                    />
+                  </View>
                 </View>
-              </SlideIn>
-            ) : null}
-            {page === 2 ? (
-              <SlideIn key="week" reduceMotion={reduceMotion} axis="x" distance={18} style={{ paddingRight: 66 }}>
-                <Text style={[styles.kicker, { color: t.pinkInk }]}>This week</Text>
-                <View style={{ flexDirection: 'row', gap: 5, marginTop: 10 }}>
-                  {days.map((d, i) => (
-                    <View key={d.key} style={{ alignItems: 'center', gap: 3 }}>
-                      <SlideIn reduceMotion={reduceMotion || !d.played} delay={50 + i * 50} trigger={restart}>
-                        <View
-                          style={[
-                            styles.weekDot,
-                            { backgroundColor: d.played ? t.goldSoft : 'transparent', borderColor: d.today ? t.pink : d.played ? t.gold : t.border },
-                          ]}
-                        >
-                          <Svg width={10} height={10} viewBox="0 0 24 24">
-                            <Path d={STAR_PATH} fill={d.played ? t.gold : t.starOff} />
-                          </Svg>
-                        </View>
-                      </SlideIn>
-                      <Text style={[styles.weekLetter, { color: d.today ? t.pinkInk : t.text3 }]}>{d.letter}</Text>
-                    </View>
-                  ))}
+                <View style={{ width: width + 40, paddingLeft: 20, paddingRight: 86 }}>
+                  <Text style={[styles.kicker, { color: t.pinkInk }]}>This week</Text>
+                  <View style={{ flexDirection: 'row', gap: 5, marginTop: 10 }}>
+                    {days.map((d, i) => (
+                      <View key={d.key} style={{ alignItems: 'center', gap: 3 }}>
+                        <SlideIn reduceMotion={reduceMotion || !d.played} delay={50 + i * 50} trigger={restart}>
+                          <View
+                            style={[
+                              styles.weekDot,
+                              {
+                                backgroundColor: d.played ? t.goldSoft : 'transparent',
+                                borderColor: d.today ? t.pink : d.played ? t.gold : t.border,
+                              },
+                            ]}
+                          >
+                            <Svg width={10} height={10} viewBox="0 0 24 24">
+                              <Path d={STAR_PATH} fill={d.played ? t.gold : t.starOff} />
+                            </Svg>
+                          </View>
+                        </SlideIn>
+                        <Text style={[styles.weekLetter, { color: d.today ? t.pinkInk : t.text3 }]}>{d.letter}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={[styles.weekLine, { color: t.text2 }]}>{weekLine}</Text>
                 </View>
-                <Text style={[styles.weekLine, { color: t.text2 }]}>{weekLine}</Text>
-              </SlideIn>
+              </ScrollView>
             ) : null}
           </View>
           <View style={{ flexDirection: 'row', gap: 2, marginLeft: -8 }}>
@@ -211,7 +264,9 @@ export default function LevelCard({ t, stats, isNew, reduceMotion }) {
                 accessibilityState={{ selected: page === i }}
                 style={styles.dotHit}
               >
-                <View style={{ width: page === i ? 22 : 7, height: 7, borderRadius: 999, backgroundColor: page === i ? t.pink : t.track }} />
+                <View
+                  style={{ width: page === i ? 22 : 7, height: 7, borderRadius: 999, backgroundColor: page === i ? t.pink : t.track }}
+                />
               </Pressable>
             ))}
           </View>
@@ -228,13 +283,16 @@ export function StreakStrip({ t, stats, reduceMotion }) {
       <View style={{ flexDirection: 'row', gap: 4 }}>
         {days.map(d => (
           <View key={d.key} style={{ alignItems: 'center', gap: 2 }}>
-            <View style={[styles.stripDot, { backgroundColor: d.today ? t.pinkSoft : 'transparent', borderColor: d.today ? t.pink : t.border }]} />
+            <View
+              style={[styles.stripDot, { backgroundColor: d.today ? t.pinkSoft : 'transparent', borderColor: d.today ? t.pink : t.border }]}
+            />
             <Text style={[styles.stripLetter, { color: d.today ? t.pinkInk : t.text3 }]}>{d.letter}</Text>
           </View>
         ))}
       </View>
       <Text style={[styles.stripText, { color: t.text2 }]}>
-        <Text style={{ fontWeight: '800', color: t.text, fontSize: ds(10.5) }}>Play today</Text> to start your streak. Your wins will show here.
+        <Text style={{ fontWeight: '800', color: t.text, fontSize: ds(10.5) }}>Play today</Text> to start your streak. Your wins will show
+        here.
       </Text>
     </SlideIn>
   );
@@ -269,7 +327,18 @@ const styles = StyleSheet.create({
   weekLetter: { fontSize: ds(8.5), fontWeight: '700' },
   weekLine: { fontSize: ds(11), lineHeight: 16, marginTop: 10 },
   dotHit: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  strip: { marginHorizontal: 20, marginTop: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', gap: 10 },
+  strip: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   stripDot: { width: 15, height: 15, borderRadius: 8, borderWidth: 1.5 },
   stripLetter: { fontSize: ds(8), fontWeight: '700' },
   stripText: { flex: 1, fontSize: ds(10.5), lineHeight: 15 },

@@ -1,5 +1,5 @@
 import { Modal, View, ScrollView, StyleSheet } from 'react-native';
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
@@ -37,7 +37,8 @@ function Choice({ t, label, icon, soft, border, ink, onPress, disabled }) {
   );
 }
 
-function Result({ t, state, level, topic, hasNext, settings, balance, reduceMotion, onReplay, onNextLevel, onClose }) {
+function Result({ t, state, level, topic, hasNext, nextCost, settings, balance, reduceMotion, onReplay, onNextLevel, onClose }) {
+  const [going, setGoing] = useState(false);
   const cleared = state.phase === 'cleared';
   const stars = cleared ? state.stars : 0;
   const answered = (state.results || []).length;
@@ -47,8 +48,15 @@ function Result({ t, state, level, topic, hasNext, settings, balance, reduceMoti
     { value: stars, label: stars === 1 ? 'star' : 'stars', ink: t.goldInk },
     { value: balance, label: 'SP left', ink: t.pinkInk },
   ];
-  const primary = cleared ? (hasNext ? 'Next level' : 'Back to levels') : 'Try again';
-  const onPrimary = cleared ? (hasNext ? onNextLevel : onClose) : onReplay;
+  const short = cleared && hasNext && nextCost > balance;
+  const nextLabel = short ? 'Not enough SP' : nextCost ? `Next level · ${nextCost} SP` : 'Next level';
+  const primary = cleared ? (hasNext ? nextLabel : 'Back to levels') : 'Try again';
+  function goNext() {
+    if (going) return;
+    setGoing(true);
+    onNextLevel();
+  }
+  const onPrimary = cleared ? (hasNext ? goNext : onClose) : onReplay;
   return (
     <View style={{ flex: 1 }}>
       {cleared && stars >= 3 ? <Confetti colors={[t.pink, t.gold, t.green, t.pinkInk, t.goldSoft]} reduceMotion={reduceMotion} /> : null}
@@ -72,21 +80,40 @@ function Result({ t, state, level, topic, hasNext, settings, balance, reduceMoti
       </View>
       <View style={styles.statRow}>
         {stats.map((s, i) => (
-          <SlideIn key={s.label} reduceMotion={reduceMotion} delay={700 + i * 80} style={[styles.stat, { backgroundColor: t.surface, borderColor: t.border }]}>
+          <SlideIn
+            key={s.label}
+            reduceMotion={reduceMotion}
+            delay={700 + i * 80}
+            style={[styles.stat, { backgroundColor: t.surface, borderColor: t.border }]}
+          >
             <Text style={[styles.statValue, { color: s.ink }]}>{s.value}</Text>
             <Text style={[styles.statLabel, { color: t.text2 }]}>{s.label}</Text>
           </SlideIn>
         ))}
       </View>
       <View style={{ marginTop: 'auto', paddingHorizontal: 18, gap: 8 }}>
-        <PinkButton t={t} label={primary} reduceMotion={reduceMotion} onPress={onPrimary} />
+        <PinkButton t={t} label={primary} disabled={short || going} reduceMotion={reduceMotion} onPress={onPrimary} />
         <GhostButton t={t} label="Back to levels" onPress={onClose} />
       </View>
     </View>
   );
 }
 
-export default function QuizPlayV2({ t, open, topic, level, hasNext, settings, balance, api, reduceMotion, onClose, onFinish, onNextLevel }) {
+export default function QuizPlayV2({
+  t,
+  open,
+  topic,
+  level,
+  hasNext,
+  nextCost = 0,
+  settings,
+  balance,
+  api,
+  reduceMotion,
+  onClose,
+  onFinish,
+  onNextLevel,
+}) {
   const insets = useSafeAreaInsets();
   const [state, dispatch] = useReducer(playReducer, undefined, initialPlay);
   const reported = useRef(false);
@@ -159,11 +186,13 @@ export default function QuizPlayV2({ t, open, topic, level, hasNext, settings, b
         <Glow t={t} />
         {done ? (
           <Result
+            key={`${topic.id}-${level.n}`}
             t={t}
             state={state}
             level={level}
             topic={topic}
             hasNext={hasNext}
+            nextCost={nextCost}
             settings={settings}
             balance={balance}
             reduceMotion={reduceMotion}
@@ -179,28 +208,51 @@ export default function QuizPlayV2({ t, open, topic, level, hasNext, settings, b
                 {Array.from({ length: rounds }, (_, i) => (
                   <View
                     key={i}
-                    style={[styles.bar, { backgroundColor: i < results.length ? (results[i] ? t.green : t.red) : i === state.round ? t.pink : t.track }]}
+                    style={[
+                      styles.bar,
+                      { backgroundColor: i < results.length ? (results[i] ? t.green : t.red) : i === state.round ? t.pink : t.track },
+                    ]}
                   />
                 ))}
               </View>
               <View style={{ flexDirection: 'row', gap: 2 }} accessibilityLabel={`${state.attempt ? state.lives : lives} hearts left`}>
                 {Array.from({ length: lives }, (_, i) => (
-                  <HeartIcon key={i} t={t} alive={i < (state.attempt ? state.lives : lives)} lost={answered && !right && i === state.lives} reduceMotion={reduceMotion} />
+                  <HeartIcon
+                    key={i}
+                    t={t}
+                    alive={i < (state.attempt ? state.lives : lives)}
+                    lost={answered && !right && i === state.lives}
+                    reduceMotion={reduceMotion}
+                  />
                 ))}
               </View>
             </View>
             <View style={styles.sub}>
-              <Text style={[styles.round, { color: t.pinkInk }]}>{state.attempt ? `Round ${state.round + 1} of ${state.total}` : 'Getting ready…'}</Text>
+              <Text style={[styles.round, { color: t.pinkInk }]}>
+                {state.attempt ? `Round ${state.round + 1} of ${state.total}` : 'Getting ready…'}
+              </Text>
               <Text style={[styles.level, { color: t.text3 }]}>
                 Level {level.n} · {level.name}
               </Text>
             </View>
 
             {round ? (
-              <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12 }} showsVerticalScrollIndicator={false}>
+              <ScrollView
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12 }}
+                showsVerticalScrollIndicator={false}
+              >
                 <SlideIn key={state.round} reduceMotion={reduceMotion} distance={24}>
                   <Shake trigger={answered && !right ? state.round + 1 : 0} reduceMotion={reduceMotion}>
-                    <View style={[styles.card, { backgroundColor: t.surface, borderColor: answered ? (right ? t.green : t.pink) : t.border, shadowColor: t.cardShadow }]}>
+                    <View
+                      style={[
+                        styles.card,
+                        {
+                          backgroundColor: t.surface,
+                          borderColor: answered ? (right ? t.green : t.pink) : t.border,
+                          shadowColor: t.cardShadow,
+                        },
+                      ]}
+                    >
                       {answered ? (
                         <Pop reduceMotion={reduceMotion} style={[styles.verdict, { backgroundColor: right ? t.green : t.pink }]}>
                           <Text style={styles.verdictText}>
@@ -243,26 +295,63 @@ export default function QuizPlayV2({ t, open, topic, level, hasNext, settings, b
 
             {state.error ? <Text style={[styles.error, { color: t.pinkInk }]}>{state.error}</Text> : null}
             <View style={{ paddingHorizontal: 16 }}>
-              {!state.attempt && state.error ? <PinkButton t={t} label="Try again" reduceMotion={reduceMotion} onPress={retryStart} /> : null}
+              {!state.attempt && state.error ? (
+                <PinkButton t={t} label="Try again" reduceMotion={reduceMotion} onPress={retryStart} />
+              ) : null}
               {round && !answered ? (
                 <View>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <Choice t={t} label="Myth" icon={MYTH_ICON} soft={t.pinkSoft} border={t.pinkBorder} ink={t.pinkInk} disabled={state.busy} onPress={() => choose('myth')} />
-                    <Choice t={t} label="Fact" icon={FACT_ICON} soft={t.greenSoft} border={t.greenBorder} ink={t.greenInk} disabled={state.busy} onPress={() => choose('fact')} />
+                    <Choice
+                      t={t}
+                      label="Myth"
+                      icon={MYTH_ICON}
+                      soft={t.pinkSoft}
+                      border={t.pinkBorder}
+                      ink={t.pinkInk}
+                      disabled={state.busy}
+                      onPress={() => choose('myth')}
+                    />
+                    <Choice
+                      t={t}
+                      label="Fact"
+                      icon={FACT_ICON}
+                      soft={t.greenSoft}
+                      border={t.greenBorder}
+                      ink={t.greenInk}
+                      disabled={state.busy}
+                      onPress={() => choose('fact')}
+                    />
                   </View>
-                  <PressScale onPress={takeHint} disabled={!canHint} accessibilityLabel={state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}>
+                  <PressScale
+                    onPress={takeHint}
+                    disabled={!canHint}
+                    accessibilityLabel={state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}
+                  >
                     <View style={styles.hintBtn}>
                       <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
-                        <Path d={HINT} stroke={state.hinted ? t.text3 : t.goldInk} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                        <Path
+                          d={HINT}
+                          stroke={state.hinted ? t.text3 : t.goldInk}
+                          strokeWidth={1.8}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </Svg>
-                      <Text style={[styles.hintLabel, { color: state.hinted ? t.text3 : t.goldInk }]}>{state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}</Text>
+                      <Text style={[styles.hintLabel, { color: state.hinted ? t.text3 : t.goldInk }]}>
+                        {state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}
+                      </Text>
                     </View>
                   </PressScale>
                 </View>
               ) : null}
               {answered ? (
                 <Pop reduceMotion={reduceMotion}>
-                  <PinkButton t={t} label={isLast ? 'See how you did' : 'Next question'} reduceMotion={reduceMotion} onPress={() => dispatch({ type: 'next' })} />
+                  <PinkButton
+                    t={t}
+                    label={isLast ? 'See how you did' : 'Next question'}
+                    reduceMotion={reduceMotion}
+                    onPress={() => dispatch({ type: 'next' })}
+                  />
                 </Pop>
               ) : null}
             </View>
@@ -281,7 +370,17 @@ const styles = StyleSheet.create({
   sub: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 20, paddingTop: 18 },
   round: { fontSize: ds(10), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
   level: { fontSize: ds(10.5), fontWeight: '600' },
-  card: { minHeight: 200, paddingVertical: 22, paddingHorizontal: 20, borderRadius: 28, borderWidth: 1.5, marginTop: 12, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 1, shadowRadius: 18 },
+  card: {
+    minHeight: 200,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    marginTop: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 18,
+  },
   verdict: { position: 'absolute', top: -13, left: 20, paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999 },
   verdictText: { color: '#FFFFFF', fontSize: ds(11), fontWeight: '800', letterSpacing: 0.5 },
   statement: { fontFamily: FONT.serif, fontSize: 23, lineHeight: 30 },
