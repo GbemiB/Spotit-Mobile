@@ -1,4 +1,4 @@
-import { freeLevelsText, freeLevelsShort } from './wording.js';
+import { freeLevelsText, freeLevelsShort, gameError } from './wording.js';
 
 describe('free levels wording', () => {
   it('follows the number of free levels from the server', () => {
@@ -9,5 +9,16 @@ describe('free levels wording', () => {
     expect(freeLevelsShort(null)).toBe('');
     expect(freeLevelsShort(2)).toBe('levels 1–2 of every topic are free');
     expect(freeLevelsShort(0)).toBe('every level costs SP');
+  });
+});
+
+describe('game errors', () => {
+  it('keeps the SP message and otherwise shows what the server said', () => {
+    expect(gameError({ status: 402, message: 'Not enough points' })).toBe('You don’t have enough SpotPoints for that yet.');
+    expect(gameError({ status: 409, message: 'This day has no visitors yet.' })).toBe('This day has no visitors yet.');
+    expect(gameError({ status: 403, message: 'Win more stars to open this part of the map.' })).toBe(
+      'Win more stars to open this part of the map.',
+    );
+    expect(gameError(null)).toBe('Something went wrong. Please try again.');
   });
 });

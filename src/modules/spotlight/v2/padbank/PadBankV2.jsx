@@ -8,7 +8,7 @@ import { useTheme, Text, FONT } from '../../../../shared/styles/index.js';
 import * as padbankApi from '../../../../shared/api/padbank.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { PressScale, Pop } from '../../common/SpotlightFx.jsx';
-import { friendlyError } from '../../quiz/quizLogic.js';
+import { gameError } from '../../common/wording.js';
 import { clueIcon, endTitle as fallbackTitle, goalLabels, visitPrice, togglePack, slipName } from '../../games/padbank/padbankLogic.js';
 import Character from '../Character.jsx';
 import { spotTokens, STAR_PATH } from '../tokens.js';
@@ -195,6 +195,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   const [end, setEnd] = useState(null);
   const [flight, setFlight] = useState(null);
   const [error, setError] = useState(null);
+  const [rulesKey, setRulesKey] = useState(0);
   const timers = useRef([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -203,11 +204,11 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
     padbankApi
       .getRules(token)
       .then(r => alive && setRules(r))
-      .catch(e => alive && setError(friendlyError(e)));
+      .catch(e => alive && setError(gameError(e)));
     return () => {
       alive = false;
     };
-  }, [token]);
+  }, [token, rulesKey]);
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       onExit();
@@ -244,7 +245,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
       setEnd(null);
       setPhase('serve');
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('intro');
     }
   }
@@ -281,7 +282,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
       );
     } catch (e) {
       setFlight(null);
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('serve');
     }
   }
@@ -298,7 +299,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
       setPhase('end');
       onChanged?.();
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('serve');
     }
   }
@@ -318,6 +319,8 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   }
 
   function playAgain() {
+    setRules(null);
+    setRulesKey(n => n + 1);
     setPhase('intro');
     setRun(null);
     setEnd(null);
@@ -833,7 +836,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                 ? freeLeft > 0
                   ? 'Your next run is free'
                   : `Next run costs ${cost} SP`
-                : `Tomorrow your first ${freeVisitors} visitors are free again`}
+                : `Your next day starts with ${freeVisitors} free ${freeVisitors === 1 ? 'visitor' : 'visitors'}`}
             </Text>
           </SlideIn>
         </>

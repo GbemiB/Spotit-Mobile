@@ -9,7 +9,7 @@ import { useTheme, Text, FONT } from '../../../../shared/styles/index.js';
 import * as givedayApi from '../../../../shared/api/giveday.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { PressScale, Pop, Twinkle, Bob } from '../../common/SpotlightFx.jsx';
-import { friendlyError } from '../../quiz/quizLogic.js';
+import { gameError } from '../../common/wording.js';
 import {
   giftCost,
   canGive,
@@ -302,7 +302,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       setHere(null);
       setPhase(data.home ? 'map' : 'home');
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('intro');
     }
   }
@@ -324,7 +324,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       setSel(null);
       setPhase('map');
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
     } finally {
       setBusy(false);
     }
@@ -340,7 +340,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       const data = await givedayApi.loadArea(run.runId, a.id, token);
       setArea(cur => (cur && cur.areaId === a.id ? data : cur));
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setArea(null);
     }
   }
@@ -359,7 +359,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       setTrips(data);
       setMode(best ? best.mode : null);
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
     }
   }
 
@@ -398,7 +398,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
         feel(true);
       }, ms + 80);
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
     } finally {
       setBusy(false);
     }
@@ -436,7 +436,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
         }
       }, 1900);
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('build');
     }
   }
@@ -453,7 +453,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       setPhase('done');
       onChanged?.();
     } catch (e) {
-      setError(friendlyError(e));
+      setError(gameError(e));
       setPhase('map');
     }
   }
@@ -653,7 +653,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
           >
             <Text style={styles.btnText}>{phase === 'loading' ? 'Starting…' : 'Start the day'}</Text>
             <View style={styles.btnChip}>
-              <Text style={styles.btnChipText}>{freeLeft > 0 ? 'Free try' : cost ? `${cost} SP` : 'Free'}</Text>
+              <Text style={styles.btnChipText}>{!cost ? 'Free' : freeLeft > 0 ? 'Free try' : `${cost} SP`}</Text>
             </View>
           </PinkButton>
         </SlideIn>

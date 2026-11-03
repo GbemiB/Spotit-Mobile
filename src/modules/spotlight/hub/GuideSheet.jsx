@@ -17,11 +17,14 @@ function countWord(n) {
   return ['no', 'one', 'two', 'three', 'four', 'five'][n] || String(n);
 }
 
-export function guideSteps({ freeLevels, freeTries, games = [], ranks = [] }) {
+export function guideSteps({ freeLevels, freeTries, freeGames = false, games = [], ranks = [] }) {
   const ways = countWord(games.length + 1);
   const gameText = games.length ? `, and ${countWord(games.length)} pretend ${games.length === 1 ? 'game' : 'games'}: ${listWords(games)}` : '';
   const levels = freeLevels > 0 ? (freeLevels === 1 ? 'Level 1 of every quiz topic is free' : `Levels 1 to ${freeLevels} of every quiz topic are free`) : 'Every quiz level costs SP';
-  const tries = freeTries > 0 ? `, and each game gives you ${countWord(freeTries)} free ${freeTries === 1 ? 'try' : 'tries'}` : '';
+  const tries = freeGames && games.length
+    ? ', and the games are free to open'
+    : freeTries > 0
+      ? `, and each game gives you ${countWord(freeTries)} free ${freeTries === 1 ? 'try' : 'tries'}` : '';
   const rankNames = ranks.map(r => r.name);
   const ladder = rankNames.length > 1 ? ` Collect them to grow from ${rankNames[0]} to ${listWords(rankNames.slice(1))}.` : '';
   return [
@@ -103,7 +106,8 @@ export default function GuideSheet({ open, settings, challenges = [], ranks = []
   const pos = useAnimatedValue(0);
   const games = challenges.filter(c => c.kind !== 'quiz');
   const freeTries = games.length ? Math.min(...games.map(g => g.freePlaysLeft || 0)) : 0;
-  const steps = guideSteps({ freeLevels: settings?.freeLevels, freeTries, games: games.map(g => g.name), ranks });
+  const freeGames = games.length > 0 && games.every(g => !g.cost);
+  const steps = guideSteps({ freeLevels: settings?.freeLevels, freeTries, freeGames, games: games.map(g => g.name), ranks });
   const first = index === 0;
   const last = index === steps.length - 1;
 

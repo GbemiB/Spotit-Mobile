@@ -11,3 +11,8 @@ export function freeLevelsShort(n) {
   if (n === 1) return 'level 1 of every topic is free';
   return `levels 1–${n} of every topic are free`;
 }
+
+export function gameError(e) {
+  if (e?.status === 402) return 'You don’t have enough SpotPoints for that yet.';
+  return e?.message || 'Something went wrong. Please try again.';
+}

@@ -32,6 +32,12 @@ describe('guideSteps', () => {
     expect(steps[1].body).toContain('one free try');
     expect(steps[2].body).toContain('from Curious to Explorer, Myth Buster and Know-It-All');
   });
+  it('says the games are free to open when they cost nothing', () => {
+    const steps = guideSteps({ freeLevels: 2, freeTries: 1, freeGames: true, games: ['Pad Bank Run', 'Give Day'], ranks: [] });
+    expect(steps[1].body).toBe(
+      'Levels 1 to 2 of every quiz topic are free, and the games are free to open. After that, you use SpotPoints.',
+    );
+  });
   it('copes with no games, no free tries and one rank', () => {
     const steps = guideSteps({ freeLevels: 0, freeTries: 0, games: [], ranks: [{ name: 'Curious' }] });
     expect(steps[0].title).toBe('One way to play');
