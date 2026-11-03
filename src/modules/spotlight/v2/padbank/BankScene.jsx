@@ -6,7 +6,12 @@ import Character from '../Character.jsx';
 import { HEART_PATH } from '../tokens.js';
 import { ds, Sway, Travel, Blink, WaveOnce } from '../motion.jsx';
 
-export const PACK_ART = { pink: ['#F2A0AE', '#DC5A74'], peach: ['#F7D49A', '#D6A24E'], rose: ['#E8708A', '#C04E68'], green: ['#A5D8BA', '#4E9E78'] };
+export const PACK_ART = {
+  pink: ['#F2A0AE', '#DC5A74'],
+  peach: ['#F7D49A', '#D6A24E'],
+  rose: ['#E8708A', '#C04E68'],
+  green: ['#A5D8BA', '#4E9E78'],
+};
 
 export function packArt(color) {
   return PACK_ART[color] || PACK_ART.pink;
@@ -14,8 +19,64 @@ export function packArt(color) {
 
 export function sceneColors(isDark) {
   return isDark
-    ? { wall: '#2A2023', wallStripe: '#2E2327', frame: '#4A3438', sky1: '#1E1624', sky2: '#3A2630', street: '#2A2226', shopOut: '#3A2C30', shopOut2: '#4A3438', awn2: '#E2647C', winOut: '#F7C98A', ink: '#C7B8BD', floor: '#221A1D', shelf: '#7A5446', shelfDark: '#5E3E36', plant: '#4E9E78', pot: '#C28A33', sign: '#2A2023', signBorder: '#5E3E46', walker1: '#7A6C71', walker1b: '#5E3E46', walker2: '#7A6C71', walker2b: '#3E6B55', counterTop: '#8A604E', counterFront: '#5E3E36', counterLine: '#4A3028', shutter1: '#3A2C30', shutter2: '#2A2023' }
-    : { wall: '#FFF3EE', wallStripe: '#FDEBE4', frame: '#E8C3BC', sky1: '#FFE3D4', sky2: '#FFF3EC', street: '#F3E6DE', shopOut: '#FFFFFF', shopOut2: '#FFF6EE', awn2: '#F2A0AE', winOut: '#FFF0F2', ink: '#6E6066', floor: '#F6E4DA', shelf: '#D9B08A', shelfDark: '#B98B66', plant: '#8FCBA9', pot: '#E2B86A', sign: '#FFFFFF', signBorder: '#F2D0D8', walker1: '#C7A592', walker1b: '#F2A0AE', walker2: '#8D5A3B', walker2b: '#8FCBA9', counterTop: '#E9C9A9', counterFront: '#DDB592', counterLine: '#CFA27C', shutter1: '#F2E6E1', shutter2: '#E3D2CB' };
+    ? {
+        wall: '#2A2023',
+        wallStripe: '#2E2327',
+        frame: '#4A3438',
+        sky1: '#1E1624',
+        sky2: '#3A2630',
+        street: '#2A2226',
+        shopOut: '#3A2C30',
+        shopOut2: '#4A3438',
+        awn2: '#E2647C',
+        winOut: '#F7C98A',
+        ink: '#C7B8BD',
+        floor: '#221A1D',
+        shelf: '#7A5446',
+        shelfDark: '#5E3E36',
+        plant: '#4E9E78',
+        pot: '#C28A33',
+        sign: '#2A2023',
+        signBorder: '#5E3E46',
+        walker1: '#7A6C71',
+        walker1b: '#5E3E46',
+        walker2: '#7A6C71',
+        walker2b: '#3E6B55',
+        counterTop: '#8A604E',
+        counterFront: '#5E3E36',
+        counterLine: '#4A3028',
+        shutter1: '#3A2C30',
+        shutter2: '#2A2023',
+      }
+    : {
+        wall: '#FFF3EE',
+        wallStripe: '#FDEBE4',
+        frame: '#E8C3BC',
+        sky1: '#FFE3D4',
+        sky2: '#FFF3EC',
+        street: '#F3E6DE',
+        shopOut: '#FFFFFF',
+        shopOut2: '#FFF6EE',
+        awn2: '#F2A0AE',
+        winOut: '#FFF0F2',
+        ink: '#6E6066',
+        floor: '#F6E4DA',
+        shelf: '#D9B08A',
+        shelfDark: '#B98B66',
+        plant: '#8FCBA9',
+        pot: '#E2B86A',
+        sign: '#FFFFFF',
+        signBorder: '#F2D0D8',
+        walker1: '#C7A592',
+        walker1b: '#F2A0AE',
+        walker2: '#8D5A3B',
+        walker2b: '#8FCBA9',
+        counterTop: '#E9C9A9',
+        counterFront: '#DDB592',
+        counterLine: '#CFA27C',
+        shutter1: '#F2E6E1',
+        shutter2: '#E3D2CB',
+      };
 }
 
 function Bag({ fill, top, size = 26 }) {
@@ -50,10 +111,19 @@ export default function BankScene({ t, isDark, k, packs, stock, queue, peek, pee
   const bags = [];
   packs.forEach((p, i) => {
     const art = packArt(p.color);
-    const row = i < 2 ? 0 : 1;
-    const col = i % 2;
+    const wide = packs.length > 4;
+    const row = wide ? Math.floor(i / 4) % 2 : i < 2 ? 0 : 1;
+    const col = wide ? i % 4 : i % 2;
+    const step = wide ? 12 : 24;
     for (let n = 0; n < p.stock; n += 1) {
-      bags.push({ key: `${p.id}-${n}`, left: (26 + col * 120 + n * 24) * k, top: (row ? 200 : 120) * k, fill: art[0], top2: art[1], gone: (stock[p.id] ?? p.stock) <= n });
+      bags.push({
+        key: `${p.id}-${n}`,
+        left: (26 + col * (wide ? 62 : 120) + n * step) * k,
+        top: (row ? 200 : 120) * k,
+        fill: art[0],
+        top2: art[1],
+        gone: (stock[p.id] ?? p.stock) <= n,
+      });
     }
   });
   return (
@@ -93,8 +163,31 @@ export default function BankScene({ t, isDark, k, packs, stock, queue, peek, pee
         <Rect x={22} y={138} width={16} height={12} rx={3} fill={s.pot} />
         <Rect x={243} y={218} width={14} height={12} rx={3} fill={s.pot} />
       </Svg>
-      <Blink reduceMotion={reduceMotion} style={{ position: 'absolute', left: 302 * k, top: 176 * k, width: 18 * k, height: 16 * k, borderRadius: 3 * k, backgroundColor: s.winOut }} />
-      <Blink reduceMotion={reduceMotion} delay={1200} style={{ position: 'absolute', left: 342 * k, top: 152 * k, width: 16 * k, height: 14 * k, borderRadius: 3 * k, backgroundColor: s.winOut }} />
+      <Blink
+        reduceMotion={reduceMotion}
+        style={{
+          position: 'absolute',
+          left: 302 * k,
+          top: 176 * k,
+          width: 18 * k,
+          height: 16 * k,
+          borderRadius: 3 * k,
+          backgroundColor: s.winOut,
+        }}
+      />
+      <Blink
+        reduceMotion={reduceMotion}
+        delay={1200}
+        style={{
+          position: 'absolute',
+          left: 342 * k,
+          top: 152 * k,
+          width: 16 * k,
+          height: 14 * k,
+          borderRadius: 3 * k,
+          backgroundColor: s.winOut,
+        }}
+      />
       <Sway reduceMotion={reduceMotion} deg={4} style={{ position: 'absolute', left: 18 * k, top: 118 * k }}>
         <Svg width={40 * k} height={32 * k} viewBox="18 118 40 32">
           <Path d="M30 148c-10-6-14-18-8-26 6 6 9 15 8 26zM30 148c6-10 16-14 24-10-4 8-13 12-24 10z" fill={s.plant} />
@@ -106,10 +199,23 @@ export default function BankScene({ t, isDark, k, packs, stock, queue, peek, pee
         </Svg>
       </Sway>
       <View style={{ position: 'absolute', left: 284 * k, top: 250 * k, width: 84 * k, height: 60 * k, overflow: 'hidden' }}>
-        <Travel reduceMotion={reduceMotion} from={-40 * k} to={130 * k} duration={11000} style={{ position: 'absolute', left: 0, bottom: 0 }}>
+        <Travel
+          reduceMotion={reduceMotion}
+          from={-40 * k}
+          to={130 * k}
+          duration={11000}
+          style={{ position: 'absolute', left: 0, bottom: 0 }}
+        >
           <Walker color={s.walker1} body={s.walker1b} />
         </Travel>
-        <Travel reduceMotion={reduceMotion} from={130 * k} to={-40 * k} duration={14000} delay={4000} style={{ position: 'absolute', left: 0, bottom: 0 }}>
+        <Travel
+          reduceMotion={reduceMotion}
+          from={130 * k}
+          to={-40 * k}
+          duration={14000}
+          delay={4000}
+          style={{ position: 'absolute', left: 0, bottom: 0 }}
+        >
           <Walker color={s.walker2} body={s.walker2b} dress />
         </Travel>
       </View>
@@ -118,7 +224,12 @@ export default function BankScene({ t, isDark, k, packs, stock, queue, peek, pee
           <Bag fill={b.fill} top={b.top2} size={26 * k} />
         </View>
       ))}
-      <Sway reduceMotion={reduceMotion} deg={3} duration={3600} style={{ position: 'absolute', left: 92 * k, top: 100 * k, alignItems: 'center' }}>
+      <Sway
+        reduceMotion={reduceMotion}
+        deg={3}
+        duration={3600}
+        style={{ position: 'absolute', left: 92 * k, top: 100 * k, alignItems: 'center' }}
+      >
         <Svg width={96 * k} height={14 * k} viewBox="0 0 96 14">
           <Path d="M20 0v14M76 0v14" stroke={s.shelfDark} strokeWidth={1.5} />
         </Svg>
@@ -146,11 +257,28 @@ export default function BankScene({ t, isDark, k, packs, stock, queue, peek, pee
         </View>
       ) : null}
       {peek ? (
-        <Travel reduceMotion={reduceMotion} from={0} to={-10} duration={2600} style={{ position: 'absolute', left: 330 * k, top: 236 * k, width: 70 * k, height: 80 * k, overflow: 'hidden' }}>
+        <Travel
+          reduceMotion={reduceMotion}
+          from={0}
+          to={-10}
+          duration={2600}
+          style={{ position: 'absolute', left: 330 * k, top: 236 * k, width: 70 * k, height: 80 * k, overflow: 'hidden' }}
+        >
           <Character name={peekLook} size={80 * k} />
         </Travel>
       ) : null}
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 372 * k, height: 16 * k, backgroundColor: s.counterTop, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 372 * k,
+          height: 16 * k,
+          backgroundColor: s.counterTop,
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+        }}
+      />
       <View style={{ position: 'absolute', left: 0, right: 0, top: 388 * k, height: 82 * k, backgroundColor: s.counterFront }}>
         <Svg width={W} height={82 * k} viewBox="0 0 390 82">
           <Path d="M0 30h390M0 62h390" stroke={s.counterLine} strokeWidth={1.5} />
@@ -175,7 +303,15 @@ function Bell({ t, s, k, reduceMotion }) {
 }
 
 const styles = StyleSheet.create({
-  sign: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1.5 },
+  sign: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
   signText: { fontSize: ds(10), fontWeight: '800', letterSpacing: 1.2 },
   face: { width: 30, height: 30, borderRadius: 15, overflow: 'hidden', borderWidth: 2, alignItems: 'center', justifyContent: 'flex-end' },
   queueTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },

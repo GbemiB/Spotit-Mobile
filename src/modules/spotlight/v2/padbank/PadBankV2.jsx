@@ -9,7 +9,7 @@ import * as padbankApi from '../../../../shared/api/padbank.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { PressScale, Pop } from '../../common/SpotlightFx.jsx';
 import { friendlyError } from '../../quiz/quizLogic.js';
-import { clueIcon, endTitle as fallbackTitle, goalLabels, visitPrice } from '../../games/padbank/padbankLogic.js';
+import { clueIcon, endTitle as fallbackTitle, goalLabels, visitPrice, togglePack, slipName } from '../../games/padbank/padbankLogic.js';
 import Character from '../Character.jsx';
 import { spotTokens, STAR_PATH } from '../tokens.js';
 import { ds, SlideIn, Breathe, WaveOnce } from '../motion.jsx';
@@ -23,7 +23,16 @@ const SCOOT = 'M5 17a2 2 0 1 0 0 .1M18 17a2 2 0 1 0 0 .1M5 17h9l3-6h3M3 9h7v5H3z
 const BULB = 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z';
 const TICK = 'M5 12.5l4.5 4.5L19 7.5';
 const DASH = 'M6 12h12';
-const LOOKS = { girl: ['outreach', 'outreachHappy'], woman: ['mama', 'mamaHappy'], student: ['coach', 'coach'] };
+const LOOKS = {
+  girl: ['outreach', 'outreachHappy'],
+  woman: ['mama', 'mamaHappy'],
+  student: ['coach', 'coach'],
+  man: ['man', 'manHappy'],
+  grandma: ['grandma', 'grandmaHappy'],
+  teens: ['teens', 'teensHappy'],
+  motherDaughter: ['motherDaughter', 'motherDaughterHappy'],
+  fatherDaughter: ['fatherDaughter', 'fatherDaughterHappy'],
+};
 
 function lookOf(look, happy) {
   const pair = LOOKS[look] || ['you', 'youHappy'];
@@ -173,7 +182,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   const [phase, setPhase] = useState('intro');
   const [run, setRun] = useState(null);
   const [round, setRound] = useState(0);
-  const [pack, setPack] = useState(null);
+  const [picks, setPicks] = useState([]);
   const [route, setRoute] = useState(null);
   const [fb, setFb] = useState(null);
   const [stock, setStock] = useState({});
@@ -229,7 +238,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
       setRightPack(0);
       setRightWay(0);
       setRound(0);
-      setPack(null);
+      setPicks([]);
       setRoute(null);
       setFb(null);
       setEnd(null);
@@ -241,14 +250,18 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   }
 
   async function hand() {
-    if (phase !== 'serve' || !pack || !route || short) return;
+    if (phase !== 'serve' || !ready || short) return;
     feel('tap');
-    const chosen = run.packs.find(p => p.id === pack);
-    const index = run.packs.findIndex(p => p.id === pack);
-    setFlight({ kind: route === 'delivery' ? 'scooter' : 'fly', from: (20 + index * 92) * k, art: packArt(chosen.color) });
+    const first = run.packs.find(p => p.id === picks[0]);
+    const index = Math.min(
+      3,
+      run.packs.findIndex(p => p.id === picks[0]),
+    );
+    const given = [...picks];
+    setFlight({ kind: route === 'delivery' ? 'scooter' : 'fly', from: (20 + index * 92) * k, art: packArt(first.color) });
     setPhase('act');
     try {
-      const out = await padbankApi.serve(run.runId, round, pack, route, token);
+      const out = await padbankApi.serve(run.runId, round, given, route, token);
       if (out.spent > 0 && typeof out.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: out.balance });
       later(
         () => {
@@ -259,7 +272,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
           setServed(out.served);
           setRightPack(out.rightPack);
           setRightWay(out.rightWay);
-          setFb({ ...out, pack: chosen, route });
+          setFb({ ...out, packs: given, first, route });
           if (out.finished) setEnd(out);
           setPhase('feedback');
           feel(out.result === 'oops' ? 'bad' : 'good');
@@ -298,7 +311,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
       return;
     }
     setRound(r => r + 1);
-    setPack(null);
+    setPicks([]);
     setRoute(null);
     setFb(null);
     setPhase('serve');
@@ -317,7 +330,11 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   const queue =
     phase === 'serve' || phase === 'act' || phase === 'feedback' ? visitors.slice(round + 1).map(v => lookOf(v.look, false)) : [];
   const shownPacks = run?.packs || [];
-  const chosen = pack ? shownPacks.find(p => p.id === pack) : null;
+  const size = Math.max(1, visitor?.size || 1);
+  const chosenList = picks.map(id => shownPacks.find(p => p.id === id)).filter(Boolean);
+  const chosen = chosenList.length ? chosenList : null;
+  const chosenUnique = chosenList.filter((p, i) => chosenList.indexOf(p) === i);
+  const packsCost = chosenList.reduce((sum, p) => sum + p.cost, 0);
   const priceRules = run || rules;
   const freeVisitors = priceRules?.freeVisitors ?? 0;
   const visitorFee = priceRules?.visitorFee ?? 0;
@@ -325,7 +342,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   const freeNow = round < freeVisitors;
   const orderCost = visitPrice(round, priceRules, chosen, route);
   const short = !freeNow && orderCost > balance;
-  const ready = !!pack && !!route;
+  const ready = picks.length === size && !!route;
   const kicker =
     phase === 'intro' || phase === 'loading'
       ? `Day ${rules?.day ?? 1}`
@@ -339,10 +356,10 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
     { text: `Pack ${rightPack}/${total}`, done: rightPack > 0 },
     { text: `Way ${rightWay}/${total}`, done: rightWay > 0 },
   ];
-  const priceNote = `Your first ${freeVisitors} ${freeVisitors === 1 ? 'visitor is' : 'visitors are'} free. After that, each visitor costs ${visitorFee} SP plus her pack, and delivery is ${deliveryCost} SP.`;
+  const priceNote = `Your first ${freeVisitors} ${freeVisitors === 1 ? 'visitor is' : 'visitors are'} free. After that, each visitor costs ${visitorFee} SP plus the packs, and delivery is ${deliveryCost} SP.`;
   const openChip = cost > 0 ? (freeLeft > 0 ? 'Free try' : `${cost} SP`) : 'Free to open';
   const sp = n => (freeNow ? 'Free' : `${n} SP`);
-  const nextLabel = end ? 'See your day' : round + 1 < freeVisitors ? 'Next visitor · free' : `Next visitor · ${visitorFee} SP + pack`;
+  const nextLabel = end ? 'See your day' : round + 1 < freeVisitors ? 'Next visitor · free' : `Next visitor · ${visitorFee} SP + packs`;
   const fbStyle = fb
     ? { great: [t.green, t.greenSoft], ok: [t.orange, t.orangeSoft], oops: [t.pink, t.redSoft] }[fb.result]
     : [t.pink, t.pinkSoft];
@@ -362,7 +379,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
         queue={queue}
         peek={phase === 'intro' || phase === 'loading'}
         peekLook="outreach"
-        ringKey={`${round}-${phase === 'serve' && !pack}`}
+        ringKey={`${round}-${phase === 'serve' && !picks.length}`}
         reduceMotion={reduceMotion}
       />
       {visitor && (phase === 'serve' || phase === 'act' || phase === 'feedback') ? (
@@ -370,7 +387,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
           <Visitor
             k={k}
             name={lookOf(visitor.look, happy)}
-            entering={phase === 'serve' && !pack}
+            entering={phase === 'serve' && !picks.length}
             happy={happy}
             reduceMotion={reduceMotion}
           />
@@ -416,7 +433,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
             </View>
           </View>
           <Text style={[styles.introText, { color: t.text2 }]}>
-            Visitors come to your counter. Read what each one needs, pick the right pack and the best way to get it to her.
+            Visitors come to your counter. Read what each one needs, pick the right packs and the best way to get them there.
           </Text>
           {rules ? (
             <SlideIn reduceMotion={reduceMotion} delay={250} style={[styles.note, { backgroundColor: t.goldSoft }]}>
@@ -474,26 +491,32 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
 
       {phase === 'serve' || phase === 'act' ? (
         <>
-          <View style={[styles.packRow, { top: 380 * k }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={[styles.packRow, { top: 370 * k }]}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 10, paddingTop: 10 }}
+          >
             {shownPacks.map(p => {
-              const on = pack === p.id;
-              const left = stock[p.id] ?? 0;
+              const count = picks.filter(x => x === p.id).length;
+              const on = count > 0;
+              const left = (stock[p.id] ?? 0) - count;
               const art = packArt(p.color);
               return (
                 <PressScale
                   key={p.id}
-                  onPress={() => left > 0 && phase === 'serve' && setPack(p.id)}
-                  disabled={left <= 0 || phase !== 'serve'}
-                  accessibilityLabel={`${p.name}, ${freeNow ? 'free' : `${p.cost} SP`}, ${left} left`}
-                  style={{ flex: 1 }}
+                  onPress={() => phase === 'serve' && setPicks(cur => togglePack(cur, p.id, size, stock[p.id] ?? 0))}
+                  disabled={(stock[p.id] ?? 0) <= 0 || phase !== 'serve'}
+                  accessibilityLabel={`${p.name}, ${freeNow ? 'free' : `${p.cost} SP`}, ${left} left${count ? `, ${count} picked` : ''}`}
                 >
                   <View
                     style={[
                       styles.pack,
                       {
+                        width: shownPacks.length > 4 ? 84 * k : (width - 44) / Math.max(1, shownPacks.length),
                         backgroundColor: on ? t.pinkSoft : t.surface,
                         borderColor: on ? t.pink : t.border,
-                        opacity: left > 0 ? 1 : 0.45,
+                        opacity: (stock[p.id] ?? 0) > 0 ? 1 : 0.45,
                         transform: [{ translateY: on ? -10 : 0 }],
                       },
                     ]}
@@ -506,16 +529,21 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                     <View style={[styles.stock, { backgroundColor: left > 0 ? t.text : t.disabledBg }]}>
                       <Text style={[styles.stockText, { color: left > 0 ? t.bg : t.disabledFg }]}>{left}</Text>
                     </View>
+                    {count > 1 ? (
+                      <View style={[styles.countBadge, { backgroundColor: t.pink }]}>
+                        <Text style={styles.countText}>×{count}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </PressScale>
               );
             })}
-          </View>
+          </ScrollView>
           <ScrollView
             style={{ position: 'absolute', left: 0, right: 0, top: 494 * k, bottom: insets.bottom + 94 }}
             contentContainerStyle={{ paddingHorizontal: 14 }}
           >
-            <View style={{ flexDirection: 'row', gap: 8, opacity: pack ? 1 : 0.45 }}>
+            <View style={{ flexDirection: 'row', gap: 8, opacity: picks.length ? 1 : 0.45 }}>
               {[
                 { id: 'pickup', label: 'Pickup', sub: 'Free', icon: HOME },
                 { id: 'delivery', label: 'Delivery', sub: freeNow ? 'Free today' : `${deliveryCost} SP`, icon: SCOOT },
@@ -524,8 +552,8 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                 return (
                   <PressScale
                     key={r.id}
-                    onPress={() => pack && phase === 'serve' && setRoute(r.id)}
-                    disabled={!pack}
+                    onPress={() => picks.length && phase === 'serve' && setRoute(r.id)}
+                    disabled={!picks.length}
                     accessibilityLabel={`${r.label}, ${r.sub}`}
                     style={{ flex: 1 }}
                   >
@@ -555,17 +583,20 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                 <Text style={[styles.small, { color: t.text3, marginTop: 0 }]}>ORDER SLIP</Text>
                 <View style={[styles.tag, { backgroundColor: freeNow ? t.greenSoft : t.goldSoft }]}>
                   <Text style={[styles.tagText, { color: freeNow ? t.greenInk : t.goldInk }]}>
+                    {size > 1 ? `${picks.length} of ${size} packs · ` : ''}
                     {freeNow ? `Free visitor ${round + 1} of ${freeVisitors}` : 'Paid visitor'}
                   </Text>
                 </View>
               </View>
               <View style={[styles.slipRow, { marginTop: 8 }]}>
-                <Text style={[styles.slipMain, { color: t.text }]}>{chosen ? chosen.name : 'Tap a pack on the counter'}</Text>
-                <Text style={[styles.slipCost, { color: t.goldInk }]}>{chosen ? sp(chosen.cost) : ''}</Text>
+                <Text style={[styles.slipMain, { color: t.text }]}>
+                  {chosen ? slipName(picks, shownPacks) : size > 1 ? `Tap ${size} packs on the counter` : 'Tap a pack on the counter'}
+                </Text>
+                <Text style={[styles.slipCost, { color: t.goldInk }]}>{chosen ? sp(packsCost) : ''}</Text>
               </View>
-              {chosen?.contents?.length ? (
+              {chosenUnique.some(p => p.contents?.length) ? (
                 <View style={styles.contents}>
-                  {chosen.contents.map(c => (
+                  {[...new Set(chosenUnique.flatMap(p => p.contents || []))].map(c => (
                     <View key={c} style={[styles.content, { backgroundColor: t.pinkSoft }]}>
                       <Text style={[styles.contentText, { color: t.pinkInk }]}>{c}</Text>
                     </View>
@@ -574,7 +605,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
               ) : null}
               <View style={[styles.slipRow, { marginTop: 7 }]}>
                 <Text style={[styles.slipMain, { color: route ? t.text : t.text3 }]}>
-                  {route ? (route === 'delivery' ? 'Delivery to her' : 'She picks it up') : 'Then choose how she gets it'}
+                  {route ? (route === 'delivery' ? 'Delivery' : 'Picked up at the bank') : 'Then choose how it gets there'}
                 </Text>
                 <Text style={[styles.slipCost, { color: t.goldInk }]}>
                   {route ? (route === 'delivery' && !freeNow ? `${deliveryCost} SP` : 'Free') : ''}
@@ -619,7 +650,9 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                   ? 'Not enough SP'
                   : ready
                     ? `${route === 'delivery' ? 'Send it' : 'Hand it over'} · ${freeNow ? 'Free' : `${orderCost} SP`}`
-                    : 'Pick a pack and a way'
+                    : size > 1
+                      ? `Pick ${size} packs and a way`
+                      : 'Pick a pack and a way'
               }
             />
             {!freeNow ? (
@@ -665,7 +698,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                 <SlideIn reduceMotion={reduceMotion} delay={150} style={[styles.half, { backgroundColor: t.bg }]}>
-                  <Text style={[styles.small, { color: t.text3, marginTop: 0 }]}>SHE NEEDED</Text>
+                  <Text style={[styles.small, { color: t.text3, marginTop: 0 }]}>WHAT THEY NEED</Text>
                   {visitor.clues.map(c => (
                     <View key={c.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 }}>
                       <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
@@ -678,15 +711,17 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                 <SlideIn reduceMotion={reduceMotion} delay={250} style={[styles.half, { backgroundColor: fbStyle[1] }]}>
                   <Text style={[styles.small, { color: t.text3, marginTop: 0 }]}>YOU GAVE</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 }}>
-                    <PackBag fill={packArt(fb.pack.color)[0]} top={packArt(fb.pack.color)[1]} size={22} />
-                    <Text style={[styles.gave, { color: t.text }]}>{fb.pack.name}</Text>
+                    <PackBag fill={packArt(fb.first.color)[0]} top={packArt(fb.first.color)[1]} size={22} />
+                    <Text style={[styles.gave, { color: t.text, flex: 1 }]}>{slipName(fb.packs, shownPacks)}</Text>
                   </View>
                   <Text style={[styles.need, { color: t.text2, marginTop: 5 }]}>
                     {fb.route === 'delivery' ? 'By delivery' : 'Picked up'}
                   </Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
                     <View style={[styles.mark, { backgroundColor: fb.result === 'oops' ? t.pink : t.green }]}>
-                      <Text style={styles.markText}>{fb.result === 'oops' ? 'Wrong pack' : 'Right pack'}</Text>
+                      <Text style={styles.markText}>
+                        {fb.result === 'oops' ? (size > 1 ? 'Wrong packs' : 'Wrong pack') : size > 1 ? 'Right packs' : 'Right pack'}
+                      </Text>
                     </View>
                     {fb.result !== 'oops' ? (
                       <View style={[styles.mark, { backgroundColor: fb.result === 'great' ? t.green : t.orange }]}>
@@ -860,7 +895,19 @@ const styles = StyleSheet.create({
   btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   btnChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.22)' },
   btnChipText: { color: '#FFFFFF', fontSize: ds(11), fontWeight: '800' },
-  packRow: { position: 'absolute', left: 10, right: 10, flexDirection: 'row', gap: 8, zIndex: 3 },
+  packRow: { position: 'absolute', left: 0, right: 0, zIndex: 3, flexGrow: 0 },
+  countBadge: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countText: { color: '#FFFFFF', fontSize: ds(10), fontWeight: '800' },
   pack: {
     height: 92,
     paddingVertical: 6,

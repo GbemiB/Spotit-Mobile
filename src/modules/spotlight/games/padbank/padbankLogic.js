@@ -22,6 +22,15 @@ export const CLUE_ICONS = {
   book: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 1 6.5 18H20',
   walk: 'M13 4.5a1.5 1.5 0 1 0 0-.1M9 21l2-6 3 2v4M11 15l-1-4 3-2 3 3h3M7 11l3-2',
   smile: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM8.5 14a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01',
+  girls:
+    'M9 7a2.5 2.5 0 1 0 0-.1M15 7a2.5 2.5 0 1 0 0-.1M4.5 19c.5-3.5 2.5-5.5 4.5-5.5s4 2 4.5 5.5M11 19c.5-3.5 2.5-5.5 4.5-5.5s3.5 2 4 5.5',
+  ball: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z',
+  swim: 'M3 17c2 0 2-1.5 4.5-1.5S9.5 17 12 17s2.5-1.5 4.5-1.5S19 17 21 17M8 12l3-4 4 2 2-3M16 6.5a1.5 1.5 0 1 0 0-.1',
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+  baby: 'M12 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM7 20v-4a5 5 0 0 1 10 0v4M10 7h.01M14 7h.01',
+  water: 'M4 4h10v4h-3v3M14 6h3a3 3 0 0 1 3 3v1M12 14s-2 2.4-2 4a2 2 0 0 0 4 0c0-1.6-2-4-2-4z',
+  noWater: 'M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5zM4 4l16 16',
+  clock: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 2',
 };
 
 export const CLUE_TONES = ['pink', 'peach', 'green'];
@@ -56,9 +65,34 @@ export function goalLabels() {
   return ['Serve every visitor', 'Right pack for everyone', 'Right way to reach everyone'];
 }
 
-export function visitPrice(round, rules, pack, route) {
+export function visitPrice(round, rules, packs, route) {
   if (!rules || round < (rules.freeVisitors || 0)) return 0;
-  return (rules.visitorFee || 0) + (pack ? pack.cost || 0 : 0) + (route === 'delivery' ? rules.deliveryCost || 0 : 0);
+  const list = Array.isArray(packs) ? packs : packs ? [packs] : [];
+  return (rules.visitorFee || 0) + list.reduce((sum, p) => sum + (p?.cost || 0), 0) + (route === 'delivery' ? rules.deliveryCost || 0 : 0);
+}
+
+export function togglePack(picks, id, size, left) {
+  const count = picks.filter(x => x === id).length;
+  if (size <= 1) return left > 0 ? [id] : picks;
+  if (picks.length < size && left - count > 0) return [...picks, id];
+  if (count) {
+    const at = picks.lastIndexOf(id);
+    return [...picks.slice(0, at), ...picks.slice(at + 1)];
+  }
+  return picks;
+}
+
+export function slipName(picks, packs) {
+  const counts = {};
+  picks.forEach(id => {
+    counts[id] = (counts[id] || 0) + 1;
+  });
+  return Object.keys(counts)
+    .map(id => {
+      const name = packs.find(p => p.id === id)?.name || id;
+      return counts[id] > 1 ? `${counts[id]} × ${name}` : name;
+    })
+    .join(', ');
 }
 
 export function nextLabel(finished) {
