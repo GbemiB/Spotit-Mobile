@@ -52,8 +52,13 @@ export function endTitle(hearts, stars) {
   return 'Bank closed';
 }
 
-export function goalLabels(total, budgetGoal) {
-  return [`${total} packs out`, `${total} perfect`, `${budgetGoal}+ budget left`];
+export function goalLabels() {
+  return ['Serve every visitor', 'Right pack for everyone', 'Right way to reach everyone'];
+}
+
+export function visitPrice(round, rules, pack, route) {
+  if (!rules || round < (rules.freeVisitors || 0)) return 0;
+  return (rules.visitorFee || 0) + (pack ? pack.cost || 0 : 0) + (route === 'delivery' ? rules.deliveryCost || 0 : 0);
 }
 
 export function nextLabel(finished) {

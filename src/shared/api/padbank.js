@@ -8,3 +8,6 @@ export function serve(runId, round, pack, route, token) {
 export function getRules(token) {
   return apiRequest('/padbank/rules', { token });
 }
+export function closeBank(runId, token) {
+  return apiRequest(`/padbank/runs/${encodeURIComponent(runId)}/close`, { method: 'POST', token });
+}

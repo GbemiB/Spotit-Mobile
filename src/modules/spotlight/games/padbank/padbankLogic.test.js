@@ -1,4 +1,15 @@
-import { moodFor, clueIcon, packColor, endTitle, goalLabels, nextLabel, canPick, CLUE_ICONS, PACK_COLORS } from './padbankLogic.js';
+import {
+  moodFor,
+  clueIcon,
+  packColor,
+  endTitle,
+  goalLabels,
+  visitPrice,
+  nextLabel,
+  canPick,
+  CLUE_ICONS,
+  PACK_COLORS,
+} from './padbankLogic.js';
 import { avatarXml, LOOK_NAMES, MOODS } from '../../common/avatars.js';
 
 describe('pad bank rules in the app', () => {
@@ -19,7 +30,7 @@ describe('pad bank rules in the app', () => {
     expect(endTitle(2, 3)).toBe('Bank clear!');
     expect(endTitle(2, 2)).toBe('Nice day!');
     expect(endTitle(1, 1)).toBe('Bank closed');
-    expect(goalLabels(3, 40)).toEqual(['3 packs out', '3 perfect', '40+ budget left']);
+    expect(goalLabels()).toEqual(['Serve every visitor', 'Right pack for everyone', 'Right way to reach everyone']);
     expect(nextLabel(true)).toBe('See the day');
     expect(nextLabel(false)).toBe('Next visitor');
   });
@@ -38,5 +49,16 @@ describe('pad bank rules in the app', () => {
       }),
     );
     expect(avatarXml('nobody')).toBe(avatarXml('girl'));
+  });
+  it('charges nothing for the free visitors, then the fee, pack and delivery', () => {
+    const rules = { freeVisitors: 2, visitorFee: 2, deliveryCost: 2 };
+    const pack = { cost: 5 };
+    expect(visitPrice(0, rules, pack, 'delivery')).toBe(0);
+    expect(visitPrice(1, rules, pack, 'pickup')).toBe(0);
+    expect(visitPrice(2, rules, pack, 'pickup')).toBe(7);
+    expect(visitPrice(2, rules, pack, 'delivery')).toBe(9);
+    expect(visitPrice(2, rules, null, null)).toBe(2);
+    expect(visitPrice(0, { freeVisitors: 0, visitorFee: 1 }, pack, 'pickup')).toBe(6);
+    expect(visitPrice(3, null, pack, 'pickup')).toBe(0);
   });
 });

@@ -6,13 +6,15 @@ import { Text } from '../../../shared/styles/index.js';
 import { PressScale, useLoopValue, Shine } from '../common/SpotlightFx.jsx';
 import { ds, useCountUp } from './motion.jsx';
 
-const COIN_STAR = 'M12 6.8l1.5 3.2 3.4.4-2.5 2.3.7 3.4-3.1-1.8-3.1 1.8.7-3.4-2.5-2.3 3.4-.4z';
+export const COIN_STAR = 'M12 6.8l1.5 3.2 3.4.4-2.5 2.3.7 3.4-3.1-1.8-3.1 1.8.7-3.4-2.5-2.3 3.4-.4z';
 const COIN_LINE = 'M12 8v8M9.8 10h3.4a1.4 1.4 0 0 1 0 2.8h-2.4a1.4 1.4 0 0 0 0 2.8h3.4';
 
 export function CircleButton({ t, icon, label, onPress, size = 44, iconSize = 18, color }) {
   return (
     <PressScale onPress={onPress} accessibilityLabel={label}>
-      <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: t.surface, borderColor: t.border }]}>
+      <View
+        style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: t.surface, borderColor: t.border }]}
+      >
         <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none">
           <Path d={icon} stroke={color || t.pinkInk} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
@@ -104,7 +106,16 @@ const styles = StyleSheet.create({
   circle: { borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingLeft: 7, paddingRight: 12, borderRadius: 999, borderWidth: 1 },
   pillText: { fontSize: ds(13), fontWeight: '800' },
-  small: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 34, paddingLeft: 6, paddingRight: 10, borderRadius: 17, borderWidth: 1 },
+  small: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 34,
+    paddingLeft: 6,
+    paddingRight: 10,
+    borderRadius: 17,
+    borderWidth: 1,
+  },
   smallText: { fontSize: ds(13), fontWeight: '800' },
   btn: { borderRadius: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexDirection: 'row', gap: 8 },
   btnText: { fontSize: 15, fontWeight: '800' },
