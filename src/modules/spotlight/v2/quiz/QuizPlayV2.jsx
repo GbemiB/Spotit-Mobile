@@ -28,7 +28,7 @@ function Choice({ t, label, icon, soft, border, ink, onPress, disabled }) {
   return (
     <PressScale onPress={onPress} disabled={disabled} accessibilityLabel={label} style={{ flex: 1 }}>
       <View style={[styles.choice, { backgroundColor: soft, borderColor: border, opacity: disabled ? 0.6 : 1 }]}>
-        <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path d={icon} stroke={ink} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
         <Text style={[styles.choiceText, { color: ink }]}>{label}</Text>
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   why: { marginTop: 12, fontSize: ds(13), lineHeight: 20 },
   fun: { marginTop: 10, paddingVertical: 9, paddingHorizontal: 11, borderRadius: 14 },
   funText: { fontSize: ds(11.5), lineHeight: 17 },
-  choice: { height: 96, borderRadius: 24, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  choice: { height: 60, borderRadius: 20, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   choiceText: { fontSize: 16, fontWeight: '800' },
   hintBtn: { height: 44, marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   hintLabel: { fontSize: ds(12.5), fontWeight: '700' },
