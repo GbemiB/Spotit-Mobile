@@ -1,4 +1,4 @@
-import { Animated, BackHandler, Easing, View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Animated, BackHandler, Easing, View, ScrollView, StyleSheet } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,28 +10,47 @@ import * as givedayApi from '../../../../shared/api/giveday.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { PressScale, Pop, Twinkle, Bob } from '../../common/SpotlightFx.jsx';
 import { friendlyError } from '../../quiz/quizLogic.js';
-import { kitCost, canGive, togglePick, factIcon, productArt } from '../../games/giveday/givedayLogic.js';
+import {
+  giftCost,
+  canGive,
+  togglePick,
+  factIcon,
+  productArt,
+  clockLabel,
+  kmBetween,
+  levelInfo,
+  playerLevel,
+  nextLevel,
+  isAreaLocked,
+  freeLevels,
+  homeGroups,
+  mapRings,
+  kindIcon,
+  travelIcon,
+} from '../../games/giveday/givedayLogic.js';
+import { ZOOMS } from '../../games/giveday/lagosMap.js';
 import Character from '../Character.jsx';
-import { spotTokens, STAR_PATH, HEART_PATH, toneOf } from '../tokens.js';
+import { spotTokens, STAR_PATH, toneOf } from '../tokens.js';
 import { ds, SlideIn, Breathe, Blink } from '../motion.jsx';
 import { Confetti, StarRow, Shake } from '../fx.jsx';
-import { CircleButton, CoinPill, PinkButton, Glow } from '../ui.jsx';
-import TownMap, { Walker, PLACE_KINDS, placeTones } from './TownMap.jsx';
+import { CircleButton, SpPill, PinkButton, Glow } from '../ui.jsx';
+import LagosMap from './LagosMap.jsx';
 
 const BACK = 'M15 5l-7 7 7 7';
 const GIFT = 'M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-2-4-6-3-5 0M12 7c2-4 6-3 5 0';
 const TICK = 'M5 12.5l4.5 4.5L19 7.5';
+const CLOSE = 'M6 6l12 12M18 6L6 18';
+const CLOCK = 'M12 7.5V12l3 2';
 const HOSTS = {
-  'hope-house': ['mamaRonke', 'mamaRonkeHappy'],
-  'bright-school': ['teacher', 'teacherHappy'],
-  'hope-camp': ['mama', 'mamaHappy'],
-  'girls-fc': ['coach', 'coach'],
-  'oshodi-road': ['outreach', 'outreachHappy'],
-  'balogun-market': ['market', 'market'],
-  'my-kit': ['you', 'youHappy'],
-  'ikire-village': ['nurse', 'nurse'],
+  teacher: ['teacher', 'teacherHappy'],
+  mamaRonke: ['mamaRonke', 'mamaRonkeHappy'],
+  mama: ['mama', 'mamaHappy'],
+  woman: ['mama', 'mamaHappy'],
+  coach: ['coach', 'coach'],
+  outreach: ['outreach', 'outreachHappy'],
+  market: ['market', 'market'],
+  nurse: ['nurse', 'nurse'],
 };
-const BY_LOOK = { woman: ['mamaRonke', 'mamaRonkeHappy'], student: ['coach', 'coach'], girl: ['you', 'youHappy'] };
 const RATING = {
   good: ['green', 'greenSoft', TICK, 'Great pick'],
   ok: ['orange', 'orangeSoft', 'M6 12h12', 'Okay'],
@@ -39,47 +58,38 @@ const RATING = {
   missed: ['orange', 'goldSoft', 'M12 7v6M12 17h.01', 'Missed'],
 };
 
+function placeTones(isDark) {
+  return isDark
+    ? [
+        ['#4A3438', '#E2647C', '#5E3E46'],
+        ['#3E3A2E', '#C28A33', '#5A4A30'],
+        ['#2E3A34', '#6BBF9B', '#3E5246'],
+        ['#3A3040', '#F2A0AE', '#4A3A44'],
+      ]
+    : [
+        ['#FFFFFF', '#F2A0AE', '#E8C3BC'],
+        ['#FFF6EE', '#E2B86A', '#D9B68A'],
+        ['#F3FAF5', '#8FCBA9', '#B7DFC8'],
+        ['#FFF0F2', '#DC5A74', '#E8C3BC'],
+      ];
+}
+
 function hostOf(place, happy) {
-  const pair = HOSTS[place.id] || BY_LOOK[place.hostLook] || ['you', 'youHappy'];
+  const pair = place.forSelf ? ['you', 'youHappy'] : HOSTS[place.hostLook] || HOSTS.woman;
   return pair[happy ? 1 : 0];
 }
 
 function feel(good) {
-  const done = good ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success) : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const done = good
+    ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   Promise.resolve(done).catch(() => {});
 }
 
-export function roadY(place) {
-  return place.y + 12;
-}
-
-export function route(cur, tx, ty) {
-  const legs = [];
-  let c = { x: cur.x, y: cur.y };
-  const go = (x, y) => {
-    if (c.x !== x || c.y !== y) {
-      legs.push({ x, y });
-      c = { x, y };
-    }
-  };
-  if (c.y === ty) {
-    go(tx, ty);
-    return legs;
-  }
-  if (c.y === 627) {
-    go(258, 627);
-    go(258, 517);
-  }
-  go(195, c.y);
-  if (ty === 627) {
-    go(195, 517);
-    go(258, 517);
-    go(258, 627);
-  } else {
-    go(195, ty);
-  }
-  go(tx, ty);
-  return legs;
+function legTime(from, to, zoom, mode) {
+  const px = Math.hypot(to.x - from.x, to.y - from.y) * ZOOMS[zoom];
+  const speed = mode === 'walk' ? 6 : mode === 'bike' ? 3.5 : 2;
+  return Math.min(2800, Math.max(500, Math.round(px * speed)));
 }
 
 function PlaceScene({ t, isDark, place, tone, tall, happy, handing, reduceMotion, k }) {
@@ -88,7 +98,12 @@ function PlaceScene({ t, isDark, place, tone, tall, happy, handing, reduceMotion
     : { bg: ['#FFF3EC', '#FDE7E2'], sun: '#FBF1E0', ground: '#F6DCD3', window: '#FFF0F2', sign: '#FFFFFF' };
   const h = useAnimatedValue(tall ? 420 : 236);
   useEffect(() => {
-    const anim = Animated.timing(h, { toValue: tall ? 420 : 236, duration: reduceMotion ? 0 : 450, easing: Easing.bezier(0.2, 0.9, 0.3, 1), useNativeDriver: false });
+    const anim = Animated.timing(h, {
+      toValue: tall ? 420 : 236,
+      duration: reduceMotion ? 0 : 450,
+      easing: Easing.bezier(0.2, 0.9, 0.3, 1),
+      useNativeDriver: false,
+    });
     anim.start();
     return () => anim.stop();
   }, [tall, h, reduceMotion]);
@@ -147,7 +162,13 @@ function Kit({ index, color, reduceMotion }) {
   const v = useAnimatedValue(0);
   useEffect(() => {
     if (reduceMotion) return undefined;
-    const anim = Animated.timing(v, { toValue: 1, duration: 1100, delay: index * 180, easing: Easing.bezier(0.4, 0, 0.2, 1), useNativeDriver: true });
+    const anim = Animated.timing(v, {
+      toValue: 1,
+      duration: 1100,
+      delay: index * 180,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+      useNativeDriver: true,
+    });
     anim.start();
     return () => anim.stop();
   }, [v, index, reduceMotion]);
@@ -180,52 +201,73 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const { isDark } = useTheme();
   const t = spotTokens(isDark);
   const tones = placeTones(isDark);
-  const { width } = useWindowDimensions();
-  const k = width / 390;
   const token = state.accessToken;
+  const balance = state.femPoints || 0;
   const cost = challenge?.cost ?? 0;
   const [freeLeft, setFreeLeft] = useState(challenge?.freePlaysLeft ?? 0);
   const [phase, setPhase] = useState('intro');
   const [run, setRun] = useState(null);
-  const [coins, setCoins] = useState(0);
+  const [areas, setAreas] = useState([]);
+  const [homeId, setHomeId] = useState(null);
+  const [pos, setPos] = useState(null);
+  const [legMs, setLegMs] = useState(0);
+  const [ride, setRide] = useState(null);
+  const [walking, setWalking] = useState(false);
+  const [clock, setClock] = useState(0);
+  const [stars, setStars] = useState(0);
   const [helped, setHelped] = useState(0);
   const [visits, setVisits] = useState({});
   const [log, setLog] = useState([]);
-  const [placeId, setPlaceId] = useState(null);
-  const [people, setPeople] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [area, setArea] = useState(null);
+  const [sel, setSel] = useState(null);
+  const [trips, setTrips] = useState(null);
+  const [mode, setMode] = useState(null);
+  const [here, setHere] = useState(null);
   const [picked, setPicked] = useState([]);
   const [result, setResult] = useState(null);
   const [day, setDay] = useState(null);
+  const [toast, setToast] = useState(null);
   const [error, setError] = useState(null);
-  const [pos, setPos] = useState({ x: 195, y: 417 });
-  const [walking, setWalking] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(0);
   const timers = useRef([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const changeZoom = useCallback(d => setZoom(z => Math.min(ZOOMS.length - 1, Math.max(0, z + d))), []);
   const later = useCallback((fn, ms) => timers.current.push(setTimeout(fn, reduceMotion ? 0 : ms)), [reduceMotion]);
+
+  const levels = run?.levels || [];
+  const products = run?.products || [];
+  const travelModes = run?.travel || [];
+  const levelNow = playerLevel(levels, stars);
+  const nx = nextLevel(levels, stars);
+  const widest = levels.length ? Math.max(...levels.map(l => l.radiusKm)) : 0;
+  const home = areas.find(a => a.id === homeId) || null;
+  const shownAreas = areas.map(a => ({ ...a, locked: isAreaLocked(levels, a, stars) }));
+  const visited = Object.keys(visits).length;
+  const travelled = !!here || visited > 0;
+  const closesBy = p => Math.min(p.closes, run?.dayEnd ?? p.closes);
+  const shut = p => clock + (run?.visitMinutes || 0) > closesBy(p);
+  const areaOf = id => areas.find(a => a.id === id);
+  const areaLocked = !!area && !area.loading && stars < (area.starsNeeded || 0);
+
+  function back() {
+    if (phase === 'visit') setPhase('map');
+    else if (phase === 'build') setPhase('visit');
+    else if (phase === 'home' && homeId) setPhase('map');
+    else if (phase === 'map' && sel) setSel(null);
+    else if (phase === 'map' && area) setArea(null);
+    else if (phase !== 'handover' && phase !== 'ending') onExit();
+  }
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (phase === 'visit') setPhase('map');
-      else if (phase === 'build') setPhase('visit');
-      else if (phase !== 'handover') onExit();
+      back();
       return true;
     });
     return () => sub.remove();
-  }, [phase, onExit]);
-
-  const places = (run?.places || []).map(p => ({ ...p, art: PLACE_KINDS[p.id] || 'home' }));
-  const place = places.find(p => p.id === placeId) || null;
-  const placeIndex = place ? places.indexOf(place) : 0;
-  const tone = tones[placeIndex % tones.length];
-  const products = run?.products || [];
-  const total = kitCost(products, picked, people);
-  const unit = people ? total / people : 0;
-  const over = total > coins;
-  const ok = canGive(products, picked, people, coins);
-  const visited = Object.keys(visits).length;
-  const starsTotal = Object.values(visits).reduce((s, x) => s + x, 0);
+  });
 
   async function start() {
     feel(false);
@@ -236,40 +278,126 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       if (typeof data.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: data.balance });
       if (data.cost === 0) setFreeLeft(n => Math.max(0, n - 1));
       setRun(data);
-      setCoins(data.coins);
+      setAreas(data.areas || []);
+      setHomeId(data.home);
+      setPos(data.home ? { x: data.x, y: data.y } : null);
+      setLegMs(0);
+      setClock(data.clock);
+      setStars(data.stars);
       setHelped(0);
       setVisits({});
       setLog([]);
       setDay(null);
-      setPlaceId(null);
-      setPos({ x: 195, y: 417 });
-      setPhase('map');
+      setArea(null);
+      setSel(null);
+      setHere(null);
+      setPhase(data.home ? 'map' : 'home');
     } catch (e) {
       setError(friendlyError(e));
       setPhase('intro');
     }
   }
 
-  function selectPlace(p) {
-    if (phase !== 'map' || walking || p.locked) return;
+  async function pickHome(id) {
+    if (busy) return;
     feel(false);
-    setPlaceId(p.id);
-    const legs = route(pos, p.x + 30, roadY(p));
-    if (!legs.length) return;
-    setWalking(true);
-    legs.forEach((leg, i) => later(() => setPos(leg), i * 430));
-    later(() => setWalking(false), legs.length * 430 + 60);
+    setBusy(true);
+    setError(null);
+    try {
+      const out = await givedayApi.setHome(id, token);
+      setAreas(out.areas || []);
+      setHomeId(out.home);
+      if (!travelled) {
+        setLegMs(0);
+        setPos({ x: out.x, y: out.y });
+      }
+      setArea(null);
+      setSel(null);
+      setPhase('map');
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function walkIn() {
-    if (!place || visits[place.id] != null) return;
-    setPeople(null);
-    setPicked([]);
-    setPhase('visit');
+  async function openArea(a) {
+    if (walking) return;
+    feel(false);
+    setSel(null);
+    setError(null);
+    setArea({ areaId: a.id, name: a.name, level: a.level, loading: true, places: [] });
+    try {
+      const data = await givedayApi.loadArea(run.runId, a.id, token);
+      setArea(cur => (cur && cur.areaId === a.id ? data : cur));
+    } catch (e) {
+      setError(friendlyError(e));
+      setArea(null);
+    }
+  }
+
+  async function selectPlace(p) {
+    if (!area || area.loading || areaLocked || p.locked || visits[p.id] != null || shut(p)) return;
+    feel(false);
+    setSel(p);
+    setTrips(null);
+    setError(null);
+    if (here === p.id) return;
+    try {
+      const data = await givedayApi.loadTrips(run.runId, p.id, token);
+      const pass = data.passNeeded ? data.passCost : 0;
+      const best = data.quotes.find(q => q.open && q.cost + pass <= balance) || data.quotes[0];
+      setTrips(data);
+      setMode(best ? best.mode : null);
+    } catch (e) {
+      setError(friendlyError(e));
+    }
+  }
+
+  async function go() {
+    if (!sel || walking || busy) return;
+    if (here === sel.id) {
+      setPicked([]);
+      setPhase('visit');
+      return;
+    }
+    const quote = trips?.quotes.find(q => q.mode === mode);
+    const price = quote ? quote.cost + (trips.passNeeded ? trips.passCost : 0) : 0;
+    if (!quote || !quote.open || !trips.levelOpen || price > balance) {
+      setShake(n => n + 1);
+      return;
+    }
+    feel(false);
+    setBusy(true);
+    setError(null);
+    try {
+      const out = await givedayApi.travel(run.runId, sel.id, mode, token);
+      if (out.spent > 0 && typeof out.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: out.balance });
+      if (trips.passNeeded) {
+        setArea(cur => (cur && cur.level === trips.level ? { ...cur, passNeeded: false } : cur));
+      }
+      const ms = legTime(pos, { x: out.x, y: out.y }, zoom, out.mode);
+      setWalking(true);
+      setRide(out.mode === 'walk' ? null : out.mode);
+      setLegMs(ms);
+      setPos({ x: out.x, y: out.y });
+      later(() => {
+        setWalking(false);
+        setRide(null);
+        setClock(out.clock);
+        setHere(out.placeId);
+        feel(true);
+      }, ms + 80);
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function give() {
-    if (!ok) {
+    const budget = area?.giftBudget ?? 0;
+    if (!canGive(products, picked, budget)) {
       setShake(n => n + 1);
       return;
     }
@@ -277,15 +405,26 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     setPhase('handover');
     setError(null);
     try {
-      const out = await givedayApi.give(run.runId, place.id, people, picked, token);
+      const out = await givedayApi.give(run.runId, sel.id, picked, token);
       later(() => {
-        setCoins(out.coins);
-        setHelped(out.helped);
+        const levelBefore = levelNow;
         setVisits(v => ({ ...v, [out.placeId]: out.stars }));
-        setLog(l => [...l, { id: out.placeId, n: out.people, stars: out.stars }]);
+        setHelped(out.helped);
+        setClock(out.clock);
+        setStars(out.playerStars);
+        setAreas(list => list.map(a => (a.id === area.areaId ? { ...a, visited: a.visited + 1 } : a)));
+        setArea(cur => (cur ? { ...cur, places: cur.places.map(p => (p.id === out.placeId ? { ...p, stars: out.stars } : p)) } : cur));
+        setLog(l => [
+          ...l,
+          { id: out.placeId, name: sel.name, areaName: area.name, who: sel.who, n: out.people, stars: out.stars, forSelf: sel.forSelf },
+        ]);
         setResult(out);
         setPhase('result');
         feel(out.stars >= 2);
+        if (out.level > levelBefore) {
+          later(() => setToast(out.level), 400);
+          later(() => setToast(null), 3800);
+        }
       }, 1900);
     } catch (e) {
       setError(friendlyError(e));
@@ -300,6 +439,8 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     try {
       const out = await givedayApi.finishDay(run.runId, token);
       setDay(out);
+      setArea(null);
+      setSel(null);
       setPhase('done');
       onChanged?.();
     } catch (e) {
@@ -308,23 +449,112 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     }
   }
 
-  function back() {
-    if (phase === 'visit') setPhase('map');
-    else if (phase === 'build') setPhase('visit');
-    else onExit();
-  }
-
-  const onMap = phase === 'intro' || phase === 'loading' || phase === 'map' || phase === 'ending';
+  const onMap = phase === 'map' || phase === 'ending';
   const inScene = phase === 'visit' || phase === 'handover';
-  const sheetH = 210;
+  const placeIndex =
+    sel && area
+      ? Math.max(
+          0,
+          area.places.findIndex(p => p.id === sel.id),
+        )
+      : 0;
+  const tone = tones[placeIndex % tones.length];
+  const gift = area?.giftBudget ?? 0;
+  const unit = giftCost(products, picked);
+  const over = unit > gift;
+  const ok = canGive(products, picked, gift);
+  const freeNums = freeLevels(levels);
+  const freeModes = travelModes.filter(m => !m.cost).map(m => m.label);
+  const focus = walking || !sel ? (area && !walking ? areaOf(area.areaId) : pos) : sel;
+  const late = run ? clock >= run.dayEnd - 120 : false;
+
+  const quote = trips?.quotes.find(q => q.mode === mode) || null;
+  const price = quote ? quote.cost + (trips.passNeeded ? trips.passCost : 0) : 0;
+  const isHere = sel && here === sel.id;
+  const visitedSel = sel && visits[sel.id] != null;
+  const shutNow = sel && shut(sel);
+  let goLabel = 'Walk in';
+  let blocked = false;
+  if (sel) {
+    if (visitedSel) {
+      goLabel = 'Visited today';
+      blocked = true;
+    } else if (shutNow && !isHere) {
+      goLabel = 'Closed for today';
+      blocked = true;
+    } else if (!isHere) {
+      if (!trips || !quote) {
+        goLabel = 'Checking the way…';
+        blocked = true;
+      } else if (!trips.levelOpen) {
+        goLabel = `Win ${trips.starsNeeded} stars to go here`;
+        blocked = true;
+      } else if (!quote.open) {
+        goLabel = 'Closed by the time you arrive';
+        blocked = true;
+      } else if (price > balance) {
+        goLabel = 'Not enough SP';
+        blocked = true;
+      } else {
+        goLabel = `${trips.passNeeded ? `Day pass + ${quote.label.toLowerCase()}` : `${quote.label} there`} · ${price ? `${price} SP` : 'free'}`;
+      }
+    }
+  }
+  const closesLine = !sel
+    ? ''
+    : shutNow && !visitedSel && !isHere
+      ? `Closed at ${clockLabel(sel.closes)}`
+      : isHere
+        ? `You’re here · open till ${clockLabel(sel.closes)}`
+        : `Open till ${clockLabel(sel.closes)}${trips?.passNeeded ? ` · level ${trips.level} day pass ${trips.passCost} SP` : ''}`;
+  const closesColor = shutNow && !isHere ? t.red : isHere ? t.greenInk : t.goldInk;
+
+  let areaNote = '';
+  if (area && !area.loading) {
+    if (areaLocked) areaNote = `Win ${area.starsNeeded} Give Day stars to open level ${area.level}. You have ${stars}.`;
+    else if (area.passNeeded)
+      areaNote = `Level ${area.level} needs a ${area.passCost} SP day pass. Gifts here can be worth up to ${area.giftBudget} SP.`;
+    else areaNote = `Gifts here can be worth up to ${area.giftBudget} SP · ${area.passCost ? 'day pass bought' : 'free level'}`;
+  }
+  const areaMeta = area ? areaOf(area.areaId) : null;
+  const areaLine = areaMeta
+    ? `${areaMeta.region} · ${home ? `${kmBetween(home, areaMeta, run.unitsPerKm)} km from home · ` : ''}level ${area.level}`
+    : '';
+  const levelLine = `${levelInfo(levels, levelNow)?.name || ''} · ${
+    nx
+      ? `${stars} of ${nx.starsNeeded} stars to open level ${nx.number} (${nx.radiusKm < widest ? `up to ${nx.radiusKm} km` : 'all of Lagos'}${nx.passCost ? `, day pass ${nx.passCost} SP` : ', free'})`
+      : 'all of Lagos is open to you'
+  }`;
+  const levelPct = nx ? Math.min(100, Math.round((stars / Math.max(1, nx.starsNeeded)) * 100)) : 100;
+  const freeLine = levels.length
+    ? `Home: ${home?.name || ''}. ${freeNums.length ? `Level${freeNums.length > 1 ? 's' : ''} ${freeNums.join(' and ')} ${freeNums.length > 1 ? 'are' : 'is'} free, with ${levels[0].giftBudget} SP of gifts at each place.` : ''}${freeModes.length ? ` ${freeModes.join(' and ')} is free; faster ways get you there before closing.` : ''}`
+    : '';
+  const toastLevel = toast ? levelInfo(levels, toast) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      {onMap ? (
-        <ScrollView contentContainerStyle={{ height: Math.max(700 * k + sheetH, 844 * k) }} showsVerticalScrollIndicator={false} bounces={false}>
-          <TownMap t={t} isDark={isDark} k={k} height={844 * k} spots={places} onSpot={selectPlace} selId={placeId} done={visits} reduceMotion={reduceMotion} />
-          {run ? <Walker t={t} m={{ meBg: isDark ? '#3A2C30' : '#FFE3C8' }} k={k} pos={pos} walking={walking} reduceMotion={reduceMotion} /> : null}
-        </ScrollView>
+      {onMap && run ? (
+        <LagosMap
+          t={t}
+          isDark={isDark}
+          zoom={zoom}
+          onZoom={changeZoom}
+          areas={shownAreas}
+          home={home}
+          pos={pos}
+          legMs={legMs}
+          ride={ride}
+          walking={walking}
+          selId={area?.areaId}
+          onArea={openArea}
+          rings={mapRings(levels)}
+          levelNow={levelNow}
+          unitsPerKm={run.unitsPerKm}
+          focus={focus}
+          topPad={insets.top + 70}
+          bottomPad={330}
+          reduceMotion={reduceMotion}
+        />
       ) : null}
 
       {!onMap ? <Glow t={t} height={360} /> : null}
@@ -332,26 +562,65 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       {phase !== 'done' ? (
         <View style={[styles.hud, { top: insets.top + 8 }]}>
           <CircleButton t={t} icon={BACK} label={onMap ? 'Back to Spotlight' : 'Back'} onPress={back} />
-          <View style={[styles.titleBox, onMap ? { backgroundColor: t.surface, borderColor: t.border } : null]}>
+          <View style={[styles.titleBox, onMap || phase === 'home' ? { backgroundColor: t.surface, borderColor: t.border } : null]}>
             <Text style={[styles.kicker, { color: t.pinkInk }]} numberOfLines={1}>
-              {onMap ? 'Today' : place?.kind}
+              {inScene || phase === 'build' ? `${sel?.kind || ''} · ${area?.name || ''}` : 'Today'}
             </Text>
             <Text style={[styles.hudTitle, { color: t.text }]} numberOfLines={1}>
-              {onMap ? 'Give Day' : place?.name}
+              {inScene || phase === 'build' ? sel?.name : 'Give Day'}
             </Text>
           </View>
-          <CoinPill t={t} value={run ? coins : '—'} label={`${coins} give coins left`} />
-          <View style={[styles.helped, { backgroundColor: t.pinkSoft, borderColor: t.pinkBorder }]} accessibilityLabel={`${helped} people helped today`}>
-            <Svg width={15} height={15} viewBox="0 0 24 24">
-              <Path d={HEART_PATH} fill={t.pink} />
-            </Svg>
-            <Text style={[styles.helpedText, { color: t.pinkInk }]}>{helped}</Text>
-          </View>
+          {run ? (
+            <View
+              style={[styles.clock, { backgroundColor: late ? t.orangeSoft : t.surface, borderColor: t.border }]}
+              accessibilityLabel={`Time now ${clockLabel(clock)}`}
+            >
+              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                <Circle cx={12} cy={12} r={8.5} stroke={late ? t.orange : t.text2} strokeWidth={2} />
+                <Path d={CLOCK} stroke={late ? t.orange : t.text2} strokeWidth={2} strokeLinecap="round" />
+              </Svg>
+              <Text style={[styles.clockText, { color: late ? t.orange : t.text }]}>{clockLabel(clock)}</Text>
+            </View>
+          ) : null}
+          <SpPill t={t} balance={balance} reduceMotion={reduceMotion} height={34} />
         </View>
       ) : null}
 
+      {onMap ? (
+        <View style={[styles.zoomCol, { top: insets.top + 62 }]}>
+          {[
+            ['+', 'Zoom in', 1],
+            ['−', 'Zoom out', -1],
+          ].map(([sign, label, d]) => (
+            <PressScale key={label} onPress={() => changeZoom(d)} accessibilityLabel={label}>
+              <View style={[styles.zoomBtn, { backgroundColor: t.surface, borderColor: t.border }]}>
+                <Text style={[styles.zoomText, { color: t.text }]}>{sign}</Text>
+              </View>
+            </PressScale>
+          ))}
+        </View>
+      ) : null}
+
+      {toastLevel && onMap ? (
+        <SlideIn reduceMotion={reduceMotion} distance={-12} style={[styles.toast, { top: insets.top + 62, backgroundColor: t.text }]}>
+          <View style={[styles.toastStar, { backgroundColor: t.gold }]}>
+            <Svg width={16} height={16} viewBox="0 0 24 24">
+              <Path d={STAR_PATH} fill="#FFFFFF" />
+            </Svg>
+          </View>
+          <Text style={[styles.toastText, { color: t.bg }]}>
+            Level {toastLevel.number} is open!{' '}
+            {toastLevel.radiusKm < widest ? `Places up to ${toastLevel.radiusKm} km away.` : 'All of Lagos.'}
+          </Text>
+        </SlideIn>
+      ) : null}
+
       {phase === 'intro' || phase === 'loading' ? (
-        <SlideIn reduceMotion={reduceMotion} distance={300} style={[styles.sheet, { backgroundColor: t.surface, paddingBottom: insets.bottom + 24 }]}>
+        <SlideIn
+          reduceMotion={reduceMotion}
+          distance={300}
+          style={[styles.sheet, { backgroundColor: t.surface, paddingBottom: insets.bottom + 24 }]}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={[styles.face, { backgroundColor: t.greenSoft }]}>
               <Character name="mamaRonke" size={50} style={{ marginBottom: -5 }} />
@@ -362,60 +631,238 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
             </View>
           </View>
           <Text style={[styles.body, { color: t.text2 }]}>
-            Walk the town, meet the people at each place and build the right period kits with your give coins.
+            Travel across Lagos, meet the people at each place and build the right period gift before they close.
           </Text>
           {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
-          <PinkButton t={t} label="Start the day" disabled={phase === 'loading'} reduceMotion={reduceMotion} onPress={start} style={{ marginTop: 14 }}>
+          <PinkButton
+            t={t}
+            label="Start the day"
+            disabled={phase === 'loading'}
+            reduceMotion={reduceMotion}
+            onPress={start}
+            style={{ marginTop: 14 }}
+          >
             <Text style={styles.btnText}>{phase === 'loading' ? 'Starting…' : 'Start the day'}</Text>
             <View style={styles.btnChip}>
-              <Text style={styles.btnChipText}>{freeLeft > 0 ? 'Free try' : `${cost} SP`}</Text>
+              <Text style={styles.btnChipText}>{freeLeft > 0 ? 'Free try' : cost ? `${cost} SP` : 'Free'}</Text>
             </View>
           </PinkButton>
         </SlideIn>
       ) : null}
 
-      {phase === 'map' || phase === 'ending' ? (
-        <SlideIn reduceMotion={reduceMotion} distance={200} style={[styles.mapSheet, { backgroundColor: t.surface, borderColor: t.border, bottom: insets.bottom + 22 }]}>
-          {place && phase === 'map' ? (
-            <SlideIn key={place.id} reduceMotion={reduceMotion} distance={8}>
+      {phase === 'home' ? (
+        <ScrollView
+          style={StyleSheet.absoluteFill}
+          contentContainerStyle={{ paddingTop: insets.top + 70, paddingHorizontal: 16, paddingBottom: insets.bottom + 30 }}
+        >
+          <Text style={[styles.homeTitle, { color: t.text }]}>{homeId ? 'Change your home area' : 'Where do you live?'}</Text>
+          <Text style={[styles.body, { color: t.text2 }]}>
+            Pick your area. Places near home are free to reach; farther parts of Lagos open as you win stars.
+          </Text>
+          {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
+          {homeGroups(areas).map(g => (
+            <View key={g.name} style={{ marginTop: 14 }}>
+              <Text style={[styles.groupLabel, { color: t.text3 }]}>{g.name}</Text>
+              <View style={styles.homeWrap}>
+                {g.areas.map(a => {
+                  const on = homeId === a.id;
+                  return (
+                    <PressScale
+                      key={a.id}
+                      onPress={() => pickHome(a.id)}
+                      disabled={busy}
+                      accessibilityLabel={`${a.name}, ${a.places} places`}
+                    >
+                      <View
+                        style={[styles.homeChip, { backgroundColor: on ? t.pinkSoft : t.surface, borderColor: on ? t.pink : t.border }]}
+                      >
+                        <Text style={[styles.homeName, { color: t.text }]}>{a.name}</Text>
+                        <Text style={[styles.homeCount, { color: t.text3 }]}>{a.places} places</Text>
+                      </View>
+                    </PressScale>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
+
+      {onMap ? (
+        <SlideIn
+          reduceMotion={reduceMotion}
+          distance={200}
+          style={[styles.mapSheet, { backgroundColor: t.surface, borderColor: t.border, bottom: insets.bottom + 22 }]}
+        >
+          {sel ? (
+            <SlideIn key={sel.id} reduceMotion={reduceMotion} distance={8}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[styles.hostTile, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFE9DF' }]}>
-                  <Character name={hostOf(place, false)} size={64} style={{ marginBottom: -4 }} />
+                  <Character name={hostOf(sel, false)} size={64} style={{ marginBottom: -4 }} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={[styles.kicker, { color: t.pinkInk }]}>{place.kind}</Text>
-                  <Text style={[styles.placeName, { color: t.text }]}>{place.name}</Text>
-                  <Text style={[styles.teaser, { color: t.text2 }]}>{place.teaser}</Text>
+                  <Text style={[styles.kicker, { color: t.pinkInk }]}>
+                    {sel.kind} · {area?.name}
+                  </Text>
+                  <Text style={[styles.placeName, { color: t.text }]}>{sel.name}</Text>
+                  <Text style={[styles.teaser, { color: t.text2 }]} numberOfLines={3}>
+                    {sel.teaser}
+                  </Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                <PressScale onPress={() => setPlaceId(null)} accessibilityLabel="Not now">
+              {closesLine ? (
+                <View style={styles.closesRow}>
+                  <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+                    <Circle cx={12} cy={12} r={8.5} stroke={closesColor} strokeWidth={2} />
+                    <Path d={CLOCK} stroke={closesColor} strokeWidth={2} strokeLinecap="round" />
+                  </Svg>
+                  <Text style={[styles.closesText, { color: closesColor }]}>{closesLine}</Text>
+                </View>
+              ) : null}
+              {trips && !visitedSel && !shutNow && !isHere && trips.levelOpen ? (
+                <View style={styles.travelRow}>
+                  {trips.quotes.map(q => {
+                    const on = mode === q.mode;
+                    const can = q.open && q.cost + (trips.passNeeded ? trips.passCost : 0) <= balance;
+                    return (
+                      <PressScale key={q.mode} onPress={() => can && setMode(q.mode)} accessibilityLabel={q.label} style={{ flex: 1 }}>
+                        <View
+                          style={[
+                            styles.travel,
+                            { backgroundColor: on ? t.pinkSoft : t.surface, borderColor: on ? t.pink : t.border, opacity: can ? 1 : 0.45 },
+                          ]}
+                        >
+                          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                            <Path
+                              d={travelIcon(q.mode)}
+                              stroke={on ? t.pinkInk : t.text2}
+                              strokeWidth={1.9}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </Svg>
+                          <Text style={[styles.travelLabel, { color: t.text }]}>{q.label}</Text>
+                          <Text style={[styles.travelPrice, { color: q.cost ? t.goldInk : t.greenInk }]}>
+                            {q.cost ? `${q.cost} SP` : 'Free'}
+                          </Text>
+                          <Text style={[styles.travelNote, { color: q.open ? t.text3 : t.red }]}>
+                            {q.open ? `${q.minutes} min · ${clockLabel(q.arrive)}` : 'closed by then'}
+                          </Text>
+                        </View>
+                      </PressScale>
+                    );
+                  })}
+                </View>
+              ) : null}
+              {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
+              <Shake trigger={shake} reduceMotion={reduceMotion} style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <PressScale onPress={() => setSel(null)} accessibilityLabel="Not now">
                   <View style={[styles.notNow, { borderColor: t.border }]}>
                     <Text style={[styles.notNowText, { color: t.text2 }]}>Not now</Text>
                   </View>
                 </PressScale>
                 <PinkButton
                   t={t}
-                  label={visits[place.id] != null ? 'Visited today' : 'Walk in'}
-                  disabled={visits[place.id] != null || walking}
+                  label={goLabel}
+                  disabled={blocked || walking || busy}
                   reduceMotion={reduceMotion}
-                  onPress={walkIn}
+                  onPress={go}
                   height={50}
                   style={{ flex: 1 }}
-                />
+                >
+                  <Text
+                    style={[styles.btnText, { fontSize: 13.5, color: blocked || walking || busy ? t.disabledFg : '#FFFFFF' }]}
+                    numberOfLines={1}
+                  >
+                    {goLabel}
+                  </Text>
+                </PinkButton>
+              </Shake>
+            </SlideIn>
+          ) : area ? (
+            <SlideIn key={area.areaId} reduceMotion={reduceMotion} distance={8}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[styles.areaTitle, { color: t.text }]}>{area.name}</Text>
+                  <Text style={[styles.areaLine, { color: t.text3 }]}>{areaLine}</Text>
+                </View>
+                <CircleButton t={t} icon={CLOSE} label="Close" onPress={() => setArea(null)} size={34} iconSize={13} />
               </View>
+              {areaNote ? (
+                <View style={[styles.note, { backgroundColor: areaLocked ? t.pinkSoft : t.goldSoft }]}>
+                  <Text style={[styles.noteText, { color: areaLocked ? t.pinkInk : t.goldInk }]}>{areaNote}</Text>
+                </View>
+              ) : null}
+              {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
+              <ScrollView style={{ maxHeight: 236, marginTop: 8 }} nestedScrollEnabled>
+                {area.loading ? <Text style={[styles.areaLine, { color: t.text3, paddingVertical: 12 }]}>Loading places…</Text> : null}
+                {(area.places || []).map(p => {
+                  const done = visits[p.id] != null || p.stars != null;
+                  const gotStars = visits[p.id] ?? p.stars ?? 0;
+                  const closed = !done && shut(p);
+                  const dim = closed || areaLocked || p.locked;
+                  return (
+                    <PressScale key={p.id} onPress={() => selectPlace(p)} accessibilityLabel={`${p.name}${closed ? ', closed' : ''}`}>
+                      <View style={[styles.stopRow, { borderBottomColor: t.border, opacity: dim ? 0.55 : 1 }]}>
+                        <View style={[styles.stopIcon, { backgroundColor: t.pinkSoft }]}>
+                          <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
+                            <Path d={kindIcon(p.kind)} stroke={t.pinkInk} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                          </Svg>
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.stopName, { color: t.text }]} numberOfLines={1}>
+                            {p.name}
+                          </Text>
+                          <Text style={[styles.stopKind, { color: t.text3 }]}>
+                            {p.kind} · {closed ? 'closed' : `open till ${clockLabel(p.closes)}`}
+                          </Text>
+                        </View>
+                        <Text style={[styles.stopRight, { color: done ? t.gold : closed ? t.red : t.text3 }]}>
+                          {done ? '★'.repeat(gotStars) || 'Done' : closed ? 'Closed' : '›'}
+                        </Text>
+                      </View>
+                    </PressScale>
+                  );
+                })}
+              </ScrollView>
             </SlideIn>
           ) : (
             <View>
-              <Text style={[styles.mapTitle, { color: t.text }]}>Where will you give today?</Text>
+              <View style={styles.levelHead}>
+                <Text style={[styles.mapTitle, { color: t.text }]}>Where will you give today?</Text>
+                <View style={[styles.levelChip, { backgroundColor: t.pinkSoft }]}>
+                  <Text style={[styles.levelChipText, { color: t.pinkInk }]}>Level {levelNow}</Text>
+                </View>
+              </View>
+              <View style={[styles.barTrack, { backgroundColor: t.track, height: 5, marginTop: 9 }]}>
+                <View style={{ width: `${levelPct}%`, height: '100%' }}>
+                  <LinearGradient
+                    colors={[t.pink, t.gold]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ flex: 1, borderRadius: 999 }}
+                  />
+                </View>
+              </View>
+              <Text style={[styles.levelLine, { color: t.text3 }]}>{levelLine}</Text>
+              {freeLine ? (
+                <View style={[styles.freeBox, { backgroundColor: t.greenSoft }]}>
+                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                    <Path d={GIFT} stroke={t.greenInk} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                  <Text style={[styles.freeText, { color: t.greenInk }]}>{freeLine}</Text>
+                </View>
+              ) : null}
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
                 {[
-                  { value: `${visited} of ${places.length}`, label: 'places visited', bg: t.pinkSoft, ink: t.pinkInk },
+                  { value: visited, label: 'places visited', bg: t.pinkSoft, ink: t.pinkInk },
                   { value: helped, label: 'people helped', bg: t.greenSoft, ink: t.greenInk },
-                  { value: starsTotal, label: 'stars', bg: t.goldSoft, ink: t.goldInk },
+                  { value: clockLabel(run?.dayEnd || 0), label: 'day ends', bg: t.goldSoft, ink: t.goldInk },
                 ].map(s => (
                   <View key={s.label} style={[styles.dayStat, { backgroundColor: s.bg }]}>
-                    <Text style={[styles.dayValue, { color: s.ink }]}>{s.value}</Text>
+                    <Text style={[styles.dayValue, { color: s.ink }]} numberOfLines={1} adjustsFontSizeToFit>
+                      {s.value}
+                    </Text>
                     <Text style={[styles.dayLabel, { color: t.text2 }]}>{s.label}</Text>
                   </View>
                 ))}
@@ -424,28 +871,48 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               <PressScale onPress={finish} disabled={!visited || phase === 'ending'} accessibilityLabel="Finish the day">
                 <View style={[styles.finish, { borderColor: visited ? t.pink : t.border }]}>
                   <Text style={[styles.finishText, { color: visited ? t.pinkInk : t.text3 }]}>
-                    {phase === 'ending' ? 'Finishing…' : visited ? 'Finish the day' : 'Visit a place to start'}
+                    {phase === 'ending' ? 'Finishing…' : visited ? 'Finish the day' : 'Tap an area to start'}
                   </Text>
                 </View>
               </PressScale>
+              {!travelled ? (
+                <PressScale onPress={() => setPhase('home')} accessibilityLabel="Change home area">
+                  <Text style={[styles.changeHome, { color: t.text2 }]}>Change home area</Text>
+                </PressScale>
+              ) : null}
             </View>
           )}
         </SlideIn>
       ) : null}
 
-      {inScene && place ? (
+      {inScene && sel ? (
         <View style={{ position: 'absolute', left: 0, right: 0, top: insets.top + 60, bottom: 0 }}>
-          <PlaceScene t={t} isDark={isDark} place={place} tone={tone} tall={phase === 'handover'} happy={!!people} handing={phase === 'handover'} reduceMotion={reduceMotion} k={k} />
+          <PlaceScene
+            t={t}
+            isDark={isDark}
+            place={sel}
+            tone={tone}
+            tall={phase === 'handover'}
+            happy={false}
+            handing={phase === 'handover'}
+            reduceMotion={reduceMotion}
+            k={1}
+          />
           {phase === 'visit' ? (
-            <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 110 }}>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}>
               <SlideIn reduceMotion={reduceMotion} delay={150}>
-                <Text style={[styles.placeTeaser, { color: t.text2 }]}>{place.teaser}</Text>
+                <Text style={[styles.placeTeaser, { color: t.text2 }]}>{sel.teaser}</Text>
               </SlideIn>
               <View style={styles.facts}>
-                {(place.facts || []).map((f, i) => {
+                {(sel.facts || []).map((f, i) => {
                   const [bg, ink] = toneOf(t, f.tone);
                   return (
-                    <SlideIn key={f.text} reduceMotion={reduceMotion} delay={250 + i * 70} style={[styles.fact, { backgroundColor: t.surface, borderColor: t.border }]}>
+                    <SlideIn
+                      key={f.text}
+                      reduceMotion={reduceMotion}
+                      delay={250 + i * 70}
+                      style={[styles.fact, { backgroundColor: t.surface, borderColor: t.border }]}
+                    >
                       <View style={[styles.factIcon, { backgroundColor: bg }]}>
                         <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
                           <Path d={factIcon(f.icon)} stroke={ink} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
@@ -456,61 +923,49 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                   );
                 })}
               </View>
-              <View style={styles.askRow}>
-                <Text style={[styles.ask, { color: t.text }]}>{place.forSelf ? 'A kit for you' : `How many ${place.who} will you help?`}</Text>
-                <Text style={[styles.askHint, { color: t.text3 }]}>One kit each</Text>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                {(place.counts || []).map(n => {
-                  const on = people === n;
-                  const filled = Math.max(1, Math.round((n / Math.max(1, place.total)) * 3));
-                  return (
-                    <PressScale key={n} onPress={() => setPeople(n)} accessibilityLabel={`${n} ${place.who}`} style={{ flex: 1 }}>
-                      <Pop trigger={on ? n : 0} reduceMotion={reduceMotion || !on}>
-                        <View style={[styles.count, { backgroundColor: on ? t.pinkSoft : t.surface, borderColor: on ? t.pink : t.border }]}>
-                          <View style={{ flexDirection: 'row', gap: 2 }}>
-                            {[0, 1, 2].map(d => (
-                              <View key={d} style={[styles.countDot, { backgroundColor: d < filled ? (on ? t.pink : t.petal) : t.track }]} />
-                            ))}
-                          </View>
-                          <Text style={[styles.countNum, { color: on ? t.pinkInk : t.text }]}>{n}</Text>
-                          <Text style={[styles.countLabel, { color: on ? t.pinkInk : t.text3 }]}>
-                            {place.forSelf ? 'just you' : n === place.total ? 'everyone' : `${n} of ${place.total}`}
-                          </Text>
-                        </View>
-                      </Pop>
-                    </PressScale>
-                  );
-                })}
-              </View>
+              <SlideIn reduceMotion={reduceMotion} delay={500} style={[styles.giftCard, { backgroundColor: t.goldSoft }]}>
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path d={GIFT} stroke={t.goldInk} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.giftTitle, { color: t.text }]}>Gifts worth up to {gift} SP</Text>
+                  <Text style={[styles.giftSub, { color: t.text2 }]}>
+                    {area?.passCost ? `Included in your level ${area.level} day pass` : `Free on level ${area?.level}`}
+                    {sel.forSelf ? '' : ` · for all ${sel.total} ${sel.who}`}
+                  </Text>
+                </View>
+              </SlideIn>
             </ScrollView>
           ) : (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
-              <FlyingKits t={t} count={people || 3} reduceMotion={reduceMotion} />
-              <Text style={[styles.handing, { color: t.text2, bottom: insets.bottom + 60 }]}>Handing over {people} {people === 1 ? 'kit' : 'kits'}…</Text>
+              <FlyingKits t={t} count={12} reduceMotion={reduceMotion} />
+              <Text style={[styles.handing, { color: t.text2, bottom: insets.bottom + 60 }]}>Handing over your gift…</Text>
             </View>
           )}
           {phase === 'visit' ? (
             <View style={{ position: 'absolute', left: 16, right: 16, bottom: insets.bottom + 30 }}>
               <PinkButton
                 t={t}
-                label={people ? (place.forSelf ? 'Build your kit' : `Build ${people} kits`) : 'Pick how many first'}
-                disabled={!people}
+                label={sel.forSelf ? 'Build your kit' : `Build a gift for all ${sel.total}`}
                 reduceMotion={reduceMotion}
                 onPress={() => setPhase('build')}
               />
-              <Text style={[styles.foot, { color: t.text3 }]}>Coins are only spent when you hand the kits over</Text>
+              <Text style={[styles.foot, { color: t.text3 }]}>
+                Giving takes {run?.visitMinutes} minutes · open till {clockLabel(sel.closes)}
+              </Text>
             </View>
           ) : null}
         </View>
       ) : null}
 
-      {phase === 'build' && place ? (
+      {phase === 'build' && sel ? (
         <View style={{ position: 'absolute', left: 0, right: 0, top: insets.top + 64, bottom: 0 }}>
           <ScrollView contentContainerStyle={{ paddingBottom: 260 }}>
             <View style={{ paddingHorizontal: 18 }}>
-              <Text style={[styles.buildTitle, { color: t.text }]}>{place.forSelf ? 'Build your own kit' : `One kit for each of the ${people} ${place.who}`}</Text>
-              <Text style={[styles.buildSub, { color: t.text2 }]}>Tap what goes in. Every kit gets the same things.</Text>
+              <Text style={[styles.buildTitle, { color: t.text }]}>
+                {sel.forSelf ? 'Build your own kit' : `One gift for all ${sel.total} ${sel.who}`}
+              </Text>
+              <Text style={[styles.buildSub, { color: t.text2 }]}>Tap what goes in. Each price covers everyone here.</Text>
             </View>
             <View style={styles.grid}>
               {products.map((p, i) => {
@@ -518,7 +973,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                 const art = productArt(p.id);
                 return (
                   <SlideIn key={p.id} reduceMotion={reduceMotion} delay={i * 40} style={{ width: '48.5%' }}>
-                    <PressScale onPress={() => setPicked(cur => togglePick(cur, p.id))} accessibilityLabel={`${p.name}, ${p.cost} coins`}>
+                    <PressScale onPress={() => setPicked(cur => togglePick(cur, p.id))} accessibilityLabel={`${p.name}, ${p.cost} SP`}>
                       <View style={[styles.product, { backgroundColor: on ? t.pinkSoft : t.surface, borderColor: on ? t.pink : t.border }]}>
                         <View style={[styles.productTile, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : '#FBF6F4' }]}>
                           <Svg width={32} height={32} viewBox="0 0 32 32">
@@ -530,9 +985,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                           <Text style={[styles.productName, { color: t.text }]} numberOfLines={1}>
                             {p.name}
                           </Text>
-                          <Text style={[styles.productCost, { color: t.text3 }]}>
-                            {p.cost} {p.cost === 1 ? 'coin a kit' : 'coins a kit'}
-                          </Text>
+                          <Text style={[styles.productCost, { color: t.text3 }]}>{p.cost} SP</Text>
                         </View>
                         {on ? (
                           <Pop reduceMotion={reduceMotion} style={[styles.check, { backgroundColor: t.pink }]}>
@@ -548,24 +1001,33 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               })}
             </View>
           </ScrollView>
-          <Shake trigger={shake} reduceMotion={reduceMotion} style={[styles.budget, { backgroundColor: t.surface, borderColor: t.border, bottom: insets.bottom + 22 }]}>
+          <Shake
+            trigger={shake}
+            reduceMotion={reduceMotion}
+            style={[styles.budget, { backgroundColor: t.surface, borderColor: t.border, bottom: insets.bottom + 22 }]}
+          >
             <View style={styles.budgetRow}>
-              <Text style={[styles.kitLine, { color: t.text2 }]}>{unit ? `Each kit ${unit} coins × ${people}` : 'Pick at least one thing'}</Text>
+              <Text style={[styles.kitLine, { color: t.text2 }]}>{unit ? 'Your gift' : 'Pick at least one thing'}</Text>
               <Text style={[styles.totalLine, { color: over ? t.red : t.text }]}>
-                {total} / {coins}
+                {unit} / {gift} SP
               </Text>
             </View>
             <View style={[styles.barTrack, { backgroundColor: t.track }]}>
-              <View style={{ width: `${Math.min(100, Math.round((total / Math.max(1, coins)) * 100))}%`, height: '100%' }}>
-                <LinearGradient colors={over ? [t.red, t.red] : [t.pink, t.gold]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, borderRadius: 999 }} />
+              <View style={{ width: `${Math.min(100, Math.round((unit / Math.max(1, gift)) * 100))}%`, height: '100%' }}>
+                <LinearGradient
+                  colors={over ? [t.red, t.red] : [t.pink, t.gold]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ flex: 1, borderRadius: 999 }}
+                />
               </View>
             </View>
             <Text style={[styles.budgetLine, { color: over ? t.red : t.text3 }]}>
               {over
-                ? `That is ${total - coins} coins too many. Take something out or help fewer people.`
-                : total
-                  ? `${coins - total} coins left after this give`
-                  : 'Coins are shared across the whole day'}
+                ? `That is ${unit - gift} SP over. Take something out.`
+                : unit
+                  ? `${gift - unit} SP left in this gift budget`
+                  : `Gift budget for this place: ${gift} SP`}
             </Text>
             {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
@@ -574,42 +1036,62 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                   <Text style={[styles.notNowText, { color: t.text2 }]}>Back</Text>
                 </View>
               </PressScale>
-              <PinkButton t={t} label="give" disabled={!ok} reduceMotion={reduceMotion} onPress={give} height={50} style={{ flex: 1 }}>
+              <PinkButton
+                t={t}
+                label="Hand over the gift"
+                disabled={!ok}
+                reduceMotion={reduceMotion}
+                onPress={give}
+                height={50}
+                style={{ flex: 1 }}
+              >
                 <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">
                   <Path d={GIFT} stroke={ok ? '#FFFFFF' : t.disabledFg} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
                 </Svg>
-                <Text style={[styles.btnText, { color: ok ? '#FFFFFF' : t.disabledFg, fontSize: 14 }]}>{place.forSelf ? 'Pack my kit' : `Hand over ${people || 0} kits`}</Text>
+                <Text style={[styles.btnText, { color: ok ? '#FFFFFF' : t.disabledFg, fontSize: 14 }]}>
+                  {sel.forSelf ? 'Pack my kit' : 'Hand over the gift'}
+                </Text>
               </PinkButton>
             </View>
           </Shake>
         </View>
       ) : null}
 
-      {phase === 'result' && result && place ? (
+      {phase === 'result' && result && sel ? (
         <View style={StyleSheet.absoluteFill}>
           <View style={[StyleSheet.absoluteFill, { backgroundColor: t.overlay }]} />
           {result.stars === 3 ? <Confetti colors={[t.pink, t.gold, t.green, t.petal, t.goldSoft]} reduceMotion={reduceMotion} /> : null}
-          <SlideIn reduceMotion={reduceMotion} distance={400} style={[styles.result, { backgroundColor: t.surface, paddingBottom: insets.bottom + 24 }]}>
+          <SlideIn
+            reduceMotion={reduceMotion}
+            distance={400}
+            style={[styles.result, { backgroundColor: t.surface, paddingBottom: insets.bottom + 24 }]}
+          >
             <View style={[styles.handle, { backgroundColor: t.border }]} />
             <StarRow t={t} count={result.stars} reduceMotion={reduceMotion} big={52} small={42} />
             <Text style={[styles.resultTitle, { color: t.text }]}>{result.title}</Text>
             <View style={[styles.thanks, { backgroundColor: t.pinkSoft }]}>
               <View style={[styles.thanksFace, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFE9DF' }]}>
-                <Character name={hostOf(place, true)} size={54} style={{ marginBottom: -4 }} />
+                <Character name={hostOf(sel, true)} size={54} style={{ marginBottom: -4 }} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.thanksText, { color: t.text }]}>“{result.thanks}”</Text>
-                <Text style={[styles.quoteWho, { color: t.text3 }]}>{place.hostName}</Text>
+                <Text style={[styles.thanksText, { color: t.text }]}>
+                  “
+                  {result.stars > 0
+                    ? result.thanks
+                    : 'Every gift needs something to catch the flow: pads, tampons, a cup, period pants or reusable pads.'}
+                  ”
+                </Text>
+                <Text style={[styles.quoteWho, { color: t.text3 }]}>{sel.hostName}</Text>
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 6, marginTop: 10 }}>
               <View style={[styles.resChip, { backgroundColor: t.pinkSoft }]}>
                 <Text style={[styles.resChipText, { color: t.pinkInk }]}>
-                  +{result.people} {place.who} helped
+                  {sel.forSelf ? 'Your own kit' : `+${result.people} ${sel.who} helped`}
                 </Text>
               </View>
               <View style={[styles.resChip, { backgroundColor: t.goldSoft }]}>
-                <Text style={[styles.resChipText, { color: t.goldInk }]}>{result.spent} coins given</Text>
+                <Text style={[styles.resChipText, { color: t.goldInk }]}>Gift worth {result.giftCost} SP</Text>
               </View>
             </View>
             <Text style={[styles.gaveLabel, { color: t.text3 }]}>WHAT YOU GAVE</Text>
@@ -617,7 +1099,12 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               {[...(result.review || []), ...(result.missed || []).map(m => ({ ...m, rating: 'missed' }))].map((r, i) => {
                 const st = RATING[r.rating] || RATING.ok;
                 return (
-                  <SlideIn key={`${r.productId}-${r.rating}`} reduceMotion={reduceMotion} delay={700 + i * 60} style={[styles.reviewRow, { backgroundColor: t[st[1]] }]}>
+                  <SlideIn
+                    key={`${r.productId}-${r.rating}`}
+                    reduceMotion={reduceMotion}
+                    delay={700 + i * 60}
+                    style={[styles.reviewRow, { backgroundColor: t[st[1]] }]}
+                  >
                     <View style={[styles.reviewDot, { backgroundColor: t[st[0]] }]}>
                       <Svg width={11} height={11} viewBox="0 0 24 24" fill="none">
                         <Path d={st[2]} stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
@@ -638,7 +1125,9 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               label="Back to the map"
               reduceMotion={reduceMotion}
               onPress={() => {
-                setPlaceId(null);
+                setSel(null);
+                setPicked([]);
+                setResult(null);
                 setPhase('map');
               }}
               height={52}
@@ -676,39 +1165,52 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 18, paddingTop: 18 }}>
               {[
                 { value: day?.helped ?? helped, label: 'people helped', ink: t.pinkInk },
-                { value: day?.stars ?? starsTotal, label: 'stars', ink: t.goldInk },
-                { value: day?.coins ?? coins, label: 'coins left', ink: t.greenInk },
+                { value: day?.stars ?? 0, label: 'stars', ink: t.goldInk },
+                { value: day?.spentToday ?? 0, label: 'SP spent', ink: t.greenInk },
               ].map((s, i) => (
-                <SlideIn key={s.label} reduceMotion={reduceMotion} delay={200 + i * 80} style={[styles.doneStat, { backgroundColor: t.surface, borderColor: t.border }]}>
+                <SlideIn
+                  key={s.label}
+                  reduceMotion={reduceMotion}
+                  delay={200 + i * 80}
+                  style={[styles.doneStat, { backgroundColor: t.surface, borderColor: t.border }]}
+                >
                   <Text style={[styles.doneValue, { color: s.ink }]}>{s.value}</Text>
                   <Text style={[styles.dayLabel, { color: t.text2 }]}>{s.label}</Text>
                 </SlideIn>
               ))}
             </View>
             <View style={[styles.doneList, { backgroundColor: t.surface, borderColor: t.border }]}>
-              {log.map((l, i) => {
-                const p = places.find(x => x.id === l.id);
-                return (
-                  <SlideIn key={l.id} reduceMotion={reduceMotion} delay={300 + i * 80} style={[styles.doneRow, { borderBottomColor: i === log.length - 1 ? 'transparent' : t.border }]}>
-                    <Text style={[styles.doneName, { color: t.text }]}>{p?.name}</Text>
-                    <Text style={[styles.donePeople, { color: t.text3 }]}>
-                      {l.n} {p?.who}
-                    </Text>
-                    <View style={{ flexDirection: 'row', gap: 1 }}>
-                      {[0, 1, 2].map(n => (
-                        <Svg key={n} width={12} height={12} viewBox="0 0 24 24">
-                          <Path d={STAR_PATH} fill={n < l.stars ? t.gold : t.starOff} />
-                        </Svg>
-                      ))}
-                    </View>
-                  </SlideIn>
-                );
-              })}
+              {log.map((l, i) => (
+                <SlideIn
+                  key={l.id}
+                  reduceMotion={reduceMotion}
+                  delay={300 + i * 80}
+                  style={[styles.doneRow, { borderBottomColor: i === log.length - 1 ? 'transparent' : t.border }]}
+                >
+                  <Text style={[styles.doneName, { color: t.text }]} numberOfLines={1}>
+                    {l.name} · {l.areaName}
+                  </Text>
+                  <Text style={[styles.donePeople, { color: t.text3 }]}>{l.forSelf ? 'you' : `${l.n} ${l.who}`}</Text>
+                  <View style={{ flexDirection: 'row', gap: 1 }}>
+                    {[0, 1, 2].map(n => (
+                      <Svg key={n} width={12} height={12} viewBox="0 0 24 24">
+                        <Path d={STAR_PATH} fill={n < l.stars ? t.gold : t.starOff} />
+                      </Svg>
+                    ))}
+                  </View>
+                </SlideIn>
+              ))}
             </View>
           </ScrollView>
           <View style={{ position: 'absolute', left: 18, right: 18, bottom: insets.bottom + 30 }}>
             <PinkButton t={t} label="Back to Spotlight" reduceMotion={reduceMotion} onPress={onExit} />
-            <Text style={[styles.foot, { color: t.text3 }]}>{freeLeft > 0 ? 'Your next Give Day is free' : `Next Give Day costs ${cost} SP`}</Text>
+            <Text style={[styles.foot, { color: t.text3 }]}>
+              {freeLeft > 0 || !cost
+                ? freeNums.length
+                  ? `Level${freeNums.length > 1 ? 's' : ''} ${freeNums.join(' and ')} ${freeNums.length > 1 ? 'are' : 'is'} free every day`
+                  : 'Your next Give Day is free'
+                : `Next Give Day costs ${cost} SP`}
+            </Text>
           </View>
         </View>
       ) : null}
@@ -718,12 +1220,44 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
 
 const styles = StyleSheet.create({
   hud: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 10 },
-  titleBox: { flex: 1, minWidth: 0, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: 'transparent' },
+  titleBox: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
   kicker: { fontSize: ds(9.5), fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
   hudTitle: { fontFamily: FONT.serif, fontSize: 19, lineHeight: 22 },
-  helped: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingLeft: 8, paddingRight: 10, borderRadius: 17, borderWidth: 1 },
+  helped: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 34,
+    paddingLeft: 8,
+    paddingRight: 10,
+    borderRadius: 17,
+    borderWidth: 1,
+  },
   helpedText: { fontSize: ds(13), fontWeight: '800' },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 18, paddingHorizontal: 20, borderTopLeftRadius: 30, borderTopRightRadius: 30, zIndex: 9, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 30, shadowOffset: { width: 0, height: -10 }, elevation: 8 },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 18,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    zIndex: 9,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: -10 },
+    elevation: 8,
+  },
   face: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end' },
   sheetTitle: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 29 },
   body: { fontSize: ds(12.5), lineHeight: 19, marginTop: 8 },
@@ -731,7 +1265,20 @@ const styles = StyleSheet.create({
   btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   btnChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.22)' },
   btnChipText: { color: '#FFFFFF', fontSize: ds(11), fontWeight: '800' },
-  mapSheet: { position: 'absolute', left: 12, right: 12, padding: 14, borderRadius: 26, borderWidth: 1, zIndex: 9, shadowColor: '#C04E68', shadowOpacity: 0.1, shadowRadius: 30, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+  mapSheet: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    padding: 14,
+    borderRadius: 26,
+    borderWidth: 1,
+    zIndex: 9,
+    shadowColor: '#C04E68',
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
   hostTile: { width: 60, height: 60, borderRadius: 18, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end' },
   placeName: { fontSize: ds(15), fontWeight: '800' },
   teaser: { fontSize: ds(11), lineHeight: 15, marginTop: 2 },
@@ -746,13 +1293,38 @@ const styles = StyleSheet.create({
   scene: { marginHorizontal: 16, borderRadius: 28, borderWidth: 1, overflow: 'hidden' },
   win: { position: 'absolute', width: 34, height: 28, borderRadius: 6 },
   sign: { position: 'absolute', top: 61, width: 90, textAlign: 'center', fontSize: ds(8), fontWeight: '800', letterSpacing: 0.8 },
-  quote: { position: 'absolute', left: 150, right: 12, top: 14, paddingVertical: 9, paddingHorizontal: 11, borderTopLeftRadius: 16, borderTopRightRadius: 16, borderBottomRightRadius: 16, borderBottomLeftRadius: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  quote: {
+    position: 'absolute',
+    left: 150,
+    right: 12,
+    top: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 11,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
   quoteText: { fontFamily: FONT.serif, fontSize: 13.5, lineHeight: 18 },
   quoteWho: { fontSize: ds(9.5), fontWeight: '700', marginTop: 4 },
   thanksLine: { position: 'absolute', right: 12, top: 20, left: 150, textAlign: 'right', fontFamily: FONT.serif, fontSize: 15 },
   placeTeaser: { fontSize: ds(13), lineHeight: 20, marginTop: 12 },
   facts: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8, marginTop: 12 },
-  fact: { width: '48.5%', flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 9, paddingHorizontal: 10, borderRadius: 16, borderWidth: 1 },
+  fact: {
+    width: '48.5%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
   factIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   factText: { flex: 1, fontSize: ds(11), fontWeight: '600', lineHeight: 14 },
   askRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 18 },
@@ -767,18 +1339,49 @@ const styles = StyleSheet.create({
   buildTitle: { fontFamily: FONT.serif, fontSize: 22, lineHeight: 26 },
   buildSub: { fontSize: ds(11.5), marginTop: 3 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8, paddingHorizontal: 16, paddingTop: 12 },
-  product: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 62, paddingLeft: 8, paddingRight: 10, borderRadius: 18, borderWidth: 1.5 },
+  product: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 62,
+    paddingLeft: 8,
+    paddingRight: 10,
+    borderRadius: 18,
+    borderWidth: 1.5,
+  },
   productTile: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   productName: { fontSize: ds(12), fontWeight: '700' },
   productCost: { fontSize: ds(10), fontWeight: '600', marginTop: 1 },
   check: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  budget: { position: 'absolute', left: 12, right: 12, padding: 14, borderRadius: 26, borderWidth: 1, shadowColor: '#C04E68', shadowOpacity: 0.1, shadowRadius: 30, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
+  budget: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    padding: 14,
+    borderRadius: 26,
+    borderWidth: 1,
+    shadowColor: '#C04E68',
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
   budgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   kitLine: { fontSize: ds(11.5), fontWeight: '700' },
   totalLine: { fontFamily: FONT.serif, fontSize: 22 },
   barTrack: { height: 8, borderRadius: 999, overflow: 'hidden', marginTop: 8 },
   budgetLine: { fontSize: ds(10.5), fontWeight: '600', marginTop: 6 },
-  result: { position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '92%', paddingTop: 14, paddingHorizontal: 20, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  result: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    maxHeight: '92%',
+    paddingTop: 14,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
   handle: { width: 40, height: 5, borderRadius: 999, alignSelf: 'center', marginBottom: 12 },
   resultTitle: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 31, textAlign: 'center', marginTop: 8 },
   thanks: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, padding: 10, borderRadius: 18 },
@@ -798,4 +1401,63 @@ const styles = StyleSheet.create({
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1 },
   doneName: { flex: 1, fontSize: ds(12.5), fontWeight: '700' },
   donePeople: { fontSize: ds(10.5) },
+  clock: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 34, paddingHorizontal: 9, borderRadius: 17, borderWidth: 1 },
+  clockText: { fontSize: ds(11.5), fontWeight: '800' },
+  zoomCol: { position: 'absolute', right: 14, gap: 6, zIndex: 8 },
+  zoomBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  zoomText: { fontSize: 20, fontWeight: '700', lineHeight: 22 },
+  toast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    width: 260,
+    zIndex: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+  },
+  toastStar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  toastText: { flex: 1, fontSize: ds(11.5), fontWeight: '700', lineHeight: 16 },
+  homeTitle: { fontFamily: FONT.serif, fontSize: 26, lineHeight: 29 },
+  groupLabel: { fontSize: ds(9.5), fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+  homeWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  homeChip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1.5 },
+  homeName: { fontSize: ds(12.5), fontWeight: '800' },
+  homeCount: { fontSize: ds(9.5), fontWeight: '600' },
+  closesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  closesText: { flex: 1, fontSize: ds(10.5), fontWeight: '700' },
+  travelRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
+  travel: { alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 7, paddingHorizontal: 4, borderRadius: 16, borderWidth: 1.5 },
+  travelLabel: { fontSize: ds(12), fontWeight: '800' },
+  travelPrice: { fontSize: ds(10), fontWeight: '800' },
+  travelNote: { fontSize: ds(9.5), fontWeight: '600' },
+  areaTitle: { fontFamily: FONT.serif, fontSize: 21, lineHeight: 24 },
+  areaLine: { fontSize: ds(10.5), fontWeight: '700', marginTop: 2 },
+  note: { marginTop: 8, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 12 },
+  noteText: { fontSize: ds(10.5), fontWeight: '700', lineHeight: 15 },
+  stopRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, paddingHorizontal: 4, borderBottomWidth: 1 },
+  stopIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  stopName: { fontSize: ds(12.5), fontWeight: '800' },
+  stopKind: { fontSize: ds(10), fontWeight: '600' },
+  stopRight: { fontSize: ds(12), fontWeight: '800' },
+  levelHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  levelChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  levelChipText: { fontSize: ds(10), fontWeight: '800' },
+  levelLine: { fontSize: ds(10), fontWeight: '600', marginTop: 5 },
+  freeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  freeText: { flex: 1, fontSize: ds(10.5), fontWeight: '700', lineHeight: 15 },
+  changeHome: { alignSelf: 'center', marginTop: 6, fontSize: ds(11), fontWeight: '700', textDecorationLine: 'underline' },
+  giftCard: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, padding: 12, borderRadius: 18 },
+  giftTitle: { fontSize: ds(13.5), fontWeight: '800' },
+  giftSub: { fontSize: ds(10.5), fontWeight: '600', marginTop: 2 },
 });

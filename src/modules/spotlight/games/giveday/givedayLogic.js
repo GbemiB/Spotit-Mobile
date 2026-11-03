@@ -7,13 +7,47 @@ export const RATING_STYLE = {
   missed: { dot: '#E07A4F', bg: '#FFF6EE', icon: 'M12 7v6M12 17h.01' },
 };
 
-export function kitCost(products, picked, people) {
-  const unit = picked.reduce((sum, id) => sum + (products.find(p => p.id === id)?.cost || 0), 0);
-  return unit * (people || 0);
+const KIND_ICONS = {
+  training: 'M6 7a2.5 2.5 0 1 0 0-.1M6 17a2.5 2.5 0 1 0 0-.1M8 8.5L20 18M8 15.5L20 6',
+  school: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 1 6.5 18H20',
+  market: 'M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6',
+  roadside: 'M6 3h12v14H6zM6 11h12M8 20v-3M16 20v-3M9 14h.01M15 14h.01',
+  clinic: 'M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z',
+  football: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 8l3.5 2.5-1.3 4h-4.4l-1.3-4z',
+  hostel: 'M3 21V9l9-6 9 6v12M9 21v-6h6v6',
+  motherless: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+  community:
+    'M9 7a2.5 2.5 0 1 0 0-.1M15 7a2.5 2.5 0 1 0 0-.1M4.5 19c.5-3.5 2.5-5.5 4.5-5.5s4 2 4.5 5.5M11 19c.5-3.5 2.5-5.5 4.5-5.5s3.5 2 4 5.5',
+  shelter: 'M3 20L12 4l9 16zM12 4v16M9 20l3-6 3 6',
+  waterside: 'M3 8c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 14c3 0 3-2 6-2s3 2 6 2 3-2 6-2M3 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2',
+  youth: 'M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z',
+};
+
+export const TRAVEL_ICONS = {
+  walk: 'M13 4.5a1.5 1.5 0 1 0 0-.1M9 21l2-6 3 2v4M11 15l-1-4 3-2 3 3h3M7 11l3-2',
+  bike: 'M6 17.5a3.5 3.5 0 1 0 0-.1M18 17.5a3.5 3.5 0 1 0 0-.1M6 17.5l4-8h5l3 8M10 9.5L8.5 6H6.5M15 9.5l1-3h2',
+  car: 'M5 16h14v-4l-2-5H7l-2 5zM5 12h14M7.5 19a1.5 1.5 0 1 0 0-.1M16.5 19a1.5 1.5 0 1 0 0-.1',
+};
+
+function kindKey(kind) {
+  const k = (kind || '').toLowerCase();
+  return Object.keys(KIND_ICONS).find(key => k.includes(key)) || 'community';
 }
 
-export function canGive(products, picked, people, coins) {
-  return picked.length > 0 && people > 0 && kitCost(products, picked, people) <= coins;
+export function kindIcon(kind) {
+  return KIND_ICONS[kindKey(kind)];
+}
+
+export function travelIcon(mode) {
+  return TRAVEL_ICONS[mode] || TRAVEL_ICONS.walk;
+}
+
+export function giftCost(products, picked) {
+  return picked.reduce((sum, id) => sum + (products.find(p => p.id === id)?.cost || 0), 0);
+}
+
+export function canGive(products, picked, budget) {
+  return picked.length > 0 && giftCost(products, picked) <= budget;
 }
 
 export function togglePick(picked, id) {
@@ -32,18 +66,74 @@ export function ratingStyle(rating) {
   return RATING_STYLE[rating] || RATING_STYLE.ok;
 }
 
-export function mapPoint(place, width, height, bounds) {
-  const spanX = Math.max(1, bounds.maxX - bounds.minX);
-  const spanY = Math.max(1, bounds.maxY - bounds.minY);
-  return { left: ((place.x - bounds.minX) / spanX) * width, top: ((place.y - bounds.minY) / spanY) * height };
+export function clockLabel(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${((h + 11) % 12) + 1}:${m < 10 ? '0' : ''}${m} ${h % 24 < 12 ? 'am' : 'pm'}`;
 }
 
-export function mapBounds(places) {
-  const xs = places.map(p => p.x);
-  const ys = places.map(p => p.y);
-  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+export function kmBetween(a, b, unitsPerKm) {
+  if (!a || !b) return 0;
+  return Math.round((Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, unitsPerKm)) * 10) / 10;
 }
 
-export function groupLabel(n, place) {
-  return n === place.total ? 'everyone' : place.who;
+export function levelInfo(levels, number) {
+  return (levels || []).find(l => l.number === number) || (levels || [])[0] || null;
+}
+
+export function playerLevel(levels, stars) {
+  return (levels || []).filter(l => stars >= l.starsNeeded).reduce((best, l) => Math.max(best, l.number), 1);
+}
+
+export function nextLevel(levels, stars) {
+  const now = playerLevel(levels, stars);
+  return (levels || []).find(l => l.number === now + 1) || null;
+}
+
+export function isAreaLocked(levels, area, stars) {
+  const lv = levelInfo(levels, area.level);
+  return !!lv && stars < lv.starsNeeded;
+}
+
+export function freeLevels(levels) {
+  return (levels || []).filter(l => !l.passCost).map(l => l.number);
+}
+
+export function homeGroups(areas) {
+  const groups = [];
+  (areas || []).forEach(a => {
+    let g = groups.find(x => x.name === a.region);
+    if (!g) {
+      g = { name: a.region, areas: [] };
+      groups.push(g);
+    }
+    g.areas.push(a);
+  });
+  return groups;
+}
+
+export function isAllOfLagos(level, maxRadius) {
+  return !level || level.radiusKm >= maxRadius;
+}
+
+export function mapRings(levels) {
+  const list = levels || [];
+  if (list.length < 2) return [];
+  const widest = Math.max(...list.map(l => l.radiusKm));
+  return list.filter(l => l.radiusKm < widest);
+}
+
+export function focusOffset(point, zoom, view, top) {
+  return { x: view.width / 2 - point.x * zoom, y: top - point.y * zoom };
+}
+
+export function clampOffset(offset, view, mapPx, pad) {
+  const axis = (v, viewSize, size, p) =>
+    size + p.start + p.end <= viewSize
+      ? p.start + (viewSize - size - p.start - p.end) / 2
+      : Math.min(p.start, Math.max(viewSize - size - p.end, v));
+  return {
+    x: axis(offset.x, view.width, mapPx.width, { start: 0, end: 0 }),
+    y: axis(offset.y, view.height, mapPx.height, pad),
+  };
 }
