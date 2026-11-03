@@ -48,9 +48,11 @@ function Result({ t, state, level, topic, hasNext, nextCost, settings, balance, 
     { value: stars, label: stars === 1 ? 'star' : 'stars', ink: t.goldInk },
     { value: balance, label: 'SP left', ink: t.pinkInk },
   ];
-  const short = cleared && hasNext && nextCost > balance;
+  const replayCost = level.cost || 0;
+  const short = cleared ? hasNext && nextCost > balance : replayCost > balance;
   const nextLabel = short ? 'Not enough SP' : nextCost ? `Next level · ${nextCost} SP` : 'Next level';
-  const primary = cleared ? (hasNext ? nextLabel : 'Back to levels') : 'Try again';
+  const againLabel = short ? 'Not enough SP' : replayCost ? `Try again · ${replayCost} SP` : 'Try again';
+  const primary = cleared ? (hasNext ? nextLabel : 'Back to levels') : againLabel;
   function goNext() {
     if (going) return;
     setGoing(true);

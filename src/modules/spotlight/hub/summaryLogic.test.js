@@ -69,6 +69,7 @@ describe('challenges', () => {
   it('shows the price from the server for a live game', () => {
     expect(challengeTag(game)).toEqual({ text: 'Game · from 10 SP', muted: false });
     expect(challengeTag({ ...game, costFrom: false, cost: 15 }).text).toBe('Game · 15 SP');
+    expect(challengeTag({ ...game, cost: 0, freePlaysLeft: 1 })).toEqual({ text: 'Free to play', muted: false });
   });
   it('shows coming soon or the age lock instead of a price', () => {
     expect(challengeTag({ ...game, status: 'soon' })).toEqual({ text: 'Coming soon', muted: true });

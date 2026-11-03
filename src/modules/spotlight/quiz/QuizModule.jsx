@@ -9,6 +9,8 @@ import QuizTopicsV2 from '../v2/quiz/QuizTopicsV2.jsx';
 import QuizTrackV2, { LevelSheetV2, levelLook } from '../v2/quiz/QuizTrackV2.jsx';
 import QuizPlayV2 from '../v2/quiz/QuizPlayV2.jsx';
 import { spotTokens } from '../v2/tokens.js';
+import { CircleButton, PinkButton } from '../v2/ui.jsx';
+import { BACK } from '../v2/quiz/quizArt.js';
 import { useTheme, Text } from '../../../shared/styles/index.js';
 import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
@@ -30,6 +32,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
   const [info, setInfo] = useState(null);
   const [points, setPoints] = useState(false);
   const [playing, setPlaying] = useState(null);
+  const [openId, setOpenId] = useState(null);
 
   const settings = useMemo(() => quizSettings(home), [home]);
 
@@ -111,6 +114,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
   }
 
   function openTopic(id) {
+    setOpenId(id);
     setDetail(null);
     setView('track');
     loadDetail(id);
@@ -212,8 +216,23 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
         />
       )}
       {view === 'track' && !detailTopic && (
-        <View style={styles.waiting}>
-          <Text style={[styles.waitingTx, { color: t.text2 }]}>{error || 'Loading levels…'}</Text>
+        <View style={{ flex: 1 }}>
+          <View style={[styles.waitingBack, { top: insets.top + 8 }]}>
+            <CircleButton t={t} icon={BACK} label="Back to topics" onPress={showAllTopics} />
+          </View>
+          <View style={styles.waiting}>
+            <Text style={[styles.waitingTx, { color: t.text2 }]}>{error || 'Loading levels…'}</Text>
+            {error && openId ? (
+              <PinkButton
+                t={t}
+                label="Try again"
+                reduceMotion={reduceMotion}
+                onPress={() => loadDetail(openId)}
+                height={48}
+                style={{ marginTop: 14, alignSelf: 'stretch' }}
+              />
+            ) : null}
+          </View>
         </View>
       )}
       <LevelSheetV2
@@ -263,4 +282,5 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
 const styles = StyleSheet.create({
   waiting: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   waitingTx: { fontSize: 12, textAlign: 'center' },
+  waitingBack: { position: 'absolute', left: 14, zIndex: 2 },
 });

@@ -1,4 +1,4 @@
-import { Animated, BackHandler, Easing, View, ScrollView, StyleSheet } from 'react-native';
+import { Animated, BackHandler, Easing, View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -201,6 +201,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const { isDark } = useTheme();
   const t = spotTokens(isDark);
   const tones = placeTones(isDark);
+  const { width } = useWindowDimensions();
   const token = state.accessToken;
   const balance = state.femPoints || 0;
   const cost = challenge?.cost ?? 0;
@@ -252,9 +253,17 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const areaOf = id => areas.find(a => a.id === id);
   const areaLocked = !!area && !area.loading && stars < (area.starsNeeded || 0);
 
+  function backToMap() {
+    setSel(null);
+    setPicked([]);
+    setResult(null);
+    setPhase('map');
+  }
+
   function back() {
     if (phase === 'visit') setPhase('map');
     else if (phase === 'build') setPhase('visit');
+    else if (phase === 'result') backToMap();
     else if (phase === 'home' && homeId) setPhase('map');
     else if (phase === 'map' && sel) setSel(null);
     else if (phase === 'map' && area) setArea(null);
@@ -896,7 +905,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
             happy={false}
             handing={phase === 'handover'}
             reduceMotion={reduceMotion}
-            k={1}
+            k={width / 390}
           />
           {phase === 'visit' ? (
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 120 }}>
@@ -1124,12 +1133,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               t={t}
               label="Back to the map"
               reduceMotion={reduceMotion}
-              onPress={() => {
-                setSel(null);
-                setPicked([]);
-                setResult(null);
-                setPhase('map');
-              }}
+              onPress={backToMap}
               height={52}
               style={{ marginTop: 14 }}
             />

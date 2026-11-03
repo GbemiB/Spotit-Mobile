@@ -67,7 +67,13 @@ function QuizScene({ t, p, size, reduceMotion }) {
           <Circle cx={22} cy={20} r={11} fill={t.surface} />
           <Circle cx={33} cy={31} r={2.6} fill={t.surface} />
           <Circle cx={37} cy={36} r={1.6} fill={t.surface} />
-          <Path d="M18.8 17.6a3.3 3.3 0 1 1 4.4 3.1c-.7.3-1.1.9-1.1 1.6v.7M22.1 26.3h.01" stroke={t.pinkInk} strokeWidth={2} strokeLinecap="round" fill="none" />
+          <Path
+            d="M18.8 17.6a3.3 3.3 0 1 1 4.4 3.1c-.7.3-1.1.9-1.1 1.6v.7M22.1 26.3h.01"
+            stroke={t.pinkInk}
+            strokeWidth={2}
+            strokeLinecap="round"
+            fill="none"
+          />
         </Svg>
       </Bob>
       <Twinkle size={9 * k} color={t.spark} reduceMotion={reduceMotion} style={{ left: 39 * k, top: 10 * k }} />
@@ -77,8 +83,16 @@ function QuizScene({ t, p, size, reduceMotion }) {
       <FlipCard
         reduceMotion={reduceMotion}
         style={{ position: 'absolute', left: 6 * k, bottom: 8 * k, width: 38 * k, height: 26 * k }}
-        front={<View style={[styles.flipFace, { backgroundColor: t.pink }]}><Text style={styles.flipText}>MYTH</Text></View>}
-        back={<View style={[styles.flipFace, { backgroundColor: t.green }]}><Text style={styles.flipText}>FACT</Text></View>}
+        front={
+          <View style={[styles.flipFace, { backgroundColor: t.pink }]}>
+            <Text style={styles.flipText}>MYTH</Text>
+          </View>
+        }
+        back={
+          <View style={[styles.flipFace, { backgroundColor: t.green }]}>
+            <Text style={styles.flipText}>FACT</Text>
+          </View>
+        }
       />
     </Tile>
   );
@@ -99,15 +113,41 @@ function BankScene({ t, p, size, reduceMotion }) {
         <Path d="M2 30q6.7 6 13.3 0q6.7 6 13.3 0q6.7 6 13.3 0q6.7 6 13.3 0q6.7 6 13.3 0q6.7 6 13.3 0" fill={p.awning} />
         <Rect x={0} y={74} width={84} height={10} fill={p.ground} />
       </Svg>
-      <Blink reduceMotion={reduceMotion} style={{ position: 'absolute', left: 10 * k, top: 40 * k, width: 26 * k, height: 20 * k, borderRadius: 3 * k, backgroundColor: p.window }} />
-      <Bob distance={3} duration={3000} reduceMotion={reduceMotion} style={{ position: 'absolute', left: 13 * k, top: 47 * k, flexDirection: 'row', gap: 2 * k }}>
+      <Blink
+        reduceMotion={reduceMotion}
+        style={{
+          position: 'absolute',
+          left: 10 * k,
+          top: 40 * k,
+          width: 26 * k,
+          height: 20 * k,
+          borderRadius: 3 * k,
+          backgroundColor: p.window,
+        }}
+      />
+      <Bob
+        distance={3}
+        duration={3000}
+        reduceMotion={reduceMotion}
+        style={{ position: 'absolute', left: 13 * k, top: 47 * k, flexDirection: 'row', gap: 2 * k }}
+      >
         <View style={{ width: 7 * k, height: 10 * k, borderRadius: 2 * k, backgroundColor: t.pink }} />
         <View style={{ width: 7 * k, height: 9 * k, marginTop: k, borderRadius: 2 * k, backgroundColor: t.green }} />
       </Bob>
       <Breathe reduceMotion={reduceMotion} style={{ position: 'absolute', right: -8 * k, bottom: 2 * k }}>
         <Character name="padbankGirl" size={64 * k} />
       </Breathe>
-      <View style={{ position: 'absolute', left: 4 * k, right: 4 * k, bottom: 6 * k, height: 10 * k, borderRadius: 3 * k, backgroundColor: p.counter }} />
+      <View
+        style={{
+          position: 'absolute',
+          left: 4 * k,
+          right: 4 * k,
+          bottom: 6 * k,
+          height: 10 * k,
+          borderRadius: 3 * k,
+          backgroundColor: p.counter,
+        }}
+      />
     </Tile>
   );
 }
@@ -147,6 +187,7 @@ export function priceFor(c, freeLevels, isNew) {
   if (c.kind === 'quiz' || c.cost == null) {
     return { label: freeLevels > 0 ? `Levels 1–${freeLevels} free` : 'Play', after: '', free: true };
   }
+  if (!c.cost) return { label: 'Free to play', after: '', free: true };
   if (c.freePlaysLeft > 0) {
     if (isNew || c.plays === 0) return { label: 'Free try waiting', after: `then ${c.cost} SP`, free: true };
     return { label: `${c.freePlaysLeft} free ${c.freePlaysLeft === 1 ? 'try' : 'tries'} · then ${c.cost} SP`, after: '', free: false };
@@ -181,7 +222,9 @@ function PlayCard({ t, isDark, challenge, index, isNew, freeLevels, hot, reduceM
                 <Text style={[styles.chipText, { color: price.free ? t.greenInk : t.goldInk }]}>{price.label}</Text>
               </View>
               {isNew ? (
-                price.after ? <Text style={[styles.after, { color: t.text3 }]}>{price.after}</Text> : null
+                price.after ? (
+                  <Text style={[styles.after, { color: t.text3 }]}>{price.after}</Text>
+                ) : null
               ) : (
                 <View style={{ flexDirection: 'row', gap: 1 }} accessibilityLabel={`${stars} of 3 stars`}>
                   {[0, 1, 2].map(i => (

@@ -60,6 +60,7 @@ export async function saveSeenRank(userId, rankId) {
 export function challengeTag(c) {
   if (c.locked) return { text: `Opens at ${c.minAge}`, muted: true };
   if (c.status !== 'live') return { text: 'Coming soon', muted: true };
+  if (!c.cost) return { text: 'Free to play', muted: false };
   if (c.freePlaysLeft > 0) return { text: c.freePlaysLeft === 1 ? 'Free try' : `${c.freePlaysLeft} free tries left`, muted: false };
   if (c.kind === 'quiz' || c.cost == null) return { text: 'Play', muted: false };
   return { text: `Game · ${c.costFrom ? 'from ' : ''}${c.cost} SP`, muted: false };
