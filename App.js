@@ -293,7 +293,7 @@ function AppContent() {
     <View style={[s.root, { backgroundColor: colors.background }]}>
       <LivingBackground />
       <Screen />
-      <BottomNav screen={screen} dispatch={dispatch} />
+      {!state.navHidden && <BottomNav screen={screen} dispatch={dispatch} />}
       {periodPickerOpen && <PeriodPickerSheet />}
       {toast && <Toast icon={toast.icon} text={toast.text} onDismiss={() => dispatch({ type: A.CLEAR_TOAST })} />}
       <WelcomeTour visible={showTour} cards={cards} partnerName={partnerName} onDone={finishTour} />

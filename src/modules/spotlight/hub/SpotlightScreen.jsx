@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../../shared/store/AppContext.jsx';
+import { A } from '../../../shared/store/actions.js';
 import * as spotlightApi from '../../../shared/api/spotlight.js';
 import * as quizApi from '../../../shared/api/quiz.js';
 import { todayISO } from '../../../shared/utils/cycle.js';
@@ -29,7 +30,7 @@ function blockedMessage(reason, challenge) {
 }
 
 export default function SpotlightScreen() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const token = state.accessToken;
   const userId = state.userId;
   const balance = state.femPoints || 0;
@@ -96,6 +97,13 @@ export default function SpotlightScreen() {
 
   const exitModule = useCallback(() => setActive(null), []);
   const Module = active?.Module || null;
+  const inChallenge = !!Module;
+
+  useEffect(() => {
+    dispatch({ type: A.SET_NAV_HIDDEN, hidden: inChallenge });
+  }, [inChallenge, dispatch]);
+
+  useEffect(() => () => dispatch({ type: A.SET_NAV_HIDDEN, hidden: false }), [dispatch]);
 
   return (
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>

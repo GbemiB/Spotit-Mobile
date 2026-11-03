@@ -24,7 +24,7 @@ const BULB = 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c
 const TICK = 'M5 12.5l4.5 4.5L19 7.5';
 const DASH = 'M6 12h12';
 const LOOKS = {
-  girl: ['outreach', 'outreachHappy'],
+  girl: ['padbankGirlCalm', 'padbankGirl'],
   woman: ['mama', 'mamaHappy'],
   student: ['coach', 'coach'],
   man: ['man', 'manHappy'],

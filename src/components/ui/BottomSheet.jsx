@@ -1,16 +1,18 @@
 import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
 import { useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Text } from '../../shared/styles/index.js';
 export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel', avoidKeyboard = false, children }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={s.container} enabled={avoidKeyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={s.overlay} />
         </TouchableWithoutFeedback>
-        <View style={s.sheet}>
+        <View style={[s.sheet, { paddingBottom: Math.max(40, insets.bottom + 24) }]}>
           <View style={s.handle} />
           {title && (
             <View style={s.titleRow}>

@@ -58,6 +58,7 @@ export const INIT = {
   },
   inbox: { items: [], unreadCount: 0 },
   themePref: 'dark',
+  navHidden: false,
   isPremium: false,
   plan: null,
   renewsAt: null,
@@ -377,6 +378,8 @@ export function reducer(state, action) {
       return { ...state, inbox: { items: state.inbox.items.map(item => ({ ...item, read: true })), unreadCount: 0 } };
     case A.SET_THEME:
       return { ...state, themePref: action.pref };
+    case A.SET_NAV_HIDDEN:
+      return state.navHidden === !!action.hidden ? state : { ...state, navHidden: !!action.hidden };
     case A.SUBSCRIPTION_UPDATED: {
       const { isPremium, plan, renewsAt, autoRenew, toast } = action;
       return { ...state, isPremium, plan, renewsAt, autoRenew, toast: toast ?? state.toast };

@@ -656,3 +656,13 @@ describe('points spent', () => {
     expect(s.pointsSpent).toBe(0);
   });
 });
+
+describe('bottom nav inside a game', () => {
+  it('hides and shows the nav without keeping it between launches', () => {
+    expect(INIT.navHidden).toBe(false);
+    const hidden = reducer(INIT, { type: A.SET_NAV_HIDDEN, hidden: true });
+    expect(hidden.navHidden).toBe(true);
+    expect(reducer(hidden, { type: A.SET_NAV_HIDDEN, hidden: true })).toBe(hidden);
+    expect(reducer(hidden, { type: A.SET_NAV_HIDDEN, hidden: false }).navHidden).toBe(false);
+  });
+});
