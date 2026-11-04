@@ -157,6 +157,7 @@ export default function QuizPlayV2({
   const right = state.feedback?.right;
   const done = state.phase === 'cleared' || state.phase === 'out';
   const canHint = !state.hinted && !state.busy && balance >= hintCost;
+  const hintLabel = hintCost ? `Need a hint? ${hintCost} SP` : 'Need a hint? Free';
   const results = state.results || [];
   const isLast = state.round + 1 >= state.total || state.lives <= 0;
 
@@ -324,11 +325,7 @@ export default function QuizPlayV2({
                       onPress={() => choose('fact')}
                     />
                   </View>
-                  <PressScale
-                    onPress={takeHint}
-                    disabled={!canHint}
-                    accessibilityLabel={state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}
-                  >
+                  <PressScale onPress={takeHint} disabled={!canHint} accessibilityLabel={state.hinted ? 'Hint used' : hintLabel}>
                     <View style={styles.hintBtn}>
                       <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
                         <Path
@@ -340,7 +337,7 @@ export default function QuizPlayV2({
                         />
                       </Svg>
                       <Text style={[styles.hintLabel, { color: state.hinted ? t.text3 : t.goldInk }]}>
-                        {state.hinted ? 'Hint used' : `Need a hint? ${hintCost} SP`}
+                        {state.hinted ? 'Hint used' : hintLabel}
                       </Text>
                     </View>
                   </PressScale>

@@ -33,7 +33,7 @@ function Rules({ settings, levelLives }) {
         {lives === 1 ? '1 heart. One wrong answer ends the game.' : `${lives} hearts. A wrong answer costs one.`}
       </Rule>
       <Rule icon={SPARKLE} color={q.gold}>
-        Stuck? A hint costs {hintCost} SP.
+        Stuck? A hint costs {hintCost} SP, free on free levels.
       </Rule>
       <Rule icon="M5 12.5l4.2 4.2L19 7" color={q.green}>
         Finish with a heart left to clear the level.

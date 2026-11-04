@@ -2,6 +2,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, FONT } from '../../../../shared/styles/index.js';
 import { PressScale } from '../../common/SpotlightFx.jsx';
+import { freeLevelsBadge } from '../../common/wording.js';
 import Character from '../Character.jsx';
 import { toneOf } from '../tokens.js';
 import { ds, Breathe, FlipCard, SlideIn, GrowWidth } from '../motion.jsx';
@@ -12,13 +13,12 @@ function Hero({ t, settings, reduceMotion }) {
   const rules = [];
   if (settings?.rounds) rules.push({ label: `${settings.rounds} rounds`, free: false });
   if (settings?.lives) rules.push({ label: `${settings.lives} ${settings.lives === 1 ? 'heart' : 'hearts'}`, free: false });
-  if (settings?.freeLevels)
-    rules.push({ label: settings.freeLevels === 1 ? 'Level 1 free' : `Levels 1–${settings.freeLevels} free`, free: true });
+  if (settings?.freeLevels) rules.push({ label: freeLevelsBadge(settings.freeLevels), free: true });
   return (
     <SlideIn reduceMotion={reduceMotion} delay={60} distance={22} style={[styles.hero, { borderColor: t.border }]}>
       <LinearGradient colors={t.heroBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <Breathe reduceMotion={reduceMotion} style={{ position: 'absolute', right: 0, bottom: -6 }}>
-        <Character name="you" size={124} />
+        <Character name="you" size={124} asViewer />
       </Breathe>
       <FlipCard
         reduceMotion={reduceMotion}
@@ -48,7 +48,7 @@ function Hero({ t, settings, reduceMotion }) {
   );
 }
 
-function TopicCard({ t, item, tone, index, reduceMotion, onPress }) {
+function TopicCard({ t, item, tone, index, freeLevels, reduceMotion, onPress }) {
   const icon = topicIcon(item.topic.icon);
   const [bg, ink] = toneOf(t, tone);
   const pct = item.count ? Math.round((item.cleared / item.count) * 100) : 0;
@@ -76,6 +76,7 @@ function TopicCard({ t, item, tone, index, reduceMotion, onPress }) {
           <Text style={[styles.name, { color: t.text }]} numberOfLines={2}>
             {item.topic.name}
           </Text>
+          {!item.locked && freeLevels > 0 ? <Text style={[styles.free, { color: t.greenInk }]}>{freeLevelsBadge(freeLevels)}</Text> : null}
           <View style={[styles.track, { backgroundColor: t.track }]}>
             <GrowWidth reduceMotion={reduceMotion} pct={pct} delay={300}>
               <LinearGradient
@@ -158,6 +159,7 @@ export default function QuizTopicsV2({
               item={item}
               tone={tone}
               index={i}
+              freeLevels={settings?.freeLevels}
               reduceMotion={reduceMotion}
               onPress={() => (item.locked ? onLocked(item.topic) : onOpenTopic(item.topic.id))}
             />
@@ -190,6 +192,7 @@ const styles = StyleSheet.create({
   iconTile: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   level: { fontSize: ds(9.5), fontWeight: '800' },
   name: { fontSize: ds(13), fontWeight: '700', lineHeight: 17, marginTop: 10, minHeight: 34 },
+  free: { fontSize: ds(10.5), fontWeight: '700', marginTop: 2 },
   track: { height: 5, borderRadius: 999, overflow: 'hidden', marginTop: 8 },
   note: { fontSize: ds(10), textAlign: 'center', marginTop: 14, paddingHorizontal: 28 },
 });

@@ -1,4 +1,4 @@
-import { freeLevelsText, freeLevelsShort, gameError } from './wording.js';
+import { freeLevelsText, freeLevelsShort, freeLevelsBadge, gameError } from './wording.js';
 
 describe('free levels wording', () => {
   it('follows the number of free levels from the server', () => {
@@ -20,5 +20,14 @@ describe('game errors', () => {
       'Win more stars to open this part of the map.',
     );
     expect(gameError(null)).toBe('Something went wrong. Please try again.');
+  });
+});
+
+describe('free levels badge', () => {
+  it('names the free levels shortly', () => {
+    expect(freeLevelsBadge(2)).toBe('Levels 1–2 free');
+    expect(freeLevelsBadge(1)).toBe('Level 1 free');
+    expect(freeLevelsBadge(0)).toBe('');
+    expect(freeLevelsBadge(undefined)).toBe('');
   });
 });

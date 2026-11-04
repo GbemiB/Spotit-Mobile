@@ -32,6 +32,7 @@ export function levelLook(level, settings) {
     lives,
     price: cleared ? `${'★'.repeat(Math.max(0, level.stars || 0))} won`.trim() : level.cost ? `${level.cost} SP` : 'Free',
     paid: !cleared && level.cost > 0,
+    freeWon: cleared && !level.cost,
   };
 }
 
@@ -106,6 +107,11 @@ export default function QuizTrackV2({ t, insets, topic, group, tone, levels, set
                         <View style={[styles.price, { backgroundColor: look.paid ? t.goldSoft : t.greenSoft }]}>
                           <Text style={[styles.priceText, { color: look.paid ? t.goldInk : t.greenInk }]}>{look.price}</Text>
                         </View>
+                        {look.freeWon ? (
+                          <View style={[styles.price, { backgroundColor: t.greenSoft }]}>
+                            <Text style={[styles.priceText, { color: t.greenInk }]}>Free</Text>
+                          </View>
+                        ) : null}
                         <Text style={[styles.hearts, { color: t.text3 }]}>{look.lives === 1 ? '1 heart' : `${look.lives} hearts`}</Text>
                       </View>
                     </View>
@@ -140,7 +146,9 @@ export function LevelSheetV2({ t, open, level, topic, balance, settings, reduceM
     ? `Win level ${level.n - 1} first to open this one.`
     : cost && !afford
       ? `You need ${cost - balance} more SP. Check in daily to earn more.`
-      : `Answer myth or fact. A hint costs ${settings?.hintCost ?? ''} SP. Finish with hearts left to win stars.`;
+      : cost
+        ? `Answer myth or fact. A hint costs ${settings?.hintCost ?? ''} SP. Finish with hearts left to win stars.`
+        : 'Answer myth or fact. Hints are free on this level. Finish with hearts left to win stars.';
   const label = look.locked
     ? 'Locked for now'
     : cost

@@ -35,6 +35,7 @@ const DARK = {
   cardGlow: 'rgba(226,100,124,0.20)',
   dash: '#4A3438',
   heroBg: ['#2E1E24', '#241A1E', '#1E171A'],
+  levelColors: ['#6BBF9B', '#F0A868', '#E0B564', '#E2647C', '#F2A0AE'],
 };
 
 const LIGHT = {
@@ -74,14 +75,25 @@ const LIGHT = {
   cardGlow: 'rgba(242,160,174,0.30)',
   dash: '#EBCFD6',
   heroBg: ['#FFFFFF', '#FFF3EE', '#FFE9E4'],
+  levelColors: ['#4E9E78', '#F0A868', '#D6A24E', '#DC5A74', '#C04E68'],
 };
 
 export function spotTokens(isDark) {
   return isDark ? DARK : LIGHT;
 }
 
+export function levelColor(t, n) {
+  const list = t.levelColors;
+  return list[(Math.max(1, n || 1) - 1) % list.length];
+}
+
 export function toneOf(t, name) {
-  const m = { pink: [t.pinkSoft, t.pinkInk], gold: [t.goldSoft, t.goldInk], peach: [t.peachSoft, t.peachInk], green: [t.greenSoft, t.greenInk] };
+  const m = {
+    pink: [t.pinkSoft, t.pinkInk],
+    gold: [t.goldSoft, t.goldInk],
+    peach: [t.peachSoft, t.peachInk],
+    green: [t.greenSoft, t.greenInk],
+  };
   return m[name] || m.pink;
 }
 

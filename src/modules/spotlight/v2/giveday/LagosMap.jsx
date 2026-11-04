@@ -6,6 +6,7 @@ import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 import { Bob, PressScale } from '../../common/SpotlightFx.jsx';
 import Character from '../Character.jsx';
 import { ds, Pulse } from '../motion.jsx';
+import { levelColor } from '../tokens.js';
 import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from '../../games/giveday/lagosMap.js';
 import { clampOffset, focusOffset, travelIcon } from '../../games/giveday/givedayLogic.js';
 
@@ -165,6 +166,7 @@ export default function LagosMap({
         key: l.number,
         r: l.radiusKm * unitsPerKm,
         on: l.number <= levelNow,
+        color: levelColor(t, l.number),
         label: `Level ${l.number} · ${l.radiusKm} km`,
         top: (home.y - l.radiusKm * unitsPerKm) * z - 9,
       }))
@@ -208,7 +210,7 @@ export default function LagosMap({
               cy={home.y}
               r={r.r}
               fill="none"
-              stroke={r.on ? t.pink : t.text3}
+              stroke={r.on ? r.color : t.text3}
               strokeWidth={Math.round(1.6 / z)}
               strokeDasharray={`${Math.round(6 / z)} ${Math.round(5 / z)}`}
               opacity={0.7}
@@ -229,14 +231,17 @@ export default function LagosMap({
           : null}
         {ringList.map(r => (
           <View key={r.key} pointerEvents="none" style={[styles.ringLabelBox, { left: home.x * z - 50, top: r.top }]}>
-            <Text style={[styles.ringLabel, { backgroundColor: t.surface, color: r.on ? t.pinkInk : t.text3 }]}>{r.label}</Text>
+            <View style={[styles.ringLabelRow, { backgroundColor: t.surface }]}>
+              <View style={[styles.ringDot, { backgroundColor: r.on ? r.color : t.starOff }]} />
+              <Text style={[styles.ringLabel, { color: r.on ? t.text : t.text3 }]}>{r.label}</Text>
+            </View>
           </View>
         ))}
         {areas.map(a => {
           const sel = selId === a.id;
           const isHome = home && home.id === a.id;
           const showName = sel || zoom >= 3 || (zoom >= 1 && !a.locked) || isHome;
-          const dot = a.locked ? t.starOff : sel ? t.pink : a.level <= 2 ? t.pink : t.gold;
+          const dot = a.locked ? t.starOff : levelColor(t, a.level);
           return (
             <PressScale
               key={a.id}
@@ -284,7 +289,9 @@ const styles = StyleSheet.create({
   water: { position: 'absolute', width: 120, textAlign: 'center', fontSize: ds(9), fontWeight: '800', letterSpacing: 3 },
   region: { position: 'absolute', width: 120, textAlign: 'center', fontSize: ds(10), fontWeight: '800', letterSpacing: 2 },
   ringLabelBox: { position: 'absolute', width: 100, alignItems: 'center' },
-  ringLabel: { fontSize: ds(8.5), fontWeight: '800', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999, overflow: 'hidden' },
+  ringLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999 },
+  ringDot: { width: 6, height: 6, borderRadius: 3 },
+  ringLabel: { fontSize: ds(8.5), fontWeight: '800' },
   areaPin: { position: 'absolute', zIndex: 1 },
   areaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2.5 },

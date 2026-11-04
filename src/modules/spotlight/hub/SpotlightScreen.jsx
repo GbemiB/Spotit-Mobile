@@ -5,6 +5,7 @@ import { useApp } from '../../../shared/store/AppContext.jsx';
 import { A } from '../../../shared/store/actions.js';
 import * as spotlightApi from '../../../shared/api/spotlight.js';
 import * as quizApi from '../../../shared/api/quiz.js';
+import * as rewardsApi from '../../../shared/api/rewards.js';
 import { todayISO } from '../../../shared/utils/cycle.js';
 import { useReduceMotion } from '../../dashboard/HeroCardFx.jsx';
 import { PointsSheet, MessageSheet } from '../common/Sheets.jsx';
@@ -43,6 +44,7 @@ export default function SpotlightScreen() {
   const [message, setMessage] = useState(null);
   const [points, setPoints] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const guideSettings = useMemo(() => quizSettings(quizHome), [quizHome]);
 
   const loadHome = useCallback(
@@ -57,13 +59,34 @@ export default function SpotlightScreen() {
     [token],
   );
 
+  const loadQuizHome = useCallback(
+    () =>
+      quizApi
+        .getHome(token)
+        .then(setQuizHome)
+        .catch(() => {}),
+    [token],
+  );
+
+  const loadBalance = useCallback(
+    () =>
+      rewardsApi
+        .getSummary(token)
+        .then(data => dispatch({ type: A.REWARDS_HYDRATED, ...data }))
+        .catch(() => {}),
+    [token, dispatch],
+  );
+
   useEffect(() => {
     loadHome();
-    quizApi
-      .getHome(token)
-      .then(setQuizHome)
-      .catch(() => {});
-  }, [loadHome, token]);
+    loadQuizHome();
+  }, [loadHome, loadQuizHome]);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.allSettled([loadHome(), loadQuizHome(), loadBalance()]);
+    setRefreshing(false);
+  }, [loadHome, loadQuizHome, loadBalance]);
 
   useEffect(() => {
     updateInvite(userId, r => afterVisit(r, todayISO()));
@@ -95,7 +118,11 @@ export default function SpotlightScreen() {
     setActive({ challenge, Module: moduleFor(challenge) });
   }
 
-  const exitModule = useCallback(() => setActive(null), []);
+  const exitModule = useCallback(() => {
+    setActive(null);
+    loadHome();
+    loadBalance();
+  }, [loadHome, loadBalance]);
   const Module = active?.Module || null;
   const inChallenge = !!Module;
 
@@ -119,6 +146,8 @@ export default function SpotlightScreen() {
           loading={!home}
           error={error}
           onRetry={loadHome}
+          refreshing={refreshing}
+          onRefresh={refresh}
           reduceMotion={reduceMotion}
           onOpenChallenge={openChallenge}
           onOpenPoints={() => setPoints(true)}

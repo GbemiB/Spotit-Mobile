@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
 import { PressScale } from '../common/SpotlightFx.jsx';
@@ -12,7 +12,15 @@ const PETAL = 'M8 0c4 4 4 12 0 16-4-4-4-12 0-16z';
 
 function Petal({ color, left, top, delay, reduceMotion }) {
   return (
-    <Travel reduceMotion={reduceMotion} from={0} to={16} duration={11000} delay={delay} axis="y" style={{ position: 'absolute', left, top }}>
+    <Travel
+      reduceMotion={reduceMotion}
+      from={0}
+      to={16}
+      duration={11000}
+      delay={delay}
+      axis="y"
+      style={{ position: 'absolute', left, top }}
+    >
       <Svg width={16} height={16} viewBox="0 0 16 16">
         <Path d={PETAL} fill={color} />
       </Svg>
@@ -35,7 +43,21 @@ function SpPill({ t, balance, reduceMotion, onPress }) {
   );
 }
 
-export default function HubV2({ insets, balance, stats, challenges, freeLevels, loading, error, onRetry, reduceMotion, onOpenChallenge, onOpenPoints }) {
+export default function HubV2({
+  insets,
+  balance,
+  stats,
+  challenges,
+  freeLevels,
+  loading,
+  error,
+  onRetry,
+  refreshing,
+  onRefresh,
+  reduceMotion,
+  onOpenChallenge,
+  onOpenPoints,
+}) {
   const { isDark } = useTheme();
   const t = spotTokens(isDark);
   const isNew = !!stats && !stats.stars && !stats.levelsDone && !(stats.week || []).some(Boolean);
@@ -56,7 +78,13 @@ export default function HubV2({ insets, balance, stats, challenges, freeLevels, 
         <Petal color={t.petal} left={330} top={242} delay={4000} reduceMotion={reduceMotion} />
         <Petal color={t.petal} left={210} top={34} delay={7000} reduceMotion={reduceMotion} />
       </View>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: insets.bottom + 110 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: insets.bottom + 110 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={t.pink} progressViewOffset={insets.top} />
+        }
+      >
         <View style={styles.header}>
           <SlideIn reduceMotion={reduceMotion} delay={0}>
             <Text style={[styles.title, { color: t.text }]}>Spotlight</Text>
@@ -95,7 +123,7 @@ export default function HubV2({ insets, balance, stats, challenges, freeLevels, 
           onOpen={onOpenChallenge}
         />
 
-        <Text style={[styles.note, { color: t.text3 }]}>All games are pretend: no real products or money change hands. For learning only, not medical advice.</Text>
+        <Text style={[styles.note, { color: t.text3 }]}>All games are pretend.</Text>
       </ScrollView>
     </View>
   );
@@ -106,9 +134,25 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 },
   title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5 },
   sub: { fontSize: ds(12), marginTop: 2 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingLeft: 8, paddingRight: 13, borderRadius: 999, borderWidth: 1 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 40,
+    paddingLeft: 8,
+    paddingRight: 13,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   pillText: { fontSize: ds(13), fontWeight: '800', minWidth: 48 },
-  sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 16, marginBottom: 8 },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+  },
   section: { fontFamily: FONT.serifMedium, fontSize: 20 },
   count: { fontSize: ds(10.5), fontWeight: '600' },
   notice: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1.5, borderRadius: 18, padding: 14, alignItems: 'center', gap: 2 },
