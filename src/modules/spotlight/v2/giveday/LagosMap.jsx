@@ -65,7 +65,7 @@ function MapWalker({ t, m, z, pos, legMs, ride, moving, reduceMotion }) {
       <Bob distance={moving ? 4 : 0} duration={260} reduceMotion={reduceMotion || !moving}>
         <Pulse reduceMotion={reduceMotion} scale={1.04} duration={1800}>
           <View style={[styles.me, { backgroundColor: m.meBg, borderColor: t.pink }]}>
-            <Character name="you" size={42} style={{ marginTop: -2, marginLeft: -5 }} />
+            <Character name="you" size={42} style={{ marginTop: -2, marginLeft: -5 }} asViewer />
           </View>
         </Pulse>
         <View style={[styles.pin, { borderTopColor: t.pink }]} />

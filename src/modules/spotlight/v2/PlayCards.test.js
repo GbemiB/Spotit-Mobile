@@ -1,5 +1,7 @@
 import { priceFor } from './PlayCards.jsx';
 
+jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+
 describe('game card price', () => {
   const game = { kind: 'game', cost: 10, costFrom: false, freePlaysLeft: 0, plays: 3 };
   it('says free to play when a game costs nothing to open', () => {

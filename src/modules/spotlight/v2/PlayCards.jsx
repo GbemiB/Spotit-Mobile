@@ -78,7 +78,7 @@ function QuizScene({ t, p, size, reduceMotion }) {
       </Bob>
       <Twinkle size={9 * k} color={t.spark} reduceMotion={reduceMotion} style={{ left: 39 * k, top: 10 * k }} />
       <Breathe reduceMotion={reduceMotion} style={{ position: 'absolute', right: -8 * k, bottom: -4 * k }}>
-        <Character name="you" size={70 * k} />
+        <Character name="you" size={70 * k} asViewer />
       </Breathe>
       <FlipCard
         reduceMotion={reduceMotion}
@@ -135,7 +135,7 @@ function BankScene({ t, p, size, reduceMotion }) {
         <View style={{ width: 7 * k, height: 9 * k, marginTop: k, borderRadius: 2 * k, backgroundColor: t.green }} />
       </Bob>
       <Breathe reduceMotion={reduceMotion} style={{ position: 'absolute', right: -8 * k, bottom: 2 * k }}>
-        <Character name="padbankGirl" size={64 * k} />
+        <Character name="padbankGirl" size={64 * k} asViewer />
       </Breathe>
       <View
         style={{
@@ -175,7 +175,7 @@ function GiveScene({ t, p, size, reduceMotion }) {
         </Svg>
       </Bob>
       <Sway reduceMotion={reduceMotion} deg={3} duration={3200} style={{ position: 'absolute', right: -6 * k, bottom: -2 * k }}>
-        <Character name="mamaRonke" size={62 * k} />
+        <Character name="mamaRonke" size={62 * k} asViewer />
       </Sway>
     </Tile>
   );

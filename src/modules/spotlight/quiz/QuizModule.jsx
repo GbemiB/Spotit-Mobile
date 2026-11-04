@@ -14,7 +14,7 @@ import { BACK } from '../v2/quiz/quizArt.js';
 import { useTheme, Text } from '../../../shared/styles/index.js';
 import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
-export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) {
+export default function QuizModule({ insets, reduceMotion, challenge, onExit, onChanged }) {
   const { state, dispatch } = useApp();
   const { isDark } = useTheme();
   const t = spotTokens(isDark);
@@ -183,6 +183,7 @@ export default function QuizModule({ insets, reduceMotion, onExit, onChanged }) 
       {view === 'topics' && (
         <QuizTopicsV2
           t={t}
+          title={challenge?.name}
           insets={insets}
           balance={balance}
           groups={groups}

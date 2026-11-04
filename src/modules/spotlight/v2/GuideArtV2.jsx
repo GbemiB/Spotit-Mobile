@@ -17,7 +17,7 @@ function Ways({ t, isDark, challenges, reduceMotion }) {
         <SlideIn key={c.id} reduceMotion={reduceMotion} delay={100 + i * 120} style={{ alignItems: 'center', gap: 6 }}>
           <Bob distance={4} duration={3200} delay={i * 500} reduceMotion={reduceMotion}>
             <View style={[styles.charTile, { backgroundColor: tiles[i % 3] }]}>
-              <Character name={ART[c.id] || 'you'} size={70} style={{ marginBottom: -4 }} />
+              <Character name={ART[c.id] || 'you'} size={70} style={{ marginBottom: -4 }} asViewer />
             </View>
           </Bob>
           <Text style={[styles.charName, { color: t.text }]}>{c.name}</Text>
@@ -99,9 +99,26 @@ const styles = StyleSheet.create({
   charName: { fontSize: ds(10), fontWeight: '800' },
   freeTag: { paddingHorizontal: 12, height: 26, borderRadius: 13, justifyContent: 'center' },
   freeText: { color: '#FFFFFF', fontSize: ds(12), fontWeight: '800' },
-  ladder: { position: 'absolute', left: 0, right: 0, bottom: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 10 },
+  ladder: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
   badge: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  step: { width: 64, borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, alignItems: 'center', paddingTop: 6 },
+  step: {
+    width: 64,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    alignItems: 'center',
+    paddingTop: 6,
+  },
   stepName: { fontSize: ds(9), fontWeight: '800' },
   stepNeed: { fontSize: ds(8.5), fontWeight: '600', marginTop: 1 },
 });

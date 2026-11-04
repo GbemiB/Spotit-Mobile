@@ -64,7 +64,7 @@ function Avatar({ t, reduceMotion }) {
       </FloatUp>
       <WaveOnce reduceMotion={reduceMotion} style={[styles.avatar, { backgroundColor: t.pinkSoft }]}>
         <Breathe reduceMotion={reduceMotion}>
-          <Character name="padbankGirl" size={64} style={{ marginBottom: -7 }} />
+          <Character name="padbankGirl" size={64} style={{ marginBottom: -7 }} asViewer />
         </Breathe>
       </WaveOnce>
     </View>

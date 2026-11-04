@@ -12,7 +12,8 @@ function Hero({ t, settings, reduceMotion }) {
   const rules = [];
   if (settings?.rounds) rules.push({ label: `${settings.rounds} rounds`, free: false });
   if (settings?.lives) rules.push({ label: `${settings.lives} ${settings.lives === 1 ? 'heart' : 'hearts'}`, free: false });
-  if (settings?.freeLevels) rules.push({ label: settings.freeLevels === 1 ? 'Level 1 free' : `Levels 1–${settings.freeLevels} free`, free: true });
+  if (settings?.freeLevels)
+    rules.push({ label: settings.freeLevels === 1 ? 'Level 1 free' : `Levels 1–${settings.freeLevels} free`, free: true });
   return (
     <SlideIn reduceMotion={reduceMotion} delay={60} distance={22} style={[styles.hero, { borderColor: t.border }]}>
       <LinearGradient colors={t.heroBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -22,8 +23,16 @@ function Hero({ t, settings, reduceMotion }) {
       <FlipCard
         reduceMotion={reduceMotion}
         style={{ position: 'absolute', right: 108, top: 18, width: 52, height: 36 }}
-        front={<View style={[styles.flipFace, { backgroundColor: t.pink }]}><Text style={styles.flipText}>MYTH</Text></View>}
-        back={<View style={[styles.flipFace, { backgroundColor: t.green }]}><Text style={styles.flipText}>FACT</Text></View>}
+        front={
+          <View style={[styles.flipFace, { backgroundColor: t.pink }]}>
+            <Text style={styles.flipText}>MYTH</Text>
+          </View>
+        }
+        back={
+          <View style={[styles.flipFace, { backgroundColor: t.green }]}>
+            <Text style={styles.flipText}>FACT</Text>
+          </View>
+        }
       />
       <View style={{ padding: 16, paddingRight: 0, width: 200 }}>
         <Text style={[styles.heroTitle, { color: t.text }]}>Is it a myth, or is it a fact?</Text>
@@ -47,10 +56,20 @@ function TopicCard({ t, item, tone, index, reduceMotion, onPress }) {
   return (
     <SlideIn reduceMotion={reduceMotion} delay={50 + index * 50} style={{ width: '48.5%' }}>
       <PressScale onPress={onPress} accessibilityLabel={`${item.topic.name}. ${label}`}>
-        <View style={[styles.card, { backgroundColor: t.surface, borderColor: t.border, shadowColor: t.cardShadow, opacity: item.locked ? 0.6 : 1 }]}>
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: t.surface, borderColor: t.border, shadowColor: t.cardShadow, opacity: item.locked ? 0.6 : 1 },
+          ]}
+        >
           <View style={styles.cardTop}>
             <View style={[styles.iconTile, { backgroundColor: bg }]}>
-              <AnimIcon d={item.locked ? LOCK : icon[0]} kind={item.locked ? 'bob' : icon[1]} color={ink} reduceMotion={reduceMotion || item.locked} />
+              <AnimIcon
+                d={item.locked ? LOCK : icon[0]}
+                kind={item.locked ? 'bob' : icon[1]}
+                color={ink}
+                reduceMotion={reduceMotion || item.locked}
+              />
             </View>
             <Text style={[styles.level, { color: ink }]}>{label}</Text>
           </View>
@@ -59,7 +78,12 @@ function TopicCard({ t, item, tone, index, reduceMotion, onPress }) {
           </Text>
           <View style={[styles.track, { backgroundColor: t.track }]}>
             <GrowWidth reduceMotion={reduceMotion} pct={pct} delay={300}>
-              <LinearGradient colors={[t.pink, t.goldBar]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ height: 5, borderRadius: 999 }} />
+              <LinearGradient
+                colors={[t.pink, t.goldBar]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ height: 5, borderRadius: 999 }}
+              />
             </GrowWidth>
           </View>
         </View>
@@ -70,6 +94,7 @@ function TopicCard({ t, item, tone, index, reduceMotion, onPress }) {
 
 export default function QuizTopicsV2({
   t,
+  title,
   insets,
   balance,
   groups,
@@ -105,7 +130,9 @@ export default function QuizTopicsV2({
           <CircleButton t={t} icon={BACK} label="Back to Spotlight" onPress={onBack} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.kicker, { color: t.pinkInk }]}>Myth or fact</Text>
-            <Text style={[styles.title, { color: t.text }]}>Know Yourself</Text>
+            <Text style={[styles.title, { color: t.text }]} numberOfLines={1} adjustsFontSizeToFit>
+              {title || 'Know Yourself'}
+            </Text>
           </View>
           <SpPill t={t} balance={balance} reduceMotion={reduceMotion} onPress={onOpenPoints} />
         </View>
