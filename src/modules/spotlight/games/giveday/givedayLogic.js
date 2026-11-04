@@ -56,6 +56,11 @@ export function giftSplit(cost, free, max, extrasFree) {
   return { limit, extra, pay: extrasFree ? 0 : extra, over: cost > limit };
 }
 
+export function tripPrice(trips, quote) {
+  if (!trips || !quote || trips.extrasFree) return 0;
+  return quote.cost + (trips.passNeeded ? trips.passCost : 0);
+}
+
 export function togglePick(picked, id) {
   return picked.includes(id) ? picked.filter(x => x !== id) : [...picked, id];
 }

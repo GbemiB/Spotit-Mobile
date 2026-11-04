@@ -14,6 +14,7 @@ import {
   giftCost,
   canGive,
   giftSplit,
+  tripPrice,
   togglePick,
   factIcon,
   productArt,
@@ -355,8 +356,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     if (here === p.id) return;
     try {
       const data = await givedayApi.loadTrips(run.runId, p.id, token);
-      const pass = data.passNeeded ? data.passCost : 0;
-      const best = data.quotes.find(q => q.open && q.cost + pass <= balance) || data.quotes[0];
+      const best = data.quotes.find(q => q.open && tripPrice(data, q) <= balance) || data.quotes[0];
       setTrips(data);
       setMode(best ? best.mode : null);
     } catch (e) {
@@ -372,7 +372,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       return;
     }
     const quote = trips?.quotes.find(q => q.mode === mode);
-    const price = quote ? quote.cost + (trips.passNeeded ? trips.passCost : 0) : 0;
+    const price = tripPrice(trips, quote);
     if (!quote || !quote.open || !trips.levelOpen || price > balance) {
       setShake(n => n + 1);
       return;
@@ -487,7 +487,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const late = run ? clock >= run.dayEnd - 120 : false;
 
   const quote = trips?.quotes.find(q => q.mode === mode) || null;
-  const price = quote ? quote.cost + (trips.passNeeded ? trips.passCost : 0) : 0;
+  const price = tripPrice(trips, quote);
   const isHere = sel && here === sel.id;
   const visitedSel = sel && visits[sel.id] != null;
   const shutNow = sel && shut(sel);
@@ -533,7 +533,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     else if (area.passNeeded)
       areaNote = `Level ${area.level} needs a ${area.passCost} SP day pass. ${area.giftBudget} SP of gifts free at each stop, add more up to ${area.giftMax} SP with your SP.`;
     else
-      areaNote = `${area.giftBudget} SP of gifts free at each stop, up to ${area.giftMax} SP ${area.extrasFree ? 'with extras free on this level' : 'with your SP'} · ${area.passCost ? 'day pass bought' : 'free level'}`;
+      areaNote = `${area.giftBudget} SP of gifts free at each stop, up to ${area.giftMax} SP ${area.extrasFree ? 'with travel and extras free on this level' : 'with your SP'} · ${area.passCost ? 'day pass bought' : 'free level'}`;
   }
   const areaMeta = area ? areaOf(area.areaId) : null;
   const areaLine = areaMeta
@@ -742,7 +742,8 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                 <View style={styles.travelRow}>
                   {trips.quotes.map(q => {
                     const on = mode === q.mode;
-                    const can = q.open && q.cost + (trips.passNeeded ? trips.passCost : 0) <= balance;
+                    const can = q.open && tripPrice(trips, q) <= balance;
+                    const struck = trips.extrasFree && q.cost > 0;
                     return (
                       <PressScale key={q.mode} onPress={() => can && setMode(q.mode)} accessibilityLabel={q.label} style={{ flex: 1 }}>
                         <View
@@ -761,8 +762,11 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                             />
                           </Svg>
                           <Text style={[styles.travelLabel, { color: t.text }]}>{q.label}</Text>
-                          <Text style={[styles.travelPrice, { color: q.cost ? t.goldInk : t.greenInk }]}>
-                            {q.cost ? `${q.cost} SP` : 'Free'}
+                          <Text style={[styles.travelPrice, { color: q.cost && !struck ? t.goldInk : t.greenInk }]}>
+                            {struck ? (
+                              <Text style={{ textDecorationLine: 'line-through', color: t.disabledFg }}>{`${q.cost} SP`}</Text>
+                            ) : null}
+                            {struck ? ' free' : q.cost ? `${q.cost} SP` : 'Free'}
                           </Text>
                           <Text style={[styles.travelNote, { color: q.open ? t.text3 : t.red }]}>
                             {q.open ? `${q.minutes} min · ${clockLabel(q.arrive)}` : 'closed by then'}

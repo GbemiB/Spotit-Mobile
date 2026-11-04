@@ -21,6 +21,7 @@ import {
   mapRings,
   focusOffset,
   clampOffset,
+  tripPrice,
 } from './givedayLogic.js';
 import { FACT_ICONS, PRODUCT_ART } from './givedayArt.js';
 import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from './lagosMap.js';
@@ -139,5 +140,15 @@ describe('giftSplit', () => {
     expect(giftSplit(9, 5, 10, true)).toEqual({ limit: 10, extra: 4, pay: 0, over: false });
     expect(giftSplit(11, 5, 10, false).over).toBe(true);
     expect(giftSplit(6, 5, 0, false)).toEqual({ limit: 5, extra: 1, pay: 1, over: true });
+  });
+});
+
+describe('trip price', () => {
+  it('adds the day pass and is free on free levels', () => {
+    const quote = { cost: 2 };
+    expect(tripPrice({ passNeeded: true, passCost: 3, extrasFree: false }, quote)).toBe(5);
+    expect(tripPrice({ passNeeded: false, passCost: 3, extrasFree: false }, quote)).toBe(2);
+    expect(tripPrice({ passNeeded: true, passCost: 3, extrasFree: true }, quote)).toBe(0);
+    expect(tripPrice(null, quote)).toBe(0);
   });
 });

@@ -187,6 +187,10 @@ export function priceFor(c, freeLevels, isNew) {
   if (c.kind === 'quiz' || c.cost == null) {
     return { label: freeLevels > 0 ? `Levels 1–${freeLevels} free` : 'Play', after: '', free: true };
   }
+  if (c.freeUpTo > 0) {
+    const unit = c.id === 'pad-bank-run' ? 'Day' : 'Level';
+    return { label: c.freeUpTo === 1 ? `${unit} 1 free` : `${unit}s 1–${c.freeUpTo} free`, after: '', free: true };
+  }
   if (!c.cost) return { label: 'Free to play', after: '', free: true };
   if (c.freePlaysLeft > 0) {
     if (isNew || c.plays === 0) return { label: 'Free try waiting', after: `then ${c.cost} SP`, free: true };

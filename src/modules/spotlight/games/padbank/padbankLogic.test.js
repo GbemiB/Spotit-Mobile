@@ -80,6 +80,7 @@ describe('pad bank rules in the app', () => {
     expect(slipName(['sport', 'comfort', 'sport'], packs)).toBe('2 × Active Pack, Comfort Kit');
     expect(slipName(['mystery'], packs)).toBe('mystery');
     expect(visitPrice(2, { freeVisitors: 2, visitorFee: 2, deliveryCost: 2 }, packs, 'delivery')).toBe(16);
+    expect(visitPrice(2, { freeVisitors: 2, visitorFee: 2, deliveryCost: 2, freeDay: true }, packs, 'delivery')).toBe(0);
   });
   it('has drawings for every clue in the content', () => {
     ['girls', 'ball', 'swim', 'moon', 'baby', 'water', 'noWater', 'clock'].forEach(name => expect(clueIcon(name)).toBe(CLUE_ICONS[name]));

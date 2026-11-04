@@ -343,8 +343,12 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
   const visitorFee = priceRules?.visitorFee ?? 0;
   const deliveryCost = priceRules?.deliveryCost ?? 0;
   const freeNow = round < freeVisitors;
+  const freeDay = !!priceRules?.freeDay;
+  const onHouse = freeNow || freeDay;
   const orderCost = visitPrice(round, priceRules, chosen, route);
-  const short = !freeNow && orderCost > balance;
+  const listCost = visitPrice(round, { ...priceRules, freeDay: false }, chosen, route);
+  const strike = freeDay && !freeNow ? { textDecorationLine: 'line-through', color: t.disabledFg } : null;
+  const short = !onHouse && orderCost > balance;
   const ready = picks.length === size && !!route;
   const kicker =
     phase === 'intro' || phase === 'loading'
@@ -359,10 +363,16 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
     { text: `Pack ${rightPack}/${total}`, done: rightPack > 0 },
     { text: `Way ${rightWay}/${total}`, done: rightWay > 0 },
   ];
-  const priceNote = `Your first ${freeVisitors} ${freeVisitors === 1 ? 'visitor is' : 'visitors are'} free. After that, each visitor costs ${visitorFee} SP plus the packs, and delivery is ${deliveryCost} SP.`;
+  const priceNote = freeDay
+    ? `Day ${priceRules?.day ?? 1} is free: nothing costs SP today. Prices still show so you can see them.`
+    : `Your first ${freeVisitors} ${freeVisitors === 1 ? 'visitor is' : 'visitors are'} free. After that, each visitor costs ${visitorFee} SP plus the packs, and delivery is ${deliveryCost} SP.`;
   const openChip = cost > 0 ? (freeLeft > 0 ? 'Free try' : `${cost} SP`) : 'Free to open';
   const sp = n => (freeNow ? 'Free' : `${n} SP`);
-  const nextLabel = end ? 'See your day' : round + 1 < freeVisitors ? 'Next visitor · free' : `Next visitor · ${visitorFee} SP + packs`;
+  const nextLabel = end
+    ? 'See your day'
+    : freeDay || round + 1 < freeVisitors
+      ? 'Next visitor · free'
+      : `Next visitor · ${visitorFee} SP + packs`;
   const fbStyle = fb
     ? { great: [t.green, t.greenSoft], ok: [t.orange, t.orangeSoft], oops: [t.pink, t.redSoft] }[fb.result]
     : [t.pink, t.pinkSoft];
@@ -450,7 +460,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
           <View style={styles.statRow}>
             {[
               { value: rules?.visitors ?? '', label: 'visitors today', bg: t.pinkSoft, ink: t.pinkInk },
-              { value: rules?.freeVisitors ?? '', label: 'free visitors', bg: t.greenSoft, ink: t.greenInk },
+              { value: rules?.freeDay ? 'All' : (rules?.freeVisitors ?? ''), label: 'free visitors', bg: t.greenSoft, ink: t.greenInk },
               { value: rules?.hearts ?? '', label: 'hearts', bg: t.pinkSoft, ink: t.pinkInk },
             ].map((s, i) => (
               <SlideIn key={s.label} reduceMotion={reduceMotion} delay={100 + i * 60} style={[styles.stat, { backgroundColor: s.bg }]}>
@@ -510,7 +520,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                   key={p.id}
                   onPress={() => phase === 'serve' && setPicks(cur => togglePack(cur, p.id, size, stock[p.id] ?? 0))}
                   disabled={(stock[p.id] ?? 0) <= 0 || phase !== 'serve'}
-                  accessibilityLabel={`${p.name}, ${freeNow ? 'free' : `${p.cost} SP`}, ${left} left${count ? `, ${count} picked` : ''}`}
+                  accessibilityLabel={`${p.name}, ${onHouse ? 'free' : `${p.cost} SP`}, ${left} left${count ? `, ${count} picked` : ''}`}
                 >
                   <View
                     style={[
@@ -528,7 +538,7 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                     <Text style={[styles.packName, { color: t.text }]} numberOfLines={2}>
                       {p.name}
                     </Text>
-                    <Text style={[styles.packCost, { color: t.goldInk }]}>{sp(p.cost)}</Text>
+                    <Text style={[styles.packCost, { color: t.goldInk }, strike]}>{sp(p.cost)}</Text>
                     <View style={[styles.stock, { backgroundColor: left > 0 ? t.text : t.disabledBg }]}>
                       <Text style={[styles.stockText, { color: left > 0 ? t.bg : t.disabledFg }]}>{left}</Text>
                     </View>
@@ -549,7 +559,12 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
             <View style={{ flexDirection: 'row', gap: 8, opacity: picks.length ? 1 : 0.45 }}>
               {[
                 { id: 'pickup', label: 'Pickup', sub: 'Free', icon: HOME },
-                { id: 'delivery', label: 'Delivery', sub: freeNow ? 'Free today' : `${deliveryCost} SP`, icon: SCOOT },
+                {
+                  id: 'delivery',
+                  label: 'Delivery',
+                  sub: freeNow ? 'Free today' : freeDay ? `${deliveryCost} SP · free today` : `${deliveryCost} SP`,
+                  icon: SCOOT,
+                },
               ].map(r => {
                 const on = route === r.id;
                 return (
@@ -584,10 +599,10 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
             <View style={[styles.slip, { backgroundColor: t.surface, borderColor: ready ? t.pink : t.border }]}>
               <View style={styles.slipRow}>
                 <Text style={[styles.small, { color: t.text3, marginTop: 0 }]}>ORDER SLIP</Text>
-                <View style={[styles.tag, { backgroundColor: freeNow ? t.greenSoft : t.goldSoft }]}>
-                  <Text style={[styles.tagText, { color: freeNow ? t.greenInk : t.goldInk }]}>
+                <View style={[styles.tag, { backgroundColor: onHouse ? t.greenSoft : t.goldSoft }]}>
+                  <Text style={[styles.tagText, { color: onHouse ? t.greenInk : t.goldInk }]}>
                     {size > 1 ? `${picks.length} of ${size} packs · ` : ''}
-                    {freeNow ? `Free visitor ${round + 1} of ${freeVisitors}` : 'Paid visitor'}
+                    {freeNow ? `Free visitor ${round + 1} of ${freeVisitors}` : freeDay ? 'Free day' : 'Paid visitor'}
                   </Text>
                 </View>
               </View>
@@ -610,23 +625,24 @@ export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onC
                 <Text style={[styles.slipMain, { color: route ? t.text : t.text3 }]}>
                   {route ? (route === 'delivery' ? 'Delivery' : 'Picked up at the bank') : 'Then choose how it gets there'}
                 </Text>
-                <Text style={[styles.slipCost, { color: t.goldInk }]}>
+                <Text style={[styles.slipCost, { color: t.goldInk }, route === 'delivery' ? strike : null]}>
                   {route ? (route === 'delivery' && !freeNow ? `${deliveryCost} SP` : 'Free') : ''}
                 </Text>
               </View>
               {!freeNow ? (
                 <View style={[styles.slipRow, { marginTop: 7 }]}>
                   <Text style={[styles.slipMain, { color: t.text }]}>Visitor fee</Text>
-                  <Text style={[styles.slipCost, { color: t.goldInk }]}>{visitorFee} SP</Text>
+                  <Text style={[styles.slipCost, { color: t.goldInk }, strike]}>{visitorFee} SP</Text>
                 </View>
               ) : null}
               <View style={[styles.rule, { backgroundColor: t.border }]} />
               <View style={styles.slipRow}>
                 <Text style={[styles.slipAfter, { color: t.text2 }]}>
-                  {short ? `You have ${balance} SP` : freeNow ? 'On the house' : `Your SP after: ${balance - orderCost}`}
+                  {short ? `You have ${balance} SP` : onHouse ? 'On the house' : `Your SP after: ${balance - orderCost}`}
                 </Text>
                 <Text style={[styles.slipTotal, { color: t.text }]}>
-                  {freeNow ? 'Free' : chosen ? `${orderCost} SP` : `${visitorFee} SP +`}
+                  {freeDay && !freeNow && listCost > 0 ? <Text style={strike}>{`${listCost} SP `}</Text> : null}
+                  {onHouse ? 'Free' : chosen ? `${orderCost} SP` : `${visitorFee} SP +`}
                 </Text>
               </View>
             </View>

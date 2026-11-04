@@ -66,7 +66,7 @@ export function goalLabels() {
 }
 
 export function visitPrice(round, rules, packs, route) {
-  if (!rules || round < (rules.freeVisitors || 0)) return 0;
+  if (!rules || rules.freeDay || round < (rules.freeVisitors || 0)) return 0;
   const list = Array.isArray(packs) ? packs : packs ? [packs] : [];
   return (rules.visitorFee || 0) + list.reduce((sum, p) => sum + (p?.cost || 0), 0) + (route === 'delivery' ? rules.deliveryCost || 0 : 0);
 }
