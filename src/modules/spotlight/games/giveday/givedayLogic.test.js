@@ -1,6 +1,7 @@
 import {
   giftCost,
   canGive,
+  giftSplit,
   togglePick,
   factIcon,
   productArt,
@@ -128,5 +129,15 @@ describe('give day rules in the app', () => {
     expect(REGIONS.length).toBe(10);
     expect(WATER_LABELS.length).toBe(3);
     expect(ZOOMS).toEqual([...ZOOMS].sort((a, b) => a - b));
+  });
+});
+
+describe('giftSplit', () => {
+  it('charges only the part above the free amount, and nothing when extras are free', () => {
+    expect(giftSplit(4, 5, 10, false)).toEqual({ limit: 10, extra: 0, pay: 0, over: false });
+    expect(giftSplit(9, 5, 10, false)).toEqual({ limit: 10, extra: 4, pay: 4, over: false });
+    expect(giftSplit(9, 5, 10, true)).toEqual({ limit: 10, extra: 4, pay: 0, over: false });
+    expect(giftSplit(11, 5, 10, false).over).toBe(true);
+    expect(giftSplit(6, 5, 0, false)).toEqual({ limit: 5, extra: 1, pay: 1, over: true });
   });
 });

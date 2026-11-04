@@ -50,6 +50,12 @@ export function canGive(products, picked, budget) {
   return picked.length > 0 && giftCost(products, picked) <= budget;
 }
 
+export function giftSplit(cost, free, max, extrasFree) {
+  const limit = Math.max(max || 0, free || 0);
+  const extra = Math.max(0, cost - (free || 0));
+  return { limit, extra, pay: extrasFree ? 0 : extra, over: cost > limit };
+}
+
 export function togglePick(picked, id) {
   return picked.includes(id) ? picked.filter(x => x !== id) : [...picked, id];
 }

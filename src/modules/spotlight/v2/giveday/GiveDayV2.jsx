@@ -13,6 +13,7 @@ import { gameError } from '../../common/wording.js';
 import {
   giftCost,
   canGive,
+  giftSplit,
   togglePick,
   factIcon,
   productArt,
@@ -405,9 +406,14 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   }
 
   async function give() {
-    const budget = area?.giftBudget ?? 0;
-    if (!canGive(products, picked, budget)) {
+    const split = giftSplit(giftCost(products, picked), area?.giftBudget ?? 0, area?.giftMax ?? 0, !!area?.extrasFree);
+    if (!canGive(products, picked, split.limit)) {
       setShake(n => n + 1);
+      return;
+    }
+    if (split.pay > balance) {
+      setShake(n => n + 1);
+      setError(`You need ${split.pay} SP for the extra gifts. Take something out or earn more SP.`);
       return;
     }
     feel(false);
@@ -417,6 +423,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       const out = await givedayApi.give(run.runId, sel.id, picked, token);
       later(() => {
         const levelBefore = levelNow;
+        if (out.giftPaid > 0 && typeof out.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: out.balance });
         setVisits(v => ({ ...v, [out.placeId]: out.stars }));
         setHelped(out.helped);
         setClock(out.clock);
@@ -470,8 +477,10 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const tone = tones[placeIndex % tones.length];
   const gift = area?.giftBudget ?? 0;
   const unit = giftCost(products, picked);
-  const over = unit > gift;
-  const ok = canGive(products, picked, gift);
+  const extrasFree = !!area?.extrasFree;
+  const split = giftSplit(unit, gift, area?.giftMax ?? 0, extrasFree);
+  const over = split.over;
+  const ok = canGive(products, picked, split.limit) && split.pay <= balance;
   const freeNums = freeLevels(levels);
   const freeModes = travelModes.filter(m => !m.cost).map(m => m.label);
   const focus = walking || !sel ? (area && !walking ? areaOf(area.areaId) : pos) : sel;
@@ -522,8 +531,9 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   if (area && !area.loading) {
     if (areaLocked) areaNote = `Win ${area.starsNeeded} Give Day stars to open level ${area.level}. You have ${stars}.`;
     else if (area.passNeeded)
-      areaNote = `Level ${area.level} needs a ${area.passCost} SP day pass. Gifts here can be worth up to ${area.giftBudget} SP.`;
-    else areaNote = `Gifts here can be worth up to ${area.giftBudget} SP · ${area.passCost ? 'day pass bought' : 'free level'}`;
+      areaNote = `Level ${area.level} needs a ${area.passCost} SP day pass. ${area.giftBudget} SP of gifts free at each stop, add more up to ${area.giftMax} SP with your SP.`;
+    else
+      areaNote = `${area.giftBudget} SP of gifts free at each stop, up to ${area.giftMax} SP ${area.extrasFree ? 'with extras free on this level' : 'with your SP'} · ${area.passCost ? 'day pass bought' : 'free level'}`;
   }
   const areaMeta = area ? areaOf(area.areaId) : null;
   const areaLine = areaMeta
@@ -536,7 +546,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   }`;
   const levelPct = nx ? Math.min(100, Math.round((stars / Math.max(1, nx.starsNeeded)) * 100)) : 100;
   const freeLine = levels.length
-    ? `Home: ${home?.name || ''}. ${freeNums.length ? `Level${freeNums.length > 1 ? 's' : ''} ${freeNums.join(' and ')} ${freeNums.length > 1 ? 'are' : 'is'} free, with ${levels[0].giftBudget} SP of gifts at each place.` : ''}${freeModes.length ? ` ${freeModes.join(' and ')} is free; faster ways get you there before closing.` : ''}`
+    ? `Home: ${home?.name || ''}. ${freeNums.length ? `Level${freeNums.length > 1 ? 's' : ''} ${freeNums.join(' and ')} ${freeNums.length > 1 ? 'are' : 'is'} free, with ${levels[0].giftBudget} SP of gifts free at each stop; add more with SP.` : ''}${freeModes.length ? ` ${freeModes.join(' and ')} is free; faster ways get you there before closing.` : ''}`
     : '';
   const toastLevel = toast ? levelInfo(levels, toast) : null;
 
@@ -1018,11 +1028,11 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
             <View style={styles.budgetRow}>
               <Text style={[styles.kitLine, { color: t.text2 }]}>{unit ? 'Your gift' : 'Pick at least one thing'}</Text>
               <Text style={[styles.totalLine, { color: over ? t.red : t.text }]}>
-                {unit} / {gift} SP
+                {unit} / {split.limit} SP
               </Text>
             </View>
             <View style={[styles.barTrack, { backgroundColor: t.track }]}>
-              <View style={{ width: `${Math.min(100, Math.round((unit / Math.max(1, gift)) * 100))}%`, height: '100%' }}>
+              <View style={{ width: `${Math.min(100, Math.round((unit / Math.max(1, split.limit)) * 100))}%`, height: '100%' }}>
                 <LinearGradient
                   colors={over ? [t.red, t.red] : [t.pink, t.gold]}
                   start={{ x: 0, y: 0 }}
@@ -1032,11 +1042,23 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               </View>
             </View>
             <Text style={[styles.budgetLine, { color: over ? t.red : t.text3 }]}>
-              {over
-                ? `That is ${unit - gift} SP over. Take something out.`
-                : unit
-                  ? `${gift - unit} SP left in this gift budget`
-                  : `Gift budget for this place: ${gift} SP`}
+              {over ? (
+                `That is ${unit - split.limit} SP over the most you can give here. Take something out.`
+              ) : split.extra ? (
+                extrasFree ? (
+                  <>
+                    {`${gift} SP free · extras `}
+                    <Text style={{ textDecorationLine: 'line-through', color: t.disabledFg }}>{`${split.extra} SP`}</Text>
+                    {' free on this level'}
+                  </>
+                ) : (
+                  `${gift} SP free · ${split.pay} SP from your points`
+                )
+              ) : unit ? (
+                `${gift - unit} SP of free gifts left · then ${extrasFree ? 'extras are free on this level' : 'extras use your SP'}`
+              ) : (
+                `${gift} SP of gifts free here · add more up to ${split.limit} SP${extrasFree ? ', free on this level' : ' with your SP'}`
+              )}
             </Text>
             {error ? <Text style={[styles.error, { color: t.pinkInk }]}>{error}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
@@ -1047,7 +1069,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               </PressScale>
               <PinkButton
                 t={t}
-                label="Hand over the gift"
+                label={`Hand over the gift${split.pay ? `, ${split.pay} SP` : ''}`}
                 disabled={!ok}
                 reduceMotion={reduceMotion}
                 onPress={give}
@@ -1058,7 +1080,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                   <Path d={GIFT} stroke={ok ? '#FFFFFF' : t.disabledFg} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
                 </Svg>
                 <Text style={[styles.btnText, { color: ok ? '#FFFFFF' : t.disabledFg, fontSize: 14 }]}>
-                  {sel.forSelf ? 'Pack my kit' : 'Hand over the gift'}
+                  {`${sel.forSelf ? 'Pack my kit' : 'Hand over the gift'}${split.pay ? ` · ${split.pay} SP` : ''}`}
                 </Text>
               </PinkButton>
             </View>
@@ -1100,7 +1122,9 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                 </Text>
               </View>
               <View style={[styles.resChip, { backgroundColor: t.goldSoft }]}>
-                <Text style={[styles.resChipText, { color: t.goldInk }]}>Gift worth {result.giftCost} SP</Text>
+                <Text
+                  style={[styles.resChipText, { color: t.goldInk }]}
+                >{`Gift worth ${result.giftCost} SP${result.giftPaid ? ` · ${result.giftPaid} SP from your points` : ''}`}</Text>
               </View>
             </View>
             <Text style={[styles.gaveLabel, { color: t.text3 }]}>WHAT YOU GAVE</Text>
