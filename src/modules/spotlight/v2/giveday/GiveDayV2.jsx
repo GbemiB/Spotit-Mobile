@@ -35,7 +35,7 @@ import Character from '../Character.jsx';
 import { spotTokens, STAR_PATH, toneOf } from '../tokens.js';
 import { ds, SlideIn, Breathe, Blink } from '../motion.jsx';
 import { Confetti, StarRow, Shake } from '../fx.jsx';
-import { CircleButton, SpPill, PinkButton, Glow } from '../ui.jsx';
+import { CircleButton, SpPill, PinkButton, GhostButton, Glow } from '../ui.jsx';
 import LagosMap from './LagosMap.jsx';
 
 const BACK = 'M15 5l-7 7 7 7';
@@ -229,6 +229,7 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
   const [here, setHere] = useState(null);
   const [picked, setPicked] = useState([]);
   const [result, setResult] = useState(null);
+  const [repacking, setRepacking] = useState(false);
   const [day, setDay] = useState(null);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState(null);
@@ -259,12 +260,16 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     setSel(null);
     setPicked([]);
     setResult(null);
+    setRepacking(false);
     setPhase('map');
   }
 
   function back() {
     if (phase === 'visit') setPhase('map');
-    else if (phase === 'build') setPhase('visit');
+    else if (phase === 'build' && repacking) {
+      setRepacking(false);
+      setPhase('result');
+    } else if (phase === 'build') setPhase('visit');
     else if (phase === 'result') backToMap();
     else if (phase === 'home' && homeId) setPhase('map');
     else if (phase === 'map' && sel) setSel(null);
@@ -411,7 +416,8 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
       setShake(n => n + 1);
       return;
     }
-    if (split.pay > balance) {
+    const refund = repacking ? result?.giftPaid || 0 : 0;
+    if (split.pay > balance + refund) {
       setShake(n => n + 1);
       setError(`You need ${split.pay} SP for the extra gifts. Take something out or earn more SP.`);
       return;
@@ -420,20 +426,23 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
     setPhase('handover');
     setError(null);
     try {
-      const out = await givedayApi.give(run.runId, sel.id, picked, token);
+      const again = repacking;
+      const out = await givedayApi.give(run.runId, sel.id, picked, token, again);
       later(() => {
         const levelBefore = levelNow;
-        if (out.giftPaid > 0 && typeof out.balance === 'number') dispatch({ type: A.POINTS_SPENT, newBalance: out.balance });
+        if ((out.giftPaid > 0 || out.refunded > 0) && typeof out.balance === 'number')
+          dispatch({ type: A.POINTS_SPENT, newBalance: out.balance });
         setVisits(v => ({ ...v, [out.placeId]: out.stars }));
         setHelped(out.helped);
         setClock(out.clock);
         setStars(out.playerStars);
-        setAreas(list => list.map(a => (a.id === area.areaId ? { ...a, visited: a.visited + 1 } : a)));
+        if (!again) setAreas(list => list.map(a => (a.id === area.areaId ? { ...a, visited: a.visited + 1 } : a)));
         setArea(cur => (cur ? { ...cur, places: cur.places.map(p => (p.id === out.placeId ? { ...p, stars: out.stars } : p)) } : cur));
         setLog(l => [
-          ...l,
+          ...l.filter(x => x.id !== out.placeId),
           { id: out.placeId, name: sel.name, areaName: area.name, who: sel.who, n: out.people, stars: out.stars, forSelf: sel.forSelf },
         ]);
+        setRepacking(false);
         setResult(out);
         setPhase('result');
         feel(out.stars >= 2);
@@ -988,7 +997,11 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
               <Text style={[styles.buildTitle, { color: t.text }]}>
                 {sel.forSelf ? 'Build your own kit' : `One gift for all ${sel.total} ${sel.who}`}
               </Text>
-              <Text style={[styles.buildSub, { color: t.text2 }]}>Tap what goes in. Each price covers everyone here.</Text>
+              <Text style={[styles.buildSub, { color: t.text2 }]}>
+                {repacking
+                  ? `Repack the gift. ${result?.giftPaid ? `The ${result.giftPaid} SP you paid comes back. ` : ''}It takes another visit's time.`
+                  : 'Tap what goes in. Each price covers everyone here.'}
+              </Text>
             </View>
             <View style={styles.grid}>
               {products.map((p, i) => {
@@ -1157,13 +1170,25 @@ export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onC
                 );
               })}
             </ScrollView>
+            {result.canRepack ? (
+              <GhostButton
+                t={t}
+                label="Repack the gift"
+                onPress={() => {
+                  setRepacking(true);
+                  setPhase('build');
+                }}
+                height={52}
+                style={{ marginTop: 14 }}
+              />
+            ) : null}
             <PinkButton
               t={t}
               label="Back to the map"
               reduceMotion={reduceMotion}
               onPress={backToMap}
               height={52}
-              style={{ marginTop: 14 }}
+              style={{ marginTop: result.canRepack ? 8 : 14 }}
             />
           </SlideIn>
         </View>

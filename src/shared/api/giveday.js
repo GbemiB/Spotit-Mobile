@@ -15,8 +15,8 @@ export function loadTrips(runId, placeId, token) {
 export function travel(runId, placeId, mode, token) {
   return apiRequest(`${run(runId)}/travel`, { method: 'POST', body: { placeId, mode }, token });
 }
-export function give(runId, placeId, products, token) {
-  return apiRequest(`${run(runId)}/give`, { method: 'POST', body: { placeId, products }, token });
+export function give(runId, placeId, products, token, repack = false) {
+  return apiRequest(`${run(runId)}/give`, { method: 'POST', body: { placeId, products, repack }, token });
 }
 export function finishDay(runId, token) {
   return apiRequest(`${run(runId)}/finish`, { method: 'POST', token });
