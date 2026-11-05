@@ -28,6 +28,7 @@ import * as rewardsApi from '../../shared/api/rewards.js';
 import * as usersApi from '../../shared/api/users.js';
 import NotificationsSheet from './NotificationsSheet.jsx';
 import PointsCard from './PointsCard.jsx';
+import SpotlightNextCard from './SpotlightNextCard.jsx';
 import LogPeriodCta from './LogPeriodCta.jsx';
 import MoodCheckIn from './MoodCheckIn.jsx';
 import WeekStrip from './WeekStrip.jsx';
@@ -140,6 +141,7 @@ export default function HomeScreen() {
   const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [spotlightKey, setSpotlightKey] = useState(0);
   useEffect(() => {
     logsApi
       .getTemplate(accessToken)
@@ -150,6 +152,7 @@ export default function HomeScreen() {
   }, []);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setSpotlightKey(k => k + 1);
     const now = new Date();
     const from = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
     const to = toISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14));
@@ -386,6 +389,14 @@ export default function HomeScreen() {
           onPress={() => dispatch({ type: A.GO, screen: 'rewards' })}
         />
       </RiseIn>
+
+      <SpotlightNextCard
+        token={accessToken}
+        refreshKey={spotlightKey}
+        style={s.section}
+        reduceMotion={reduceMotion}
+        onPress={() => dispatch({ type: A.GO, screen: 'spotlight' })}
+      />
 
       <RiseIn index={2} style={s.section} reduceMotion={reduceMotion}>
         {viewer.isPartner ? <PartnerCheckInCard name={viewer.name} /> : <MoodCheckIn />}
