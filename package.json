@@ -56,6 +56,9 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "/.expo/"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
     ]
   }
 }
