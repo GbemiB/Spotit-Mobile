@@ -459,7 +459,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
           ) : null}
           <View style={styles.statRow}>
             {[
-              { value: rules?.visitors ?? '', label: 'visitors today', bg: t.pinkSoft, ink: t.pinkInk },
+              { value: rules?.visitors ?? '', label: 'visitors', bg: t.pinkSoft, ink: t.pinkInk },
               { value: rules?.freeDay ? 'All' : (rules?.freeVisitors ?? ''), label: 'free visitors', bg: t.greenSoft, ink: t.greenInk },
               { value: rules?.hearts ?? '', label: 'hearts', bg: t.pinkSoft, ink: t.pinkInk },
             ].map((s, i) => (
@@ -562,7 +562,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
                 {
                   id: 'delivery',
                   label: 'Delivery',
-                  sub: freeNow ? 'Free today' : freeDay ? `${deliveryCost} SP · free today` : `${deliveryCost} SP`,
+                  sub: freeNow ? 'Free on this level' : freeDay ? `${deliveryCost} SP · free on this level` : `${deliveryCost} SP`,
                   icon: SCOOT,
                 },
               ].map(r => {
@@ -678,11 +678,11 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
               <PressScale
                 onPress={closeForToday}
                 disabled={phase !== 'serve'}
-                accessibilityLabel="Close the bank for today"
+                accessibilityLabel="Close the bank"
                 style={{ alignSelf: 'center' }}
               >
                 <View style={styles.closeLink}>
-                  <Text style={[styles.closeLinkText, { color: t.text2 }]}>Close the bank for today</Text>
+                  <Text style={[styles.closeLinkText, { color: t.text2 }]}>Close the bank</Text>
                 </View>
               </PressScale>
             ) : null}

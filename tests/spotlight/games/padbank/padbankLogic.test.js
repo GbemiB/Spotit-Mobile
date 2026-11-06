@@ -13,10 +13,10 @@ describe('pad bank rules in the app', () => {
     expect(clueIcon('drop')).toBe(CLUE_ICONS.drop);
     expect(clueIcon('mystery')).toBe(CLUE_ICONS.smile);
   });
-  it('names the end of the day', () => {
+  it('names the end of the level', () => {
     expect(endTitle(0, 0)).toBe('Out of hearts');
     expect(endTitle(2, 3)).toBe('Bank clear!');
-    expect(endTitle(2, 2)).toBe('Nice day!');
+    expect(endTitle(2, 2)).toBe('Nice work!');
     expect(endTitle(1, 1)).toBe('Bank closed');
     expect(goalLabels()).toEqual(['Serve every visitor', 'Right pack for everyone', 'Right way to reach everyone']);
   });

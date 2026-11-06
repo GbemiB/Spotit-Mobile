@@ -26,7 +26,7 @@ export function clueIcon(name) {
 export function endTitle(hearts, stars) {
   if (hearts <= 0) return 'Out of hearts';
   if (stars === 3) return 'Bank clear!';
-  if (stars === 2) return 'Nice day!';
+  if (stars === 2) return 'Nice work!';
   return 'Bank closed';
 }
 
