@@ -1,4 +1,4 @@
-import { splitPressStyle } from './SpotlightFx.jsx';
+import { splitPressStyle } from './effects.jsx';
 
 describe('splitPressStyle', () => {
   it('gives flex and margins to the touch area so buttons share a row', () => {

@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import Svg, { Circle, Path, Polygon, Polyline, Rect } from 'react-native-svg';
 import { Text } from '../../../../shared/styles/index.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
-import { Bob, PressScale } from '../../common/SpotlightFx.jsx';
-import Character from '../Character.jsx';
-import { ds, Pulse } from '../motion.jsx';
-import { levelColor } from '../tokens.js';
-import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from '../../games/giveday/lagosMap.js';
-import { clampOffset, focusOffset, travelIcon } from '../../games/giveday/givedayLogic.js';
+import { Bob, PressScale } from '../../common/motion/effects.jsx';
+import Character from '../../common/characters/Character.jsx';
+import { ds, Pulse } from '../../common/motion/motion.jsx';
+import { levelColor } from '../../common/style/tokens.js';
+import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from './lagosShapes.js';
+import { clampOffset, focusOffset, travelIcon } from './givedayLogic.js';
 
 const LOCK = 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z';
 

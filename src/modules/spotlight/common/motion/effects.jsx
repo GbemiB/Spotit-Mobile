@@ -2,7 +2,7 @@ import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
+import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
 
 export const SPARKLE = 'M12 2c.6 5 2.6 7.4 8 8.2-5.4.8-7.4 3.2-8 8.2-.6-5-2.6-7.4-8-8.2 5.4-.8 7.4-3.2 8-8.2z';
 export const HEART = 'M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z';

@@ -8,9 +8,9 @@ import * as quizApi from '../../../shared/api/quiz.js';
 import * as rewardsApi from '../../../shared/api/rewards.js';
 import { todayISO } from '../../../shared/utils/cycle.js';
 import { useReduceMotion } from '../../dashboard/HeroCardFx.jsx';
-import { PointsSheet, MessageSheet } from '../common/Sheets.jsx';
+import { PointsSheet, MessageSheet } from '../common/ui/Sheets.jsx';
 import { friendlyError, quizSettings } from '../quiz/quizLogic.js';
-import HubV2 from '../v2/HubV2.jsx';
+import SpotlightHub from './SpotlightHub.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';
 import { moduleFor, blockedReason } from './registry.js';
@@ -137,7 +137,7 @@ export default function SpotlightScreen() {
       {Module ? (
         <Module insets={insets} reduceMotion={reduceMotion} challenge={active.challenge} onExit={exitModule} onChanged={loadHome} />
       ) : (
-        <HubV2
+        <SpotlightHub
           insets={insets}
           balance={balance}
           stats={home?.stats || null}

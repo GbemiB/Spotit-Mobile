@@ -3,14 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../../shared/store/AppContext.jsx';
 import { A } from '../../../shared/store/actions.js';
 import * as quizApi from '../../../shared/api/quiz.js';
-import { PointsSheet } from '../common/Sheets.jsx';
+import { PointsSheet } from '../common/ui/Sheets.jsx';
 import { InfoSheet } from './QuizSheets.jsx';
-import QuizTopicsV2 from '../v2/quiz/QuizTopicsV2.jsx';
-import QuizTrackV2, { LevelSheetV2, levelLook } from '../v2/quiz/QuizTrackV2.jsx';
-import QuizPlayV2 from '../v2/quiz/QuizPlayV2.jsx';
-import { spotTokens } from '../v2/tokens.js';
-import { CircleButton, PinkButton } from '../v2/ui.jsx';
-import { BACK } from '../v2/quiz/quizArt.js';
+import QuizTopics from './QuizTopics.jsx';
+import QuizTrack, { LevelSheet, levelLook } from './QuizTrack.jsx';
+import QuizPlay from './QuizPlay.jsx';
+import { spotTokens } from '../common/style/tokens.js';
+import { CircleButton, PinkButton } from '../common/ui/buttons.jsx';
+import { BACK } from './quizArt.js';
 import { useTheme, Text } from '../../../shared/styles/index.js';
 import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
@@ -181,7 +181,7 @@ export default function QuizModule({ insets, reduceMotion, challenge, onExit, on
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       {view === 'topics' && (
-        <QuizTopicsV2
+        <QuizTopics
           t={t}
           title={challenge?.name}
           insets={insets}
@@ -203,7 +203,7 @@ export default function QuizModule({ insets, reduceMotion, challenge, onExit, on
         />
       )}
       {view === 'track' && detailTopic && (
-        <QuizTrackV2
+        <QuizTrack
           t={t}
           insets={insets}
           topic={detailTopic}
@@ -236,7 +236,7 @@ export default function QuizModule({ insets, reduceMotion, challenge, onExit, on
           </View>
         </View>
       )}
-      <LevelSheetV2
+      <LevelSheet
         t={t}
         open={!!sheet}
         level={sheet?.level}
@@ -261,7 +261,7 @@ export default function QuizModule({ insets, reduceMotion, challenge, onExit, on
         }}
       />
       <PointsSheet open={points} balance={balance} onClose={() => setPoints(false)} />
-      <QuizPlayV2
+      <QuizPlay
         t={t}
         open={!!playing}
         topic={playing?.topic}

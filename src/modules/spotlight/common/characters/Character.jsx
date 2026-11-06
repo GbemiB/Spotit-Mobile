@@ -1,5 +1,5 @@
 import { SvgXml } from 'react-native-svg';
-import { useApp } from '../../../shared/store/AppContext.jsx';
+import { useApp } from '../../../../shared/store/AppContext.jsx';
 import { CHARACTERS, lookFor } from './characters.js';
 
 export default function Character({ name, size, style, asViewer }) {

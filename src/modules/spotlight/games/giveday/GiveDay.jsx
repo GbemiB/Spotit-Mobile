@@ -8,7 +8,7 @@ import { A } from '../../../../shared/store/actions.js';
 import { useTheme, Text, FONT } from '../../../../shared/styles/index.js';
 import * as givedayApi from '../../../../shared/api/giveday.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
-import { PressScale, Pop, Twinkle, Bob } from '../../common/SpotlightFx.jsx';
+import { PressScale, Pop, Twinkle, Bob } from '../../common/motion/effects.jsx';
 import { gameError } from '../../common/wording.js';
 import {
   giftCost,
@@ -29,13 +29,13 @@ import {
   mapRings,
   kindIcon,
   travelIcon,
-} from '../../games/giveday/givedayLogic.js';
-import { ZOOMS } from '../../games/giveday/lagosMap.js';
-import Character from '../Character.jsx';
-import { spotTokens, STAR_PATH, toneOf } from '../tokens.js';
-import { ds, SlideIn, Breathe, Blink } from '../motion.jsx';
-import { Confetti, StarRow, Shake } from '../fx.jsx';
-import { CircleButton, SpPill, PinkButton, GhostButton, Glow } from '../ui.jsx';
+} from './givedayLogic.js';
+import { ZOOMS } from './lagosShapes.js';
+import Character from '../../common/characters/Character.jsx';
+import { spotTokens, STAR_PATH, toneOf } from '../../common/style/tokens.js';
+import { ds, SlideIn, Breathe, Blink } from '../../common/motion/motion.jsx';
+import { Confetti, StarRow, Shake } from '../../common/motion/rewardFx.jsx';
+import { CircleButton, SpPill, PinkButton, GhostButton, Glow } from '../../common/ui/buttons.jsx';
 import LagosMap from './LagosMap.jsx';
 
 const BACK = 'M15 5l-7 7 7 7';
@@ -198,7 +198,7 @@ function Kit({ index, color, reduceMotion }) {
   );
 }
 
-export default function GiveDayV2({ insets, reduceMotion, challenge, onExit, onChanged }) {
+export default function GiveDay({ insets, reduceMotion, challenge, onExit, onChanged }) {
   const { state, dispatch } = useApp();
   const { isDark } = useTheme();
   const t = spotTokens(isDark);

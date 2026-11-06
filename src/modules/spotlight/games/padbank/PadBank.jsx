@@ -7,14 +7,14 @@ import { A } from '../../../../shared/store/actions.js';
 import { useTheme, Text, FONT } from '../../../../shared/styles/index.js';
 import * as padbankApi from '../../../../shared/api/padbank.js';
 import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
-import { PressScale, Pop } from '../../common/SpotlightFx.jsx';
+import { PressScale, Pop } from '../../common/motion/effects.jsx';
 import { gameError } from '../../common/wording.js';
-import { clueIcon, endTitle as fallbackTitle, goalLabels, visitPrice, togglePack, slipName } from '../../games/padbank/padbankLogic.js';
-import Character from '../Character.jsx';
-import { spotTokens, STAR_PATH } from '../tokens.js';
-import { ds, SlideIn, Breathe, WaveOnce } from '../motion.jsx';
-import { Confetti, StarRow, HeartIcon, Shake } from '../fx.jsx';
-import { CircleButton, SpPill, PinkButton, GhostButton, COIN_STAR } from '../ui.jsx';
+import { clueIcon, endTitle as fallbackTitle, goalLabels, visitPrice, togglePack, slipName } from './padbankLogic.js';
+import Character from '../../common/characters/Character.jsx';
+import { spotTokens, STAR_PATH } from '../../common/style/tokens.js';
+import { ds, SlideIn, Breathe, WaveOnce } from '../../common/motion/motion.jsx';
+import { Confetti, StarRow, HeartIcon, Shake } from '../../common/motion/rewardFx.jsx';
+import { CircleButton, SpPill, PinkButton, GhostButton, COIN_STAR } from '../../common/ui/buttons.jsx';
 import BankScene, { PackBag, packArt, sceneColors } from './BankScene.jsx';
 
 const BACK = 'M15 5l-7 7 7 7';
@@ -168,7 +168,7 @@ function Flight({ k, from, art, kind, reduceMotion, t }) {
   );
 }
 
-export default function PadBankV2({ insets, reduceMotion, challenge, onExit, onChanged }) {
+export default function PadBank({ insets, reduceMotion, challenge, onExit, onChanged }) {
   const { state, dispatch } = useApp();
   const { isDark } = useTheme();
   const t = spotTokens(isDark);

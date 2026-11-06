@@ -2,9 +2,9 @@ import { View, StyleSheet } from 'react-native';
 import BottomSheet from '../../../components/ui/BottomSheet.jsx';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
 import { LockIcon } from '../../../components/ui/icons.jsx';
-import { GradientButton, Icon, Pop, HEART, SPARKLE } from '../common/SpotlightFx.jsx';
-import { quizColors } from '../common/theme.js';
-import { Ghost } from '../common/Sheets.jsx';
+import { GradientButton, Icon, Pop, HEART, SPARKLE } from '../common/motion/effects.jsx';
+import { quizColors } from '../common/style/theme.js';
+import { Ghost } from '../common/ui/Sheets.jsx';
 import { freeLevelsText } from '../common/wording.js';
 
 function Rule({ icon, color, children }) {

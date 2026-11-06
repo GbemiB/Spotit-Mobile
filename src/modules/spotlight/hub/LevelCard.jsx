@@ -2,12 +2,12 @@ import { Animated, Pressable, ScrollView, View, StyleSheet } from 'react-native'
 import { useRef, useState } from 'react';
 import Svg, { Defs, RadialGradient, Stop, Circle, Path } from 'react-native-svg';
 import { Text, FONT } from '../../../shared/styles/index.js';
-import { useLoopValue } from '../common/SpotlightFx.jsx';
+import { useLoopValue } from '../common/motion/effects.jsx';
 import { todayISO } from '../../../shared/utils/cycle.js';
-import { rankProgress, weekDays } from '../hub/summaryLogic.js';
-import Character from './Character.jsx';
-import { STAR_PATH, HEART_PATH, SPARK_PATH } from './tokens.js';
-import { ds, useCountUp, Breathe, WaveOnce, FloatUp, SlideIn, GrowWidth, Squiggle, Twinkle2 } from './motion.jsx';
+import { rankProgress, weekDays } from './summaryLogic.js';
+import Character from '../common/characters/Character.jsx';
+import { STAR_PATH, HEART_PATH, SPARK_PATH } from '../common/style/tokens.js';
+import { ds, useCountUp, Breathe, WaveOnce, FloatUp, SlideIn, GrowWidth, Squiggle, Twinkle2 } from '../common/motion/motion.jsx';
 
 const PAGES = ['Your level', 'Your wins', 'This week'];
 const FLAG = 'M6 21V4M6 4h11l-2 4 2 4H6';

@@ -1,9 +1,9 @@
 import { Animated, Easing, View, Dimensions } from 'react-native';
 import { useEffect } from 'react';
 import Svg, { Path } from 'react-native-svg';
-import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
-import { useEnter } from '../common/SpotlightFx.jsx';
-import { STAR_PATH, HEART_PATH } from './tokens.js';
+import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
+import { useEnter } from './effects.jsx';
+import { STAR_PATH, HEART_PATH } from '../style/tokens.js';
 
 function Piece({ left, w, h, round, color, delay, reduceMotion }) {
   const v = useAnimatedValue(0);

@@ -2,10 +2,10 @@ import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Rect, Circle, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../shared/styles/index.js';
-import { Bob, PressScale, Twinkle } from '../common/SpotlightFx.jsx';
-import Character from './Character.jsx';
-import { STAR_PATH } from './tokens.js';
-import { ds, Breathe, Sway, Drift, Blink, FlipCard, SlideIn, Pulse } from './motion.jsx';
+import { Bob, PressScale, Twinkle } from '../common/motion/effects.jsx';
+import Character from '../common/characters/Character.jsx';
+import { STAR_PATH } from '../common/style/tokens.js';
+import { ds, Breathe, Sway, Drift, Blink, FlipCard, SlideIn, Pulse } from '../common/motion/motion.jsx';
 
 function scenePalette(isDark) {
   return isDark

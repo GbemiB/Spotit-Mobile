@@ -1,10 +1,10 @@
 import { View, StyleSheet } from 'react-native';
 import Svg, { Defs, Pattern, Rect, LinearGradient as SvgGradient, Stop, Path, Circle, G } from 'react-native-svg';
 import { Text } from '../../../../shared/styles/index.js';
-import { Bob } from '../../common/SpotlightFx.jsx';
-import Character from '../Character.jsx';
-import { HEART_PATH } from '../tokens.js';
-import { ds, Sway, Travel, Blink, WaveOnce } from '../motion.jsx';
+import { Bob } from '../../common/motion/effects.jsx';
+import Character from '../../common/characters/Character.jsx';
+import { HEART_PATH } from '../../common/style/tokens.js';
+import { ds, Sway, Travel, Blink, WaveOnce } from '../../common/motion/motion.jsx';
 
 export const PACK_ART = {
   pink: ['#F2A0AE', '#DC5A74'],

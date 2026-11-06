@@ -1,7 +1,7 @@
 import { Modal, View, StyleSheet } from 'react-native';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
-import { GradientButton, PressScale, Icon, Pop, Twinkle, SPARKLE, HEART } from '../common/SpotlightFx.jsx';
-import { quizColors } from '../common/theme.js';
+import { GradientButton, PressScale, Icon, Pop, Twinkle, SPARKLE, HEART } from '../common/motion/effects.jsx';
+import { quizColors } from '../common/style/theme.js';
 import { freeLevelsText } from '../common/wording.js';
 
 export default function SpotlightInvite({ visible, balance, pick, freeLevels, reduceMotion, onPlay, onLater }) {

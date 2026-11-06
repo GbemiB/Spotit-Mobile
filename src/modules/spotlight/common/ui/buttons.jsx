@@ -2,9 +2,9 @@ import { Animated, View, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text } from '../../../shared/styles/index.js';
-import { PressScale, useLoopValue, Shine } from '../common/SpotlightFx.jsx';
-import { ds, useCountUp } from './motion.jsx';
+import { Text } from '../../../../shared/styles/index.js';
+import { PressScale, useLoopValue, Shine } from '../motion/effects.jsx';
+import { ds, useCountUp } from '../motion/motion.jsx';
 
 export const COIN_STAR = 'M12 6.8l1.5 3.2 3.4.4-2.5 2.3.7 3.4-3.1-1.8-3.1 1.8.7-3.4-2.5-2.3 3.4-.4z';
 

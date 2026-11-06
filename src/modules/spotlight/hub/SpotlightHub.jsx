@@ -1,9 +1,9 @@
 import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import Svg, { Path, Circle, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
-import { PressScale } from '../common/SpotlightFx.jsx';
-import { spotTokens } from './tokens.js';
-import { ds, useCountUp, SlideIn, Travel } from './motion.jsx';
+import { PressScale } from '../common/motion/effects.jsx';
+import { spotTokens } from '../common/style/tokens.js';
+import { ds, useCountUp, SlideIn, Travel } from '../common/motion/motion.jsx';
 import LevelCard, { StreakStrip } from './LevelCard.jsx';
 import PlayCards from './PlayCards.jsx';
 
@@ -43,7 +43,7 @@ function SpPill({ t, balance, reduceMotion, onPress }) {
   );
 }
 
-export default function HubV2({
+export default function SpotlightHub({
   insets,
   balance,
   stats,

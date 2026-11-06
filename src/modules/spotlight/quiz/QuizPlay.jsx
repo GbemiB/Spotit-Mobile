@@ -3,13 +3,13 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { Text, FONT } from '../../../../shared/styles/index.js';
-import { PressScale, Pop } from '../../common/SpotlightFx.jsx';
-import { initialPlay, playReducer, resultTitle, friendlyError } from '../../quiz/quizLogic.js';
-import Character from '../Character.jsx';
-import { ds, SlideIn, Breathe } from '../motion.jsx';
-import { Confetti, StarRow, HeartIcon, Shake } from '../fx.jsx';
-import { CircleButton, Glow, PinkButton, GhostButton } from '../ui.jsx';
+import { Text, FONT } from '../../../shared/styles/index.js';
+import { PressScale, Pop } from '../common/motion/effects.jsx';
+import { initialPlay, playReducer, resultTitle, friendlyError } from './quizLogic.js';
+import Character from '../common/characters/Character.jsx';
+import { ds, SlideIn, Breathe } from '../common/motion/motion.jsx';
+import { Confetti, StarRow, HeartIcon, Shake } from '../common/motion/rewardFx.jsx';
+import { CircleButton, Glow, PinkButton, GhostButton } from '../common/ui/buttons.jsx';
 import { CLOSE, HINT, MYTH_ICON, FACT_ICON } from './quizArt.js';
 
 function buzz(right) {
@@ -101,7 +101,7 @@ function Result({ t, state, level, topic, hasNext, nextCost, settings, balance, 
   );
 }
 
-export default function QuizPlayV2({
+export default function QuizPlay({
   t,
   open,
   topic,

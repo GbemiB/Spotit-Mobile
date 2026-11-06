@@ -1,12 +1,12 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text, FONT } from '../../../../shared/styles/index.js';
-import { PressScale } from '../../common/SpotlightFx.jsx';
-import { freeLevelsBadge } from '../../common/wording.js';
-import Character from '../Character.jsx';
-import { toneOf } from '../tokens.js';
-import { ds, Breathe, FlipCard, SlideIn, GrowWidth } from '../motion.jsx';
-import { CircleButton, SpPill, AnimIcon, Glow } from '../ui.jsx';
+import { Text, FONT } from '../../../shared/styles/index.js';
+import { PressScale } from '../common/motion/effects.jsx';
+import { freeLevelsBadge } from '../common/wording.js';
+import Character from '../common/characters/Character.jsx';
+import { toneOf } from '../common/style/tokens.js';
+import { ds, Breathe, FlipCard, SlideIn, GrowWidth } from '../common/motion/motion.jsx';
+import { CircleButton, SpPill, AnimIcon, Glow } from '../common/ui/buttons.jsx';
 import { topicIcon, BACK, LOCK } from './quizArt.js';
 
 function Hero({ t, settings, reduceMotion }) {
@@ -93,7 +93,7 @@ function TopicCard({ t, item, tone, index, freeLevels, reduceMotion, onPress }) 
   );
 }
 
-export default function QuizTopicsV2({
+export default function QuizTopics({
   t,
   title,
   insets,

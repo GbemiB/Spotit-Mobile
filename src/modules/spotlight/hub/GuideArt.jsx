@@ -2,10 +2,10 @@ import { View, StyleSheet } from 'react-native';
 import Svg, { Path, Rect, Circle, Ellipse, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../shared/styles/index.js';
-import { Bob, Twinkle, Pop } from '../common/SpotlightFx.jsx';
-import Character from './Character.jsx';
-import { STAR_PATH } from './tokens.js';
-import { ds, SlideIn, Pulse } from './motion.jsx';
+import { Bob, Twinkle, Pop } from '../common/motion/effects.jsx';
+import Character from '../common/characters/Character.jsx';
+import { STAR_PATH } from '../common/style/tokens.js';
+import { ds, SlideIn, Pulse } from '../common/motion/motion.jsx';
 
 const ART = { 'know-yourself': 'you', 'pad-bank-run': 'padbankGirl', 'give-day': 'mamaRonke' };
 
@@ -81,7 +81,7 @@ function Ladder({ t, ranks, reduceMotion }) {
   );
 }
 
-export default function GuideArtV2({ step, t, isDark, challenges, ranks, reduceMotion }) {
+export default function GuideArt({ step, t, isDark, challenges, ranks, reduceMotion }) {
   return (
     <View style={[styles.box, { borderColor: t.border }]}>
       <LinearGradient colors={t.heroBg} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />

@@ -22,7 +22,7 @@ import {
   tripPrice,
 } from './givedayLogic.js';
 import { FACT_ICONS, PRODUCT_ART } from './givedayArt.js';
-import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from './lagosMap.js';
+import { MAP_SIZE, WATER, ROADS, REGIONS, WATER_LABELS, ZOOMS } from './lagosShapes.js';
 
 const products = [
   { id: 'pads', cost: 2 },

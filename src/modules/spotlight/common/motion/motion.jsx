@@ -1,8 +1,8 @@
 import { Animated, Easing } from 'react-native';
 import { useEffect, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
-import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
-import { useLoopValue, useEnter } from '../common/SpotlightFx.jsx';
+import { useAnimatedValue } from '../../../dashboard/HeroCardFx.jsx';
+import { useLoopValue, useEnter } from './effects.jsx';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 

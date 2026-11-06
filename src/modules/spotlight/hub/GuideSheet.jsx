@@ -3,10 +3,10 @@ import { Animated, PanResponder, Pressable, View, StyleSheet } from 'react-nativ
 import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
 import BottomSheet from '../../../components/ui/BottomSheet.jsx';
 import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
-import { PressScale, Icon } from '../common/SpotlightFx.jsx';
-import GuideArtV2 from '../v2/GuideArtV2.jsx';
-import { spotTokens } from '../v2/tokens.js';
-import { ds } from '../v2/motion.jsx';
+import { PressScale, Icon } from '../common/motion/effects.jsx';
+import GuideArt from './GuideArt.jsx';
+import { spotTokens } from '../common/style/tokens.js';
+import { ds } from '../common/motion/motion.jsx';
 
 function listWords(names) {
   if (names.length <= 1) return names.join('');
@@ -147,7 +147,7 @@ export default function GuideSheet({ open, settings, challenges = [], ranks = []
                 importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
               >
                 {open && Math.abs(i - index) <= 1 ? (
-                  <GuideArtV2 step={step.key} t={t} isDark={isDark} challenges={challenges} ranks={ranks} reduceMotion={reduceMotion || i !== index} />
+                  <GuideArt step={step.key} t={t} isDark={isDark} challenges={challenges} ranks={ranks} reduceMotion={reduceMotion || i !== index} />
                 ) : (
                   <View style={{ height: 188 }} />
                 )}

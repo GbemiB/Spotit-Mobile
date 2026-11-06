@@ -1,6 +1,6 @@
 import QuizModule from '../quiz/QuizModule.jsx';
-import PadBankModule from '../v2/padbank/PadBankV2.jsx';
-import GiveDayModule from '../v2/giveday/GiveDayV2.jsx';
+import PadBankModule from '../games/padbank/PadBank.jsx';
+import GiveDayModule from '../games/giveday/GiveDay.jsx';
 
 export const CHALLENGE_MODULES = {
   'know-yourself': QuizModule,

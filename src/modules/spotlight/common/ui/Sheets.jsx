@@ -1,8 +1,8 @@
 import { View, StyleSheet } from 'react-native';
-import BottomSheet from '../../../components/ui/BottomSheet.jsx';
-import { useTheme, Text, FONT } from '../../../shared/styles/index.js';
-import { LockIcon } from '../../../components/ui/icons.jsx';
-import { PressScale, Icon, Pop, SPARKLE } from './SpotlightFx.jsx';
+import BottomSheet from '../../../../components/ui/BottomSheet.jsx';
+import { useTheme, Text, FONT } from '../../../../shared/styles/index.js';
+import { LockIcon } from '../../../../components/ui/icons.jsx';
+import { PressScale, Icon, Pop, SPARKLE } from '../motion/effects.jsx';
 
 export function Ghost({ label, onPress }) {
   const { colors: c } = useTheme();

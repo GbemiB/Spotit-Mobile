@@ -1,11 +1,11 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Text, FONT } from '../../../../shared/styles/index.js';
-import { PressScale } from '../../common/SpotlightFx.jsx';
-import BottomSheet from '../../../../components/ui/BottomSheet.jsx';
-import { toneOf } from '../tokens.js';
-import { ds, SlideIn, Pulse } from '../motion.jsx';
-import { CircleButton, AnimIcon, Glow, PinkButton } from '../ui.jsx';
+import { Text, FONT } from '../../../shared/styles/index.js';
+import { PressScale } from '../common/motion/effects.jsx';
+import BottomSheet from '../../../components/ui/BottomSheet.jsx';
+import { toneOf } from '../common/style/tokens.js';
+import { ds, SlideIn, Pulse } from '../common/motion/motion.jsx';
+import { CircleButton, AnimIcon, Glow, PinkButton } from '../common/ui/buttons.jsx';
 import { topicIcon, BACK, LOCK, CLOSE } from './quizArt.js';
 
 const STEP = 110;
@@ -36,7 +36,7 @@ export function levelLook(level, settings) {
   };
 }
 
-export default function QuizTrackV2({ t, insets, topic, group, tone, levels, settings, reduceMotion, onBack, onPlayLevel }) {
+export default function QuizTrack({ t, insets, topic, group, tone, levels, settings, reduceMotion, onBack, onPlayLevel }) {
   const icon = topicIcon(topic.icon);
   const [bg, ink] = toneOf(t, tone);
   const height = 10 + levels.length * STEP + 30;
@@ -126,7 +126,7 @@ export default function QuizTrackV2({ t, insets, topic, group, tone, levels, set
   );
 }
 
-export function LevelSheetV2({ t, open, level, topic, balance, settings, reduceMotion, onClose, onStart }) {
+export function LevelSheet({ t, open, level, topic, balance, settings, reduceMotion, onClose, onStart }) {
   if (!level || !topic) return <BottomSheet open={false} onClose={onClose} />;
   const look = levelLook(level, settings);
   const cost = level.cost || 0;
