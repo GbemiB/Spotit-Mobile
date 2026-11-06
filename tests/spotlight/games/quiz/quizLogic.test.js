@@ -13,11 +13,11 @@ import {
   playReducer,
   resultTitle,
   friendlyError,
-} from '../../../src/modules/spotlight/quiz/quizLogic.js';
-import * as quizApi from '../../../src/shared/api/quiz.js';
-import { apiRequest } from '../../../src/shared/api/client.js';
+} from '../../../../src/modules/spotlight/games/quiz/quizLogic.js';
+import * as quizApi from '../../../../src/shared/api/quiz.js';
+import { apiRequest } from '../../../../src/shared/api/client.js';
 
-jest.mock('../../../src/shared/api/client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
+jest.mock('../../../../src/shared/api/client.js', () => ({ apiRequest: jest.fn(() => Promise.resolve({})) }));
 
 const card = over => ({
   id: 'my-cycle',

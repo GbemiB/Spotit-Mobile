@@ -9,7 +9,7 @@ import * as rewardsApi from '../../../shared/api/rewards.js';
 import { todayISO } from '../../../shared/utils/cycle.js';
 import { useReduceMotion } from '../../dashboard/HeroCardFx.jsx';
 import { PointsSheet, MessageSheet } from '../common/ui/Sheets.jsx';
-import { friendlyError, quizSettings } from '../quiz/quizLogic.js';
+import { friendlyError, quizSettings } from '../games/quiz/quizLogic.js';
 import SpotlightHub from './SpotlightHub.jsx';
 import GuideSheet from './GuideSheet.jsx';
 import { updateInvite, afterVisit, wasGuideSeen, markGuideSeen } from './inviteLogic.js';

@@ -1,17 +1,17 @@
 import { View, BackHandler, StyleSheet } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useApp } from '../../../shared/store/AppContext.jsx';
-import { A } from '../../../shared/store/actions.js';
-import * as quizApi from '../../../shared/api/quiz.js';
-import { PointsSheet } from '../common/ui/Sheets.jsx';
+import { useApp } from '../../../../shared/store/AppContext.jsx';
+import { A } from '../../../../shared/store/actions.js';
+import * as quizApi from '../../../../shared/api/quiz.js';
+import { PointsSheet } from '../../common/ui/Sheets.jsx';
 import { InfoSheet } from './QuizSheets.jsx';
 import QuizTopics from './QuizTopics.jsx';
 import QuizTrack, { LevelSheet, levelLook } from './QuizTrack.jsx';
 import QuizPlay from './QuizPlay.jsx';
-import { spotTokens } from '../common/style/tokens.js';
-import { CircleButton, PinkButton } from '../common/ui/buttons.jsx';
+import { spotTokens } from '../../common/style/tokens.js';
+import { CircleButton, PinkButton } from '../../common/ui/buttons.jsx';
 import { BACK } from './quizArt.js';
-import { useTheme, Text } from '../../../shared/styles/index.js';
+import { useTheme, Text } from '../../../../shared/styles/index.js';
 import { toGroups, toChips, mergeTopicPages, toLevel, toTopic, sheetModeFor, friendlyError, quizSettings } from './quizLogic.js';
 
 export default function QuizModule({ insets, reduceMotion, challenge, onExit, onChanged }) {

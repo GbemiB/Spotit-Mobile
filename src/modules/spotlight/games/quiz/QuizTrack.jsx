@@ -1,11 +1,11 @@
 import { View, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Text, FONT } from '../../../shared/styles/index.js';
-import { PressScale } from '../common/motion/effects.jsx';
-import BottomSheet from '../../../components/ui/BottomSheet.jsx';
-import { toneOf } from '../common/style/tokens.js';
-import { ds, SlideIn, Pulse } from '../common/motion/motion.jsx';
-import { CircleButton, AnimIcon, Glow, PinkButton } from '../common/ui/buttons.jsx';
+import { Text, FONT } from '../../../../shared/styles/index.js';
+import { PressScale } from '../../common/motion/effects.jsx';
+import BottomSheet from '../../../../components/ui/BottomSheet.jsx';
+import { toneOf } from '../../common/style/tokens.js';
+import { ds, SlideIn, Pulse } from '../../common/motion/motion.jsx';
+import { CircleButton, AnimIcon, Glow, PinkButton } from '../../common/ui/buttons.jsx';
 import { topicIcon, BACK, LOCK, CLOSE } from './quizArt.js';
 
 const STEP = 110;

@@ -1,6 +1,6 @@
 import { moduleFor, blockedReason, CHALLENGE_MODULES } from '../../../src/modules/spotlight/hub/registry.js';
 
-jest.mock('../../../src/modules/spotlight/quiz/QuizModule.jsx', () => () => null);
+jest.mock('../../../src/modules/spotlight/games/quiz/QuizModule.jsx', () => () => null);
 jest.mock('../../../src/modules/spotlight/games/padbank/PadBank.jsx', () => () => null);
 jest.mock('../../../src/modules/spotlight/games/giveday/GiveDay.jsx', () => () => null);
 

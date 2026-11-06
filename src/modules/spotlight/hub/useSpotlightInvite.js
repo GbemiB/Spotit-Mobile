@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as spotlightApi from '../../../shared/api/spotlight.js';
 import * as quizApi from '../../../shared/api/quiz.js';
-import { toPick } from '../quiz/quizLogic.js';
+import { toPick } from '../games/quiz/quizLogic.js';
 import { readInvite, updateInvite, mightInvite, shouldInvite, afterShown, afterLater } from './inviteLogic.js';
 
 export default function useSpotlightInvite({ ready, userId, token, today, resumedAt }) {

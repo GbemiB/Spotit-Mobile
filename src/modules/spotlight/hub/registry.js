@@ -1,4 +1,4 @@
-import QuizModule from '../quiz/QuizModule.jsx';
+import QuizModule from '../games/quiz/QuizModule.jsx';
 import PadBankModule from '../games/padbank/PadBank.jsx';
 import GiveDayModule from '../games/giveday/GiveDay.jsx';
 
