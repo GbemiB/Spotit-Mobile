@@ -7,7 +7,6 @@ import { PressScale, useLoopValue, Shine } from '../common/SpotlightFx.jsx';
 import { ds, useCountUp } from './motion.jsx';
 
 export const COIN_STAR = 'M12 6.8l1.5 3.2 3.4.4-2.5 2.3.7 3.4-3.1-1.8-3.1 1.8.7-3.4-2.5-2.3 3.4-.4z';
-const COIN_LINE = 'M12 8v8M9.8 10h3.4a1.4 1.4 0 0 1 0 2.8h-2.4a1.4 1.4 0 0 0 0 2.8h3.4';
 
 export function CircleButton({ t, icon, label, onPress, size = 44, iconSize = 18, color }) {
   return (
@@ -39,18 +38,6 @@ export function SpPill({ t, balance, reduceMotion, onPress, height = 36 }) {
     <PressScale onPress={onPress} accessibilityLabel={`${balance} SpotPoints`}>
       {body}
     </PressScale>
-  );
-}
-
-export function CoinPill({ t, value, label, style }) {
-  return (
-    <View accessibilityLabel={label} style={[styles.small, { backgroundColor: t.surface, borderColor: t.border }, style]}>
-      <Svg width={20} height={20} viewBox="0 0 24 24">
-        <Circle cx={12} cy={12} r={9} fill={t.goldSoft} stroke={t.gold} strokeWidth={1.8} />
-        <Path d={COIN_LINE} stroke={t.goldInk} strokeWidth={1.5} fill="none" strokeLinecap="round" />
-      </Svg>
-      <Text style={[styles.smallText, { color: t.text }]}>{value}</Text>
-    </View>
   );
 }
 

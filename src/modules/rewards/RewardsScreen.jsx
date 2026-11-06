@@ -127,7 +127,6 @@ export default function RewardsScreen() {
   } = state;
   const insets = useSafeAreaInsets();
   const [billingLoading, setBillingLoading] = useState(false);
-  const [adLoading, setAdLoading] = useState(false);
   const [claimLoading, setClaimLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState(null);
   const [claimingChallengeId, setClaimingChallengeId] = useState(null);
@@ -142,21 +141,6 @@ export default function RewardsScreen() {
       dispatch({ type: A.SHOW_TOAST, icon: '🌸', text: e.message });
     } finally {
       setClaimLoading(false);
-    }
-  }
-  async function handleWatchAd() {
-    if (adLoading) return;
-    setAdLoading(true);
-    try {
-      const data = await rewardsApi.watchAd(
-        { adNetwork: 'dev-mock', adUnitId: 'dev-mock-unit', verificationToken: 'dev-mock-token' },
-        accessToken,
-      );
-      dispatch({ type: A.AD_WATCH_RESULT, ...data });
-    } catch (e) {
-      dispatch({ type: A.SHOW_TOAST, icon: '🌸', text: e.message });
-    } finally {
-      setAdLoading(false);
     }
   }
   async function handleRedeem(product) {

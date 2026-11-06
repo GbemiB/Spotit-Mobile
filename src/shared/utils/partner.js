@@ -70,10 +70,6 @@ export function expiryLabel(iso) {
 export function normalizeInviteCode(input) {
   return (input || '').replace(/[\s-]/g, '').toUpperCase();
 }
-export function signedInRoute({ onboarded, accountType }) {
-  if (accountType === 'partner') return 'partner-home';
-  return onboarded ? 'tabs' : 'setup';
-}
 export function setupRoute(partnerStatus, choseOwnCycle) {
   if (partnerStatus === undefined) return 'checking';
   if (!choseOwnCycle && partnerStatus?.state === 'invited') return 'join';
@@ -92,7 +88,4 @@ export function dayLogRows(log) {
     intimate: !!log.intimate,
     notes,
   };
-}
-export function supportLabels(options, ids) {
-  return (ids || []).map(id => options.find(o => o.id === id)?.label || id);
 }

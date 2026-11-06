@@ -124,7 +124,6 @@ export default function HomeScreen() {
     userName,
     femPoints,
     pointsSpent,
-    streak,
     cycleLength,
     periodLength,
     lastPeriodDate,
@@ -137,17 +136,8 @@ export default function HomeScreen() {
   } = state;
   const [inboxOpen, setInboxOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const [baseLogPoints, setBaseLogPoints] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => {
-    logsApi
-      .getTemplate(accessToken)
-      .then(data => {
-        if (data?.basePoints != null) setBaseLogPoints(data.basePoints);
-      })
-      .catch(() => {});
-  }, []);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     const now = new Date();

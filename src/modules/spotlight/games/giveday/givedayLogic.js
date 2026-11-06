@@ -1,12 +1,5 @@
 import { FACT_ICONS, PRODUCT_ART } from './givedayArt.js';
 
-export const RATING_STYLE = {
-  good: { dot: '#4E9E78', bg: '#E7F2EB', icon: 'M5 12.5l4.5 4.5L19 7.5' },
-  ok: { dot: '#E07A4F', bg: '#FDEBE2', icon: 'M6 12h12' },
-  poor: { dot: '#C9604F', bg: '#FDECEA', icon: 'M7 7l10 10M17 7L7 17' },
-  missed: { dot: '#E07A4F', bg: '#FFF6EE', icon: 'M12 7v6M12 17h.01' },
-};
-
 const KIND_ICONS = {
   training: 'M6 7a2.5 2.5 0 1 0 0-.1M6 17a2.5 2.5 0 1 0 0-.1M8 8.5L20 18M8 15.5L20 6',
   school: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 1 6.5 18H20',
@@ -73,10 +66,6 @@ export function productArt(id) {
   return PRODUCT_ART[id] || PRODUCT_ART.pads;
 }
 
-export function ratingStyle(rating) {
-  return RATING_STYLE[rating] || RATING_STYLE.ok;
-}
-
 export function clockLabel(minutes) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -121,10 +110,6 @@ export function homeGroups(areas) {
     g.areas.push(a);
   });
   return groups;
-}
-
-export function isAllOfLagos(level, maxRadius) {
-  return !level || level.radiusKm >= maxRadius;
 }
 
 export function mapRings(levels) {

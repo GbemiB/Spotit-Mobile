@@ -5,13 +5,6 @@ export function freeLevelsText(n) {
   return `Levels 1 to ${n} of every topic are free.`;
 }
 
-export function freeLevelsShort(n) {
-  if (n == null) return '';
-  if (n <= 0) return 'every level costs SP';
-  if (n === 1) return 'level 1 of every topic is free';
-  return `levels 1–${n} of every topic are free`;
-}
-
 export function freeLevelsBadge(n) {
   if (!n || n <= 0) return '';
   return n === 1 ? 'Level 1 free' : `Levels 1–${n} free`;

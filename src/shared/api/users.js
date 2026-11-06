@@ -20,9 +20,6 @@ export function markInboxRead(token) {
 export function requestExport(token) {
   return apiRequest('/users/me/export', { method: 'POST', token });
 }
-export function downloadExport(jobId, token) {
-  return apiRequest(`/users/me/export/${jobId}/download`, { token });
-}
 export function resetAllData(token) {
   return apiRequest('/users/me/reset', { method: 'POST', token });
 }

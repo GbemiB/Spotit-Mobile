@@ -53,11 +53,15 @@ export function mergeTopicPages(prev, next) {
 }
 
 export function toLevel(view) {
-  return { n: view.number, name: view.name, cost: view.cost, state: view.state, stars: view.stars, ready: view.ready, lives: view.lives || null };
-}
-
-export function heartsLabel(n) {
-  return n === 1 ? '1 heart' : `${n} hearts`;
+  return {
+    n: view.number,
+    name: view.name,
+    cost: view.cost,
+    state: view.state,
+    stars: view.stars,
+    ready: view.ready,
+    lives: view.lives || null,
+  };
 }
 
 export function toPick(pick) {
@@ -152,13 +156,6 @@ export function resultTitle(stars) {
   if (stars >= 3) return 'You aced it!';
   if (stars === 2) return 'Nicely done!';
   return 'You made it!';
-}
-
-export function feedbackTitle(right, streak) {
-  if (!right) return 'Not quite!';
-  if (streak >= 3) return 'On fire!';
-  if (streak === 2) return 'Spot on!';
-  return 'Nailed it!';
 }
 
 export function friendlyError(e) {

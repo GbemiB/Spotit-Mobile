@@ -72,22 +72,6 @@ export function LockIcon({ size = 20, color = '#C04E68' }) {
     </Svg>
   );
 }
-export function EnvelopeIcon({ size = 20, color = '#C04E68' }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="4" y="5" width="16" height="14" rx="2" stroke={color} strokeWidth="1.8" />
-      <Path d="M4.5 6.5 12 12.5l7.5-6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-export function DocumentIcon({ size = 18, color = '#2E2429' }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 5H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9l-3-4z" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
-      <Path d="M15 5v4h3" stroke={color} strokeWidth="1.6" strokeLinejoin="round" />
-    </Svg>
-  );
-}
 export function WarningIcon({ size = 26 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

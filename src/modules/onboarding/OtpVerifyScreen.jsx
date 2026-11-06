@@ -6,7 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import LogoMark from '../../components/ui/LogoMark.jsx';
-import { EnvelopeIcon, ChevronLeftIcon } from '../../components/ui/icons.jsx';
+import { ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
 import * as authApi from '../../shared/api/auth.js';
 const CODE_LENGTH = 4;

@@ -5,8 +5,6 @@ import {
   togglePick,
   factIcon,
   productArt,
-  ratingStyle,
-  RATING_STYLE,
   kindIcon,
   travelIcon,
   TRAVEL_ICONS,
@@ -59,8 +57,6 @@ describe('give day rules in the app', () => {
     expect(factIcon('rocket')).toBe(FACT_ICONS.girls);
     expect(productArt('cup')).toBe(PRODUCT_ART.cup);
     expect(productArt('rocket')).toBe(PRODUCT_ART.pads);
-    expect(ratingStyle('poor')).toBe(RATING_STYLE.poor);
-    expect(ratingStyle('odd')).toBe(RATING_STYLE.ok);
     expect(travelIcon('bike')).toBe(TRAVEL_ICONS.bike);
     expect(travelIcon('boat')).toBe(TRAVEL_ICONS.walk);
   });

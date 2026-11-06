@@ -7,13 +7,11 @@ import {
   toCards,
   toGroups,
   toLevel,
-  heartsLabel,
   toPick,
   sheetModeFor,
   initialPlay,
   playReducer,
   resultTitle,
-  feedbackTitle,
   friendlyError,
 } from './quizLogic.js';
 import * as quizApi from '../../../shared/api/quiz.js';
@@ -87,8 +85,6 @@ describe('mapping server data', () => {
       lives: null,
     });
     expect(toLevel({ number: 5, name: 'N', cost: 40, state: 'locked', stars: 0, ready: true, lives: 1 }).lives).toBe(1);
-    expect(heartsLabel(1)).toBe('1 heart');
-    expect(heartsLabel(2)).toBe('2 hearts');
     const pick = toPick({
       topicId: 'my-cycle',
       topicName: 'My Cycle',
@@ -145,10 +141,6 @@ describe('playReducer', () => {
 
 describe('words', () => {
   it('titles follow the streak and stars', () => {
-    expect(feedbackTitle(true, 1)).toBe('Nailed it!');
-    expect(feedbackTitle(true, 2)).toBe('Spot on!');
-    expect(feedbackTitle(true, 4)).toBe('On fire!');
-    expect(feedbackTitle(false, 0)).toBe('Not quite!');
     expect(resultTitle(3)).toBe('You aced it!');
     expect(resultTitle(2)).toBe('Nicely done!');
     expect(resultTitle(1)).toBe('You made it!');

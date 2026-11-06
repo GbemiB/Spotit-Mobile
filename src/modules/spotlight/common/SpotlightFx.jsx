@@ -1,4 +1,4 @@
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
@@ -6,8 +6,6 @@ import { useAnimatedValue } from '../../dashboard/HeroCardFx.jsx';
 
 export const SPARKLE = 'M12 2c.6 5 2.6 7.4 8 8.2-5.4.8-7.4 3.2-8 8.2-.6-5-2.6-7.4-8-8.2 5.4-.8 7.4-3.2 8-8.2z';
 export const HEART = 'M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z';
-export const STAR = 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z';
-export const FLAME = 'M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.5 2 2.5 0-3-.5-5.5 1-8z';
 
 export function useLoopValue(duration, reduceMotion, { delay = 0, linear = false } = {}) {
   const v = useAnimatedValue(0);
@@ -46,23 +44,6 @@ export function useEnter(reduceMotion, delay = 0, deps = []) {
     return () => anim.stop();
   }, [reduceMotion, delay, v, ...deps]);
   return v;
-}
-
-export function Rise({ index = 0, reduceMotion, style, children }) {
-  const v = useEnter(reduceMotion, 60 + index * 90);
-  return (
-    <Animated.View
-      style={[
-        style,
-        {
-          opacity: v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] }),
-          transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
-        },
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
 }
 
 export function Pop({ delay = 0, reduceMotion, style, children, trigger }) {
@@ -107,95 +88,6 @@ export function Twinkle({ size, color, delay = 0, reduceMotion, style }) {
         <Path d={SPARKLE} fill={color} />
       </Svg>
     </Animated.View>
-  );
-}
-
-export function Beat({ reduceMotion, children, style }) {
-  const v = useLoopValue(1400, reduceMotion);
-  return (
-    <Animated.View style={[style, { transform: [{ scale: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.18, 1] }) }] }]}>
-      {children}
-    </Animated.View>
-  );
-}
-
-export function Flicker({ reduceMotion, children }) {
-  const v = useLoopValue(1800, reduceMotion);
-  return (
-    <Animated.View
-      style={{
-        transform: [
-          { scaleY: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.08, 0.96] }) },
-          { rotate: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['-3deg', '3deg', '-3deg'] }) },
-        ],
-      }}
-    >
-      {children}
-    </Animated.View>
-  );
-}
-
-export function Blob({ size, color, duration = 3500, delay = 0, reduceMotion, style }) {
-  const v = useLoopValue(duration * 2, reduceMotion, { delay });
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        { position: 'absolute', width: size, height: size, borderRadius: size / 2, backgroundColor: color },
-        style,
-        {
-          opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }),
-          transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }],
-        },
-      ]}
-    />
-  );
-}
-
-export function Wave({ width, height, color, duration, reverse, bottom, d, reduceMotion }) {
-  const v = useLoopValue(duration, reduceMotion, { linear: true });
-  if (!width) return null;
-  const translateX = v.interpolate({ inputRange: [0, 1], outputRange: reverse ? [-width, 0] : [0, -width] });
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{ position: 'absolute', left: 0, bottom, width: width * 2, height, transform: [{ translateX }] }}
-    >
-      <Svg width={width * 2} height={height} viewBox={`0 0 800 ${height}`} preserveAspectRatio="none">
-        <Path d={d} fill={color} />
-      </Svg>
-    </Animated.View>
-  );
-}
-
-export function Waves({ isDark, reduceMotion }) {
-  const [w, setW] = useState(0);
-  return (
-    <View
-      pointerEvents="none"
-      style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 64 }}
-      onLayout={e => setW(e.nativeEvent.layout.width)}
-    >
-      <Wave
-        width={w}
-        height={60}
-        bottom={-6}
-        color={isDark ? 'rgba(220,90,116,0.10)' : 'rgba(242,160,174,0.16)'}
-        duration={9000}
-        reduceMotion={reduceMotion}
-        d="M0 30 C 100 5, 100 55, 200 30 S 300 5, 400 30 S 500 55, 600 30 S 700 5, 800 30 V 60 H 0 Z"
-      />
-      <Wave
-        width={w}
-        height={48}
-        bottom={-8}
-        color={isDark ? 'rgba(214,162,78,0.08)' : 'rgba(246,217,190,0.30)'}
-        duration={6000}
-        reverse
-        reduceMotion={reduceMotion}
-        d="M0 24 C 100 44, 100 4, 200 24 S 300 44, 400 24 S 500 4, 600 24 S 700 44, 800 24 V 48 H 0 Z"
-      />
-    </View>
   );
 }
 

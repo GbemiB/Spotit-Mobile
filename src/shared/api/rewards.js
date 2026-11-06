@@ -17,9 +17,6 @@ export function claimChallenge(id, token) {
 export function dailyClaim(token) {
   return apiRequest('/rewards/daily-claim', { method: 'POST', token });
 }
-export function watchAd({ adNetwork, adUnitId, verificationToken }, token) {
-  return apiRequest('/rewards/watch-ad', { method: 'POST', body: { adNetwork, adUnitId, verificationToken }, token });
-}
 export function getHistory({ limit, cursor } = {}, token) {
   const params = new URLSearchParams();
   if (limit) params.set('limit', limit);

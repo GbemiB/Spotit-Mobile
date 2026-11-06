@@ -1,17 +1,3 @@
-export const PACK_COLORS = {
-  pink: { bag: '#F2A0AE', dark: '#C8466A' },
-  peach: { bag: '#F6C3A8', dark: '#B85A33' },
-  rose: { bag: '#E8708A', dark: '#A9405A' },
-  green: { bag: '#8FCBA9', dark: '#2F7454' },
-};
-
-export const PACK_MARKS = {
-  starter: 'M30 33v10M25 38h10',
-  school: 'M23 42l7-7 7 7',
-  comfort: 'M25 36c0-3.5 10-3.5 10 0s-5 6.5-5 6.5-5-3-5-6.5z',
-  reusable: 'M25 39a5 5 0 1 0 1.6-3.7M25 34v3h3',
-};
-
 export const CLUE_ICONS = {
   drop: 'M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5z',
   drops: 'M8 4s3.5 3.7 3.5 6a3.5 3.5 0 0 1-7 0c0-2.3 3.5-6 3.5-6zM16 10s3.5 3.7 3.5 6a3.5 3.5 0 0 1-7 0c0-2.3 3.5-6 3.5-6z',
@@ -33,25 +19,8 @@ export const CLUE_ICONS = {
   clock: 'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 2',
 };
 
-export const CLUE_TONES = ['pink', 'peach', 'green'];
-
-export const RESULTS = {
-  great: { bg: '#4E9E78', shadow: '#2F7454', icon: 'M5 12.5l4.5 4.5L19 7.5' },
-  ok: { bg: '#E07A4F', shadow: '#B85A33', icon: 'M12 7v6M12 17h.01' },
-  oops: { bg: '#C9604F', shadow: '#8E3A2E', icon: 'M7 7l10 10M17 7L7 17' },
-};
-
-export function moodFor(phase, result) {
-  if (phase !== 'result') return 'neutral';
-  return result === 'oops' ? 'sad' : 'happy';
-}
-
 export function clueIcon(name) {
   return CLUE_ICONS[name] || CLUE_ICONS.smile;
-}
-
-export function packColor(name) {
-  return PACK_COLORS[name] || PACK_COLORS.pink;
 }
 
 export function endTitle(hearts, stars) {
@@ -93,12 +62,4 @@ export function slipName(picks, packs) {
       return counts[id] > 1 ? `${counts[id]} × ${name}` : name;
     })
     .join(', ');
-}
-
-export function nextLabel(finished) {
-  return finished ? 'See the day' : 'Next visitor';
-}
-
-export function canPick(phase, stock) {
-  return (phase === 'ask' || phase === 'route') && stock > 0;
 }

@@ -156,12 +156,6 @@ describe('rewards/shop result actions', () => {
     expect(next.lastClaimedDate).toBe(todayISO());
     expect(next.history[0]).toMatchObject({ delta: 50, label: 'Daily check-in bonus' });
   });
-  test('AD_WATCH_RESULT awards points and logs history', () => {
-    const state = { ...INIT, femPoints: 100, history: [] };
-    const next = reducer(state, { type: A.AD_WATCH_RESULT, pointsAwarded: 25, newBalance: 125 });
-    expect(next.femPoints).toBe(125);
-    expect(next.history[0]).toMatchObject({ delta: 25, label: 'Watched a rewarded ad' });
-  });
   test('CHALLENGE_CLAIM_RESULT marks only the claimed challenge and awards points', () => {
     const state = {
       ...INIT,

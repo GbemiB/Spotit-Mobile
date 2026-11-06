@@ -1,4 +1,4 @@
-import { freeLevelsText, freeLevelsShort, freeLevelsBadge, gameError } from './wording.js';
+import { freeLevelsText, freeLevelsBadge, gameError } from './wording.js';
 
 describe('free levels wording', () => {
   it('follows the number of free levels from the server', () => {
@@ -6,9 +6,6 @@ describe('free levels wording', () => {
     expect(freeLevelsText(1)).toBe('Level 1 of every topic is free.');
     expect(freeLevelsText(0)).toBe('Every level costs SP to unlock.');
     expect(freeLevelsText(null)).toBe('');
-    expect(freeLevelsShort(null)).toBe('');
-    expect(freeLevelsShort(2)).toBe('levels 1–2 of every topic are free');
-    expect(freeLevelsShort(0)).toBe('every level costs SP');
   });
 });
 

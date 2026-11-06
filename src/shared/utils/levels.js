@@ -1,9 +1,6 @@
 export function toLevelList(apiLevels) {
   return apiLevels.map(l => ({ name: l.name, lo: l.pointsLow, hi: l.pointsHigh }));
 }
-export function levelOrderFor(levels) {
-  return [...levels.map(l => l.name), 'Goddess'];
-}
 export function levelInfo(fp, levels) {
   if (!levels || levels.length === 0) {
     return { name: null, lo: 0, hi: 0, pct: 0, next: null, idx: -1 };

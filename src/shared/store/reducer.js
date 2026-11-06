@@ -324,11 +324,6 @@ export function reducer(state, action) {
       };
       return withHistory(next, { icon: '🎁', label: 'Daily check-in bonus', delta: pointsAwarded, date: todayISO() });
     }
-    case A.AD_WATCH_RESULT: {
-      const { pointsAwarded, newBalance } = action;
-      const next = { ...state, femPoints: newBalance, toast: { icon: '🎬', text: `+${pointsAwarded} SpotPoints earned` } };
-      return withHistory(next, { icon: '🎬', label: 'Watched a rewarded ad', delta: pointsAwarded, date: todayISO() });
-    }
     case A.CHALLENGE_CLAIM_RESULT: {
       const { challengeId, pointsAwarded, newBalance } = action;
       const next = {

@@ -1,4 +1,4 @@
-import { levelInfo, levelOrderFor, toLevelList } from './levels.js';
+import { levelInfo, toLevelList } from './levels.js';
 const LEVELS = [
   { name: 'Blush', lo: 0, hi: 500 },
   { name: 'Petal', lo: 500, hi: 2000 },
@@ -46,9 +46,6 @@ describe('levelInfo', () => {
   });
   test('an empty levels list (not loaded yet) returns a null-name shape instead of crashing', () => {
     expect(levelInfo(1000, [])).toEqual({ name: null, lo: 0, hi: 0, pct: 0, next: null, idx: -1 });
-  });
-  test('levelOrderFor ends with Goddess after the given levels', () => {
-    expect(levelOrderFor(LEVELS)).toEqual(['Blush', 'Petal', 'Rosé', 'Bloom', 'Wildflower', 'Moonflower', 'Goddess']);
   });
 });
 describe('toLevelList', () => {

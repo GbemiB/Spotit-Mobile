@@ -2,10 +2,8 @@ import {
   ownerCard,
   expiryLabel,
   normalizeInviteCode,
-  signedInRoute,
   setupRoute,
   dayLogRows,
-  supportLabels,
   homeInviteCopy,
   connectedLine,
   connectedTitle,
@@ -46,15 +44,6 @@ describe('normalizeInviteCode', () => {
     expect(normalizeInviteCode(undefined)).toBe('');
   });
 });
-describe('signedInRoute', () => {
-  test('a partner account always goes to the partner home', () => {
-    expect(signedInRoute({ onboarded: true, accountType: 'partner' })).toBe('partner-home');
-  });
-  test('an owner goes to set-up until onboarded, then to the tabs', () => {
-    expect(signedInRoute({ onboarded: false, accountType: 'owner' })).toBe('setup');
-    expect(signedInRoute({ onboarded: true, accountType: 'owner' })).toBe('tabs');
-  });
-});
 describe('setupRoute', () => {
   test('waits for the invite check', () => {
     expect(setupRoute(undefined, false)).toBe('checking');
@@ -82,10 +71,6 @@ describe('dayLogRows', () => {
     expect(dayLogRows(undefined)).toBeNull();
     expect(dayLogRows({ flow: null, mood: null, symptoms: [], intimate: false, notes: '  ' })).toBeNull();
   });
-});
-test('support labels come from the server options', () => {
-  const options = [{ id: 'snacks', label: 'Brought her snacks' }];
-  expect(supportLabels(options, ['snacks', 'unknown'])).toEqual(['Brought her snacks', 'unknown']);
 });
 describe('homeInviteCopy', () => {
   test('on her period it names the day', () => {

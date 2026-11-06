@@ -3,8 +3,6 @@ import { useEffect } from 'react';
 import { Text } from '../../shared/styles/index.js';
 import { useAnimatedValue } from './HeroCardFx.jsx';
 
-const FLAME = 'M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.5 2 2.5 0-3-.5-5.5 1-8z';
-
 export function RiseIn({ index = 0, style, reduceMotion, children }) {
   const v = useAnimatedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
