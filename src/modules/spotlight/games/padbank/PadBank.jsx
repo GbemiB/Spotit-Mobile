@@ -352,9 +352,9 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
   const ready = picks.length === size && !!route;
   const kicker =
     phase === 'intro' || phase === 'loading'
-      ? `Day ${rules?.day ?? 1}`
+      ? `Level ${rules?.day ?? 1}`
       : phase === 'end'
-        ? `Day ${run?.day ?? 1} · closed`
+        ? `Level ${run?.day ?? 1} · closed`
         : `Visitor ${Math.min(round + 1, total)} of ${total}`;
   const heartTotal = run?.hearts ?? rules?.hearts ?? 3;
   const goals = goalLabels();
@@ -364,12 +364,12 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
     { text: `Way ${rightWay}/${total}`, done: rightWay > 0 },
   ];
   const priceNote = freeDay
-    ? `Day ${priceRules?.day ?? 1} is free: nothing costs SP today. Prices still show so you can see them.`
+    ? `Level ${priceRules?.day ?? 1} is free: nothing costs SP here. Prices still show so you can see them.`
     : `Your first ${freeVisitors} ${freeVisitors === 1 ? 'visitor is' : 'visitors are'} free. After that, each visitor costs ${visitorFee} SP plus the packs, and delivery is ${deliveryCost} SP.`;
   const openChip = cost > 0 ? (freeLeft > 0 ? 'Free try' : `${cost} SP`) : 'Free to open';
   const sp = n => (freeNow ? 'Free' : `${n} SP`);
   const nextLabel = end
-    ? 'See your day'
+    ? 'See your level'
     : freeDay || round + 1 < freeVisitors
       ? 'Next visitor · free'
       : `Next visitor · ${visitorFee} SP + packs`;
@@ -441,7 +441,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
               <Character name="padbankGirl" size={50} style={{ marginBottom: -5 }} />
             </WaveOnce>
             <View>
-              <Text style={[styles.kicker, { color: t.pinkInk }]}>Day {rules?.day ?? 1} · pretend pad bank</Text>
+              <Text style={[styles.kicker, { color: t.pinkInk }]}>Level {rules?.day ?? 1} · pretend pad bank</Text>
               <Text style={[styles.sheetTitle, { color: t.text }]}>Open the bank!</Text>
             </View>
           </View>
@@ -602,7 +602,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
                 <View style={[styles.tag, { backgroundColor: onHouse ? t.greenSoft : t.goldSoft }]}>
                   <Text style={[styles.tagText, { color: onHouse ? t.greenInk : t.goldInk }]}>
                     {size > 1 ? `${picks.length} of ${size} packs · ` : ''}
-                    {freeNow ? `Free visitor ${round + 1} of ${freeVisitors}` : freeDay ? 'Free day' : 'Paid visitor'}
+                    {freeNow ? `Free visitor ${round + 1} of ${freeVisitors}` : freeDay ? 'Free level' : 'Paid visitor'}
                   </Text>
                 </View>
               </View>
@@ -852,7 +852,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
                 ? freeLeft > 0
                   ? 'Your next run is free'
                   : `Next run costs ${cost} SP`
-                : `Your next day starts with ${freeVisitors} free ${freeVisitors === 1 ? 'visitor' : 'visitors'}`}
+                : `Your next level starts with ${freeVisitors} free ${freeVisitors === 1 ? 'visitor' : 'visitors'}`}
             </Text>
           </SlideIn>
         </>

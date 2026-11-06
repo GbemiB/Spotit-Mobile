@@ -16,8 +16,8 @@ describe('game card price', () => {
     });
     expect(priceFor(game, 2, false)).toEqual({ label: '10 SP', after: '', free: false });
   });
-  it('shows the free days and levels for games', () => {
-    expect(priceFor({ ...game, id: 'pad-bank-run', cost: 0, freeUpTo: 2 }, 2, false).label).toBe('Days 1–2 free');
+  it('shows the free levels for games', () => {
+    expect(priceFor({ ...game, id: 'pad-bank-run', cost: 0, freeUpTo: 2 }, 2, false).label).toBe('Levels 1–2 free');
     expect(priceFor({ ...game, id: 'give-day', cost: 0, freeUpTo: 2 }, 2, false).label).toBe('Levels 1–2 free');
     expect(priceFor({ ...game, id: 'give-day', cost: 0, freeUpTo: 1 }, 2, false).label).toBe('Level 1 free');
   });

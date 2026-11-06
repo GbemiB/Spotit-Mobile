@@ -188,8 +188,7 @@ export function priceFor(c, freeLevels, isNew) {
     return { label: freeLevels > 0 ? `Levels 1–${freeLevels} free` : 'Play', after: '', free: true };
   }
   if (c.freeUpTo > 0) {
-    const unit = c.id === 'pad-bank-run' ? 'Day' : 'Level';
-    return { label: c.freeUpTo === 1 ? `${unit} 1 free` : `${unit}s 1–${c.freeUpTo} free`, after: '', free: true };
+    return { label: c.freeUpTo === 1 ? 'Level 1 free' : `Levels 1–${c.freeUpTo} free`, after: '', free: true };
   }
   if (!c.cost) return { label: 'Free to play', after: '', free: true };
   if (c.freePlaysLeft > 0) {
@@ -294,7 +293,7 @@ const styles = StyleSheet.create({
   flipText: { color: '#FFFFFF', fontSize: ds(8.5), fontWeight: '800', letterSpacing: 0.6 },
   tag: { position: 'absolute', left: 5, top: 5, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
   tagText: { fontSize: ds(8), fontWeight: '800', letterSpacing: 0.4 },
-  name: { fontSize: ds(14), lineHeight: 19, fontWeight: '700' },
+  name: { fontSize: ds(14), lineHeight: 19, fontWeight: '500' },
   sub: { fontSize: ds(11), lineHeight: 16, marginTop: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9, flexWrap: 'wrap' },
   chip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
