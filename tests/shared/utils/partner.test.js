@@ -2,6 +2,8 @@ import {
   ownerCard,
   expiryLabel,
   normalizeInviteCode,
+  findJoinCode,
+  waitLabel,
   setupRoute,
   dayLogRows,
   homeInviteCopy,
@@ -39,8 +41,8 @@ describe('expiryLabel', () => {
 });
 describe('normalizeInviteCode', () => {
   test('removes spaces and dashes and uses capitals, like the server', () => {
-    expect(normalizeInviteCode(' k7p-2qx ')).toBe('K7P2QX');
-    expect(normalizeInviteCode('K7P 2QX')).toBe('K7P2QX');
+    expect(normalizeInviteCode(' 482-913 ')).toBe('482913');
+    expect(normalizeInviteCode('482 913')).toBe('482913');
     expect(normalizeInviteCode(undefined)).toBe('');
   });
 });
@@ -121,5 +123,23 @@ describe('sharedSinceLabel', () => {
   test('shows the day sharing started', () => {
     expect(sharedSinceLabel('2026-10-23T12:00:00Z')).toBe('Sharing since 23 October');
     expect(sharedSinceLabel(null)).toBeNull();
+  });
+});
+describe('findJoinCode', () => {
+  it('finds a 6-digit code in pasted text', () => {
+    expect(findJoinCode('482913')).toBe('482913');
+    expect(findJoinCode('Your code: 482913. It expires in 10 minutes.')).toBe('482913');
+  });
+  it('ignores text without a 6-digit code', () => {
+    expect(findJoinCode('call 08012345678')).toBeNull();
+    expect(findJoinCode('12345')).toBeNull();
+    expect(findJoinCode(null)).toBeNull();
+  });
+});
+describe('waitLabel', () => {
+  it('shows minutes and seconds', () => {
+    expect(waitLabel(60)).toBe('1:00');
+    expect(waitLabel(9)).toBe('0:09');
+    expect(waitLabel(-3)).toBe('0:00');
   });
 });

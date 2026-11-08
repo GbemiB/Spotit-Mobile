@@ -68,8 +68,8 @@ export default function PartnerSection() {
               </Text>
               <Text style={s.body}>
                 {card === 'pending'
-                  ? `Code expires ${expiryLabel(status.inviteExpiresAt)}. Ask them to install Spot it and tap “I have a partner invite”.`
-                  : 'The code is no longer valid. Send a new one to the same email.'}
+                  ? `Invite open until ${expiryLabel(status.inviteExpiresAt)}. Ask them to install Spot it, tap “I have a partner invite” and sign up with this email.`
+                  : 'This invite has expired. Send a new one to the same email.'}
               </Text>
             </View>
           </View>

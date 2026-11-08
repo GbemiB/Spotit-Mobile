@@ -54,9 +54,9 @@ export default function PartnerEndedScreen() {
         <Card style={s.card}>
           <Text style={s.title}>Sharing has ended</Text>
           <Text style={s.body}>
-            You no longer see a partner&apos;s cycle, and period reminders have stopped. If you get a new invite, enter its code below.
+            You no longer see a partner&apos;s cycle, and period reminders have stopped. If you get a new invite, tap below and we&apos;ll email you a code.
           </Text>
-          <Button onPress={() => setJoining(true)}>Enter a new invite code</Button>
+          <Button onPress={() => setJoining(true)}>Join with a new invite</Button>
         </Card>
         <View style={s.actions}>
           <Button variant="secondary" onPress={() => setConfirming('logout')}>

@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, StyleSheet, Linking, AppState, Platform } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Linking, AppState } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Application from 'expo-application';
@@ -19,7 +19,7 @@ import PartnerSelfSection from '../partner/PartnerSelfSection.jsx';
 import appConfig from '../../../app.json';
 import * as authApi from '../../shared/api/auth.js';
 import * as usersApi from '../../shared/api/users.js';
-import { getSupport } from '../../shared/api/app.js';
+import { loadSupportEmail, openContactUs } from '../../shared/utils/support.js';
 import { getPermissionState, requestPermission, syncPushRegistration, unlinkPush, markPromptSeen } from '../../shared/utils/push.js';
 import { DAY_OPTIONS, toggleDay } from '../../shared/utils/reminders.js';
 import { canRateApp, openStoreListing } from '../../shared/utils/rateApp.js';
@@ -140,15 +140,11 @@ export default function SettingsScreen() {
   const [permission, setPermission] = useState('granted');
   const [supportEmail, setSupportEmail] = useState(null);
   useEffect(() => {
-    getSupport()
-      .then(data => setSupportEmail(data?.email || null))
-      .catch(() => {});
+    loadSupportEmail().then(setSupportEmail);
   }, []);
-  function contactSupport() {
+  async function contactUs() {
     if (!supportEmail) return;
-    const subject = encodeURIComponent('Spot it support');
-    const body = encodeURIComponent(`\n\n—\nApp version: ${APP_VERSION}\nPhone: ${Platform.OS} ${Platform.Version}`);
-    Linking.openURL(`mailto:${supportEmail}?subject=${subject}&body=${body}`).catch(() => toast('🌸', `Email us at ${supportEmail}`));
+    if (!(await openContactUs(supportEmail))) toast('🌸', `Email us at ${supportEmail}`);
   }
   useEffect(() => {
     getPermissionState().then(setPermission);
@@ -265,6 +261,21 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
+        {supportEmail ? (
+          <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+            <SectionHeader title="Help" />
+            <Card style={{ marginTop: 10, padding: 0, overflow: 'hidden' }}>
+              <Pressable style={[s.row, { borderBottomWidth: 0 }]} onPress={contactUs} accessibilityRole="button">
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.rowLabel, { color: colors.primary }]}>Contact us</Text>
+                  <Text style={s.supportTx}>{`Questions or problems? Email ${supportEmail}`}</Text>
+                </View>
+                <Text style={s.chevron}>›</Text>
+              </Pressable>
+            </Card>
+          </View>
+        ) : null}
+
         {!isPartner && (
           <>
             <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
@@ -359,15 +370,6 @@ export default function SettingsScreen() {
             {canRateApp ? (
               <Pressable style={s.row} onPress={openStoreListing}>
                 <Text style={[s.rowLabel, { color: colors.primary }]}>Rate Spot it</Text>
-                <Text style={s.chevron}>›</Text>
-              </Pressable>
-            ) : null}
-            {supportEmail ? (
-              <Pressable style={s.row} onPress={contactSupport} accessibilityRole="button">
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.rowLabel, { color: colors.primary }]}>Contact support</Text>
-                  <Text style={s.supportTx}>{supportEmail}</Text>
-                </View>
                 <Text style={s.chevron}>›</Text>
               </Pressable>
             ) : null}

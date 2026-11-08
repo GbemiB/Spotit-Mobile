@@ -68,7 +68,15 @@ export function expiryLabel(iso) {
   return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}, ${time}`;
 }
 export function normalizeInviteCode(input) {
-  return (input || '').replace(/[\s-]/g, '').toUpperCase();
+  return (input || '').replace(/\D/g, '');
+}
+export function findJoinCode(text) {
+  const match = /(?:^|\D)(\d{6})(?!\d)/.exec(text || '');
+  return match ? match[1] : null;
+}
+export function waitLabel(seconds) {
+  const s = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 export function setupRoute(partnerStatus, choseOwnCycle) {
   if (partnerStatus === undefined) return 'checking';

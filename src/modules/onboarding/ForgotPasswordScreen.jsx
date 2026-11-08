@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
+import ContactUsLink from '../../components/ui/ContactUsLink.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { LockIcon } from '../../components/ui/icons.jsx';
 import * as authApi from '../../shared/api/auth.js';
@@ -96,6 +97,7 @@ export default function ForgotPasswordScreen() {
                 <Text style={s.footerLink}>Login</Text>
               </Pressable>
             </View>
+            <ContactUsLink style={{ marginTop: 6 }} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

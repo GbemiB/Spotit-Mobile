@@ -1,4 +1,5 @@
 import { View, Image, Pressable, Dimensions, Animated, Easing, StyleSheet } from 'react-native';
+import ContactUsLink from '../../components/ui/ContactUsLink.jsx';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -450,6 +451,8 @@ export default function WelcomeScreen() {
           </View>
         )}
       </View>
+
+      <ContactUsLink onPhoto style={{ position: 'absolute', left: 16, top: insets.top + 16 }} />
 
       {!isLast && (
         <Pressable onPress={goToSignup} style={[s.skip, { top: insets.top + 16 }]}>

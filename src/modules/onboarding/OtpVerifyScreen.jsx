@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
+import ContactUsLink from '../../components/ui/ContactUsLink.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import { ChevronLeftIcon } from '../../components/ui/icons.jsx';
 import StatusModal from '../../components/ui/StatusModal.jsx';
@@ -279,6 +280,7 @@ export default function OtpVerifyScreen() {
                 </Text>
               </Pressable>
             )}
+            <ContactUsLink label="Code not arriving?" style={{ marginTop: 4 }} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

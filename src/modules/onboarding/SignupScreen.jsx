@@ -6,6 +6,7 @@ import { useApp } from '../../shared/store/AppContext.jsx';
 import { A } from '../../shared/store/actions.js';
 import { useTheme, Text, TextInput } from '../../shared/styles/index.js';
 import { CheckIcon } from '../../components/ui/icons.jsx';
+import ContactUsLink from '../../components/ui/ContactUsLink.jsx';
 import LogoMark from '../../components/ui/LogoMark.jsx';
 import * as authApi from '../../shared/api/auth.js';
 import { isValidEmail } from '../../shared/utils/validation.js';
@@ -132,6 +133,7 @@ export default function SignupScreen() {
                 <Text style={s.footerLink}>Login</Text>
               </Pressable>
             </View>
+            <ContactUsLink style={{ marginTop: 6 }} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -45,8 +45,8 @@ export default function InviteSheet({ open, onClose, onSend, busy }) {
         {emailError ? <Text style={s.errorTx}>{emailError}</Text> : null}
         <View style={s.hint}>
           <Text style={s.body}>
-            We&apos;ll email them a 6-character code. It only works for this email address and expires in 48 hours. Once they join, they see
-            everything you track, read-only.
+            We&apos;ll email them an invite that stays open for 48 hours. When they sign up with this email, Spot it sends them a code to
+            join. Once they join, they see everything you track, read-only.
           </Text>
         </View>
         <Button onPress={send} disabled={busy}>

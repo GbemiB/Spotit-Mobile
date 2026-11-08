@@ -6,6 +6,7 @@ import {
   cancelPartnerInvite,
   updatePartnerSettings,
   acceptPartnerInvite,
+  sendPartnerJoinCode,
   getPartnerProfile,
   getPartnerCheckIn,
   partnerCheckIn,
@@ -62,4 +63,8 @@ test('his app reads her profile and his check-in', () => {
 test('a reply puts her heart and note on the send', () => {
   replyToLove(7, { heart: true }, 'access');
   expect(apiRequest).toHaveBeenCalledWith('/partner/love/7/reply', { method: 'PUT', body: { heart: true, note: null }, token: 'access' });
+});
+test('the join screen asks the server to email a code', () => {
+  sendPartnerJoinCode('access');
+  expect(apiRequest).toHaveBeenCalledWith('/partner/invite/code', { method: 'POST', token: 'access' });
 });

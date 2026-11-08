@@ -11,6 +11,9 @@ export function resendPartnerInvite(token) {
 export function cancelPartnerInvite(token) {
   return apiRequest('/partner/invite', { method: 'DELETE', token });
 }
+export function sendPartnerJoinCode(token) {
+  return apiRequest('/partner/invite/code', { method: 'POST', token });
+}
 export function acceptPartnerInvite({ code, nickname }, token) {
   return apiRequest('/partner/accept', { method: 'POST', body: { code, nickname }, token });
 }
