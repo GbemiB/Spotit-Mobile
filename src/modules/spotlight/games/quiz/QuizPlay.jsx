@@ -65,7 +65,7 @@ function Result({ t, state, level, topic, hasNext, nextCost, settings, balance, 
       <View style={{ alignItems: 'center', paddingTop: 40, paddingHorizontal: 24 }}>
         <Pop reduceMotion={reduceMotion}>
           <Breathe reduceMotion={reduceMotion}>
-            <Character name={cleared ? 'youHappy' : 'you'} size={150} />
+            <Character name={cleared ? 'youHappy' : 'you'} size={150} asViewer />
           </Breathe>
         </Pop>
         <View style={{ marginTop: 4 }}>

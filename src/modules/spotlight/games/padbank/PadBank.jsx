@@ -438,7 +438,7 @@ export default function PadBank({ insets, reduceMotion, challenge, onExit, onCha
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <WaveOnce reduceMotion={reduceMotion} style={[styles.introFace, { backgroundColor: t.pinkSoft }]}>
-              <Character name="padbankGirl" size={50} style={{ marginBottom: -5 }} />
+              <Character name="padbankGirl" size={50} style={{ marginBottom: -5 }} asViewer />
             </WaveOnce>
             <View>
               <Text style={[styles.kicker, { color: t.pinkInk }]}>Level {rules?.day ?? 1} · pretend pad bank</Text>

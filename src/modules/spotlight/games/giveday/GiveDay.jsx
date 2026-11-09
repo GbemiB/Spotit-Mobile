@@ -127,7 +127,7 @@ function PlaceScene({ t, isDark, place, tone, tall, happy, handing, reduceMotion
           {place.name.toUpperCase()}
         </Text>
         <Breathe reduceMotion={reduceMotion} style={{ position: 'absolute', left: -10, bottom: -4 }}>
-          <Character name={hostOf(place, happy || handing)} size={190} />
+          <Character name={hostOf(place, happy || handing)} size={190} asViewer={!!place.forSelf} />
         </Breathe>
       </View>
       <Twinkle size={8} color={t.petal} reduceMotion={reduceMotion} style={{ left: 36, top: 56 }} />
@@ -651,7 +651,7 @@ export default function GiveDay({ insets, reduceMotion, challenge, onExit, onCha
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={[styles.face, { backgroundColor: t.greenSoft }]}>
-              <Character name="mamaRonke" size={50} style={{ marginBottom: -5 }} />
+              <Character name="mamaRonke" size={50} style={{ marginBottom: -5 }} asViewer />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.kicker, { color: t.pinkInk }]}>Give Day · pretend giving</Text>
@@ -726,7 +726,7 @@ export default function GiveDay({ insets, reduceMotion, challenge, onExit, onCha
             <SlideIn key={sel.id} reduceMotion={reduceMotion} distance={8}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={[styles.hostTile, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFE9DF' }]}>
-                  <Character name={hostOf(sel, false)} size={64} style={{ marginBottom: -4 }} />
+                  <Character name={hostOf(sel, false)} size={64} style={{ marginBottom: -4 }} asViewer={!!sel.forSelf} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[styles.kicker, { color: t.pinkInk }]}>
@@ -1119,7 +1119,7 @@ export default function GiveDay({ insets, reduceMotion, challenge, onExit, onCha
             <Text style={[styles.resultTitle, { color: t.text }]}>{result.title}</Text>
             <View style={[styles.thanks, { backgroundColor: t.pinkSoft }]}>
               <View style={[styles.thanksFace, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFE9DF' }]}>
-                <Character name={hostOf(sel, true)} size={54} style={{ marginBottom: -4 }} />
+                <Character name={hostOf(sel, true)} size={54} style={{ marginBottom: -4 }} asViewer={!!sel.forSelf} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.thanksText, { color: t.text }]}>
