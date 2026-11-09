@@ -1,13 +1,24 @@
 import { Modal, View, Pressable, ScrollView, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, Text } from '../../shared/styles/index.js';
-export default function BottomSheet({ open, onClose, title, closeLabel = 'Cancel', avoidKeyboard = false, children }) {
+export default function BottomSheet({ open, onClose, onClosed, title, closeLabel = 'Cancel', avoidKeyboard = false, children }) {
   const { colors } = useTheme();
   const s = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open && Platform.OS !== 'ios') onClosed?.();
+    wasOpen.current = open;
+  }, [open, onClosed]);
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={open}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      onDismiss={Platform.OS === 'ios' ? onClosed : undefined}
+    >
       <KeyboardAvoidingView style={s.container} enabled={avoidKeyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={s.overlay} />

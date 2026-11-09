@@ -54,6 +54,22 @@ export function sharedSinceLabel(iso) {
   if (!iso || Number.isNaN(d.getTime())) return null;
   return `Sharing since ${d.getDate()} ${LONG_MONTHS[d.getMonth()]}`;
 }
+export function manageConfirmCopy(action, partnerFirstName) {
+  const name = partnerFirstName || 'your partner';
+  const Name = partnerFirstName || 'Your partner';
+  if (action === 'change') {
+    return {
+      title: 'Change partner?',
+      message: `${Name} will stop seeing your cycle straight away. Then you can invite someone new.`,
+      confirmLabel: 'Stop and invite',
+    };
+  }
+  return {
+    title: `Stop sharing with ${name}?`,
+    message: `${Name} will stop seeing your cycle straight away and won't get reminders. You can invite someone again anytime.`,
+    confirmLabel: 'Stop sharing',
+  };
+}
 export function ownerCard(status) {
   if (!status) return 'loading';
   if (status.role !== 'owner') return 'hidden';

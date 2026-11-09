@@ -12,7 +12,7 @@ import LoveFromPartnerSheet from './LoveFromPartnerSheet.jsx';
 import { FONT } from '../../shared/styles/typography.js';
 import Avatar from '../../components/ui/Avatar.jsx';
 import BottomSheet from '../../components/ui/BottomSheet.jsx';
-import ConfirmModal from '../../components/ui/ConfirmModal.jsx';
+import Button from '../../components/ui/Button.jsx';
 import {
   ownerCard,
   homeInviteCopy,
@@ -20,6 +20,7 @@ import {
   connectedTitle,
   inviteExpiryText,
   sharedSinceLabel,
+  manageConfirmCopy,
 } from '../../shared/utils/partner.js';
 import { ChevronRightIcon } from '../../components/ui/icons.jsx';
 import usePartnerSharing from './usePartnerSharing.js';
@@ -137,6 +138,7 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
   const [manageOpen, setManageOpen] = useState(false);
   const [loveOpen, setLoveOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
+  const [inviteNext, setInviteNext] = useState(false);
   const reduceMotion = useReduceMotion();
   const float = useAnimatedValue(0);
   const halo = useAnimatedValue(0);
@@ -192,16 +194,25 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
   if (card === 'loading' || card === 'hidden') return null;
   const partnerName = status.partnerFirstName || 'your partner';
   const Partner = status.partnerFirstName || 'Your partner';
-  function openInviteFromManage() {
+  function closeManage() {
     setManageOpen(false);
+    setConfirm(null);
+  }
+  function manageClosed() {
+    setConfirm(null);
+    if (!inviteNext) return;
+    setInviteNext(false);
     setInviteOpen(true);
+  }
+  function openInviteFromManage() {
+    setInviteNext(true);
+    setManageOpen(false);
   }
   async function afterConfirm() {
     const action = confirm;
     if (!(await stop())) return;
-    setConfirm(null);
+    if (action === 'change') setInviteNext(true);
     setManageOpen(false);
-    if (action === 'change') setInviteOpen(true);
   }
   async function resendFromManage() {
     if (await resend()) setManageOpen(false);
@@ -209,6 +220,7 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
   async function cancelFromManage() {
     if (await cancel()) setManageOpen(false);
   }
+  const confirmCopy = manageConfirmCopy(confirm, status.partnerFirstName);
   const copy = homeInviteCopy({ firstName, phaseKey, cycleDay, daysToPeriod });
   const since = sharedSinceLabel(status.sharedSince);
   return (
@@ -369,8 +381,21 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
         date={todayISO()}
         partnerName={loveToday?.[0]?.partnerName || status?.partnerFirstName}
       />
-      <BottomSheet open={manageOpen} onClose={() => setManageOpen(false)} title="Your partner">
-        {card === 'active' ? (
+      <BottomSheet open={manageOpen} onClose={closeManage} onClosed={manageClosed} title="Your partner">
+        {confirm ? (
+          <View style={s.sheet}>
+            <View style={s.box}>
+              <Text style={s.rowTitle}>{confirmCopy.title}</Text>
+              <Text style={s.body}>{confirmCopy.message}</Text>
+            </View>
+            <Button variant="danger" onPress={afterConfirm} disabled={busy}>
+              {busy ? 'Stopping…' : confirmCopy.confirmLabel}
+            </Button>
+            <Button variant="secondary" onPress={() => setConfirm(null)} disabled={busy}>
+              Cancel
+            </Button>
+          </View>
+        ) : card === 'active' ? (
           <View style={s.sheet}>
             <View style={s.box}>
               <View style={s.boxRow}>
@@ -419,24 +444,6 @@ export default function HomePartnerCard({ firstName, phaseKey, cycleDay, daysToP
         )}
       </BottomSheet>
       <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} onSend={invite} busy={busy} />
-      <ConfirmModal
-        visible={confirm === 'stop'}
-        title={`Stop sharing with ${partnerName}?`}
-        message={`${Partner} will stop seeing your cycle straight away and won't get reminders. You can invite someone again anytime.`}
-        confirmLabel={busy ? 'Stopping…' : 'Stop sharing'}
-        destructive
-        onConfirm={afterConfirm}
-        onCancel={() => setConfirm(null)}
-      />
-      <ConfirmModal
-        visible={confirm === 'change'}
-        title="Change partner?"
-        message={`${Partner} will stop seeing your cycle straight away. Then you can invite someone new.`}
-        confirmLabel={busy ? 'Stopping…' : 'Stop and invite'}
-        destructive
-        onConfirm={afterConfirm}
-        onCancel={() => setConfirm(null)}
-      />
     </View>
   );
 }

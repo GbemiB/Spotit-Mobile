@@ -11,6 +11,7 @@ import {
   connectedTitle,
   inviteExpiryText,
   sharedSinceLabel,
+  manageConfirmCopy,
 } from '../../../src/shared/utils/partner.js';
 describe('ownerCard', () => {
   test('nothing shows until the status has loaded', () => {
@@ -141,5 +142,23 @@ describe('waitLabel', () => {
     expect(waitLabel(60)).toBe('1:00');
     expect(waitLabel(9)).toBe('0:09');
     expect(waitLabel(-3)).toBe('0:00');
+  });
+});
+
+describe('manageConfirmCopy', () => {
+  test('stop sharing names the partner', () => {
+    const copy = manageConfirmCopy('stop', 'Tunde');
+    expect(copy.title).toBe('Stop sharing with Tunde?');
+    expect(copy.confirmLabel).toBe('Stop sharing');
+    expect(copy.message.startsWith('Tunde will stop seeing your cycle')).toBe(true);
+  });
+  test('change partner asks to stop and invite', () => {
+    const copy = manageConfirmCopy('change', 'Tunde');
+    expect(copy.title).toBe('Change partner?');
+    expect(copy.confirmLabel).toBe('Stop and invite');
+  });
+  test('falls back when the partner has no first name', () => {
+    expect(manageConfirmCopy('stop', '').title).toBe('Stop sharing with your partner?');
+    expect(manageConfirmCopy('change', null).message.startsWith('Your partner')).toBe(true);
   });
 });
