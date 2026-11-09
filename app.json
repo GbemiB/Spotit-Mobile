@@ -4,7 +4,7 @@
     "slug": "spotit",
     "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -14,8 +14,10 @@
       "package": "com.spotit.app",
       "playStoreUrl": "https://play.google.com/store/apps/details?id=com.spotit.app",
       "adaptiveIcon": {
-        "backgroundColor": "#FBF3EF",
-        "foregroundImage": "./assets/icon-adaptive.png"
+        "foregroundImage": "./assets/icon-adaptive.png",
+        "backgroundImage": "./assets/icon-adaptive-bg.png",
+        "monochromeImage": "./assets/icon-monochrome.png",
+        "backgroundColor": "#FCEEEA"
       },
       "googleServicesFile": "./google-services.json"
     },
