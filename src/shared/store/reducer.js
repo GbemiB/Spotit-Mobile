@@ -17,6 +17,7 @@ export const INIT = {
   otpExpiresAt: null,
   resetEmail: null,
   userName: 'Friend',
+  userEmail: '',
   accountType: 'owner',
   partnerInviteIntent: false,
   partnerName: '',
@@ -85,6 +86,7 @@ export const INIT = {
 };
 const USER_DATA_KEYS = [
   'userName',
+  'userEmail',
   'accountType',
   'partnerName',
   'partnerState',
@@ -381,11 +383,12 @@ export function reducer(state, action) {
     }
     case A.PROFILE_HYDRATED:
     case A.PROFILE_UPDATED: {
-      const { firstName, lastName, goal, dob, cycleLength, periodLength, lastPeriodDate, trackingStartDate, themePref, isPremium } = action;
+      const { firstName, lastName, email, goal, dob, cycleLength, periodLength, lastPeriodDate, trackingStartDate, themePref, isPremium } = action;
       const userName = [firstName, lastName].filter(Boolean).join(' ').trim();
       return {
         ...state,
         userName: userName || state.userName,
+        userEmail: email || state.userEmail,
         goal,
         dob,
         cycleLength,
@@ -499,6 +502,7 @@ export function reducer(state, action) {
       return {
         ...state,
         userName: userName || state.userName,
+        userEmail: action.email || state.userEmail,
         themePref: action.themePref ?? state.themePref,
         isPremium: !!action.isPremium,
       };

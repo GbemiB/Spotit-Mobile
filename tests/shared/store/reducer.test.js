@@ -220,6 +220,14 @@ describe('profile and notifications', () => {
     );
     expect(reducer(INIT, { ...profile, lastPeriodDate: '2026-09-28' }).trackingStartDate).toBe('2026-09-01');
   });
+  test('PROFILE_HYDRATED and PARTNER_SELF_HYDRATED save the account email', () => {
+    expect(reducer(INIT, { type: A.PROFILE_HYDRATED, firstName: 'Ada', email: 'ada@x.com', cycleLength: 28, periodLength: 5 }).userEmail).toBe('ada@x.com');
+    expect(reducer(INIT, { type: A.PARTNER_SELF_HYDRATED, firstName: 'Tunde', email: 'tunde@x.com' }).userEmail).toBe('tunde@x.com');
+    expect(reducer({ ...INIT, userEmail: 'ada@x.com' }, { type: A.PROFILE_UPDATED, firstName: 'Ada', cycleLength: 28, periodLength: 5 }).userEmail).toBe('ada@x.com');
+  });
+  test('LOGOUT clears the account email', () => {
+    expect(reducer({ ...INIT, userEmail: 'ada@x.com' }, { type: A.LOGOUT }).userEmail).toBe('');
+  });
   test('PROFILE_HYDRATED keeps the existing name when first/last are both blank', () => {
     const state = { ...INIT, userName: 'Existing Name' };
     const next = reducer(state, {

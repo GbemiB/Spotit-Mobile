@@ -10,6 +10,7 @@ const PERSIST_KEYS = [
   'userId',
   'dataOwnerId',
   'userName',
+  'userEmail',
   'accountType',
   'partnerName',
   'partnerState',

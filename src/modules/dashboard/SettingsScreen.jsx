@@ -258,6 +258,14 @@ export default function SettingsScreen() {
                 returnKeyType="done"
               />
             </View>
+            {state.userEmail ? (
+              <View style={[s.row, { borderBottomWidth: 0 }]}>
+                <Text style={s.rowLabel}>Email</Text>
+                <Text style={s.emailValue} numberOfLines={1} ellipsizeMode="middle">
+                  {state.userEmail}
+                </Text>
+              </View>
+            ) : null}
           </Card>
         </View>
 
@@ -513,6 +521,7 @@ function createStyles(c) {
     permTx: { fontSize: 11, color: c.textSecondary, lineHeight: 17 },
     metaTx: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
     supportTx: { fontSize: 10, color: c.textMuted, marginTop: 2 },
+    emailValue: { flex: 1, fontSize: 12, fontWeight: '600', color: c.textFaint, textAlign: 'right' },
     inlineInput: { fontSize: 12, fontWeight: '600', color: c.primary, textAlign: 'right', minWidth: 80 },
     stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: c.border, borderRadius: 12, overflow: 'hidden' },
     stepBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: c.background },
